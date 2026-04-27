@@ -1,0 +1,39 @@
+# Env
+.env
+.env.local
+.env.*.local
+
+# Intermédiaires
+.tmp/
+*.log
+
+# Node / Next
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Drizzle artifacts (keep migrations)
+drizzle/meta/
+!drizzle/migrations/
+
+# Tests / coverage
+coverage/
+.nyc_output/
+
+# Credentials
+credentials.json
+token.json
+*.pem
+*.key

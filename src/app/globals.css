@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --border: 0 0% 90%;
+  --sidebar: 0 0% 4%;
+  --sidebar-foreground: 0 0% 75%;
+  --sidebar-active: 0 0% 100%;
+  --accent-color: 217 91% 60%;
+  --accent-amber: 38 92% 50%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'liga' 1;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Display serif for distinctive moments */
+.display-serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  font-feature-settings: 'liga' 1;
+}
+
+/* Numbers tabular */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Heading hierarchy */
+h1 {
+  letter-spacing: -0.035em;
+  font-feature-settings: 'ss01' 1;
+}
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  /* Buttons — square edges, weight 500, no soft corners */
+  .btn {
+    @apply inline-flex h-9 select-none items-center justify-center rounded-sm px-4 text-[13px] font-medium transition-all duration-150;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1;
+    @apply disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-zinc-900 text-zinc-50 hover:bg-zinc-800;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  .btn-secondary {
+    @apply btn border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50;
+  }
+  .btn-ghost {
+    @apply btn text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900;
+  }
+
+  /* Inputs — sharper edges */
+  .input {
+    @apply flex h-9 w-full rounded-sm border border-zinc-200 bg-white px-3 text-[13px];
+    @apply placeholder:text-zinc-400;
+    @apply focus-visible:outline-none focus-visible:border-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-900;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    transition: border-color 150ms;
+  }
+  textarea.input {
+    @apply h-auto py-2 leading-relaxed;
+  }
+  select.input {
+    @apply pr-8 cursor-pointer;
+  }
+
+  /* Cards — refined surface */
+  .card {
+    @apply rounded-sm border border-zinc-200 bg-white;
+  }
+
+  /* Tables — ultra-thin dividers */
+  .table-base {
+    @apply w-full text-[13px];
+  }
+  .table-base thead {
+    @apply border-b border-zinc-200;
+  }
+  .table-base thead th {
+    @apply px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500;
+  }
+  .table-base tbody {
+    @apply divide-y divide-zinc-100;
+  }
+  .table-base tbody tr {
+    @apply transition-colors hover:bg-zinc-50;
+  }
+  .table-base tbody td {
+    @apply px-5 py-3.5 text-zinc-700;
+  }
+
+  /* Badges — outlined pills, more architectural */
+  .badge {
+    @apply inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider;
+  }
+  .badge-neutral {
+    @apply badge border-zinc-200 bg-zinc-50 text-zinc-600;
+  }
+  .badge-blue {
+    @apply badge border-blue-200 bg-blue-50 text-blue-700;
+  }
+  .badge-emerald {
+    @apply badge border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+  .badge-amber {
+    @apply badge border-amber-200 bg-amber-50 text-amber-700;
+  }
+  .badge-red {
+    @apply badge border-red-200 bg-red-50 text-red-700;
+  }
+
+  .kbd {
+    @apply rounded border border-zinc-300 bg-white px-1.5 py-0.5 font-mono text-[10px] text-zinc-700;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  /* Page header with vertical accent line */
+  .page-header {
+    @apply relative pl-5;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: hsl(var(--accent-amber));
+  }
+}
+
+/* Custom scrollbar — refined */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Selection */
+::selection {
+  background: hsl(var(--accent-amber) / 0.3);
+}

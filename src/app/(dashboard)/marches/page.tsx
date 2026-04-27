@@ -1,0 +1,87 @@
+import { db } from '@/db/client';
+import { marchesTravaux, lots, properties, companies, suppliers } from '@/db/schema';
+import { asc, eq } from 'drizzle-orm';
+import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
+
+export default async function MarchesPage() {
+  let rows: any[] = [];
+  let dbError: string | null = null;
+  try {
+    rows = await db
+      .select({
+        id: marchesTravaux.id,
+        name: marchesTravaux.name,
+        amountHt: marchesTravaux.amountHt,
+        status: marchesTravaux.status,
+        dateDebutPrevu: marchesTravaux.dateDebutPrevu,
+        dateFinPrevu: marchesTravaux.dateFinPrevu,
+        lotName: lots.name,
+        propertyName: properties.name,
+        companyName: companies.name,
+        supplierName: suppliers.companyName,
+      })
+      .from(marchesTravaux)
+      .innerJoin(lots, eq(marchesTravaux.lotId, lots.id))
+      .innerJoin(properties, eq(lots.propertyId, properties.id))
+      .innerJoin(companies, eq(properties.companyId, companies.id))
+      .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
+      .orderBy(asc(marchesTravaux.createdAt));
+  } catch (e) {
+    dbError = e instanceof Error ? e.message : 'Erreur inconnue';
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Marchés de travaux</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Vue transversale des contrats fournisseur ↔ lot
+        </p>
+      </div>
+
+      {dbError && (
+        <div className="card p-6 text-sm text-amber-700">
+          Connexion DB indisponible : {dbError}
+        </div>
+      )}
+
+      {!dbError && rows.length === 0 && (
+        <div className="card p-12 text-center text-sm text-slate-500">
+          Aucun marché pour l'instant. La création de marchés se fait depuis la fiche d'un{' '}
+          <Link href="/biens" className="text-blue-600 hover:underline">lot</Link>.
+        </div>
+      )}
+
+      {!dbError && rows.length > 0 && (
+        <div className="card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Nom</th>
+                <th className="px-4 py-3">Société</th>
+                <th className="px-4 py-3">Lot</th>
+                <th className="px-4 py-3">Fournisseur</th>
+                <th className="px-4 py-3">Montant HT</th>
+                <th className="px-4 py-3">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((m) => (
+                <tr key={m.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium">{m.name}</td>
+                  <td className="px-4 py-3 text-xs">{m.companyName}</td>
+                  <td className="px-4 py-3 text-xs">{m.propertyName} / {m.lotName}</td>
+                  <td className="px-4 py-3 text-xs">{m.supplierName ?? '—'}</td>
+                  <td className="px-4 py-3 tabular-nums">{m.amountHt ? `${Number(m.amountHt).toLocaleString('fr-FR')} €` : '—'}</td>
+                  <td className="px-4 py-3 text-xs">{m.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
