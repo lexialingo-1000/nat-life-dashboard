@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
 import { suppliers, supplierContacts } from '@/db/schema';
-import { asc, sql } from 'drizzle-orm';
+import { asc, sql, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { FournisseursTable, type FournisseurRow } from './fournisseurs-table';
@@ -20,9 +20,11 @@ export default async function FournisseursPage() {
         email: suppliers.email,
         phone: suppliers.phone,
         invoicingType: suppliers.invoicingType,
-        contactsCount: sql<number>`(SELECT count(*)::int FROM ${supplierContacts} WHERE ${supplierContacts.supplierId} = ${suppliers.id})`,
+        contactsCount: sql<number>`count(${supplierContacts.id})::int`,
       })
       .from(suppliers)
+      .leftJoin(supplierContacts, eq(supplierContacts.supplierId, suppliers.id))
+      .groupBy(suppliers.id)
       .orderBy(asc(suppliers.companyName));
 
     rows = raw.map((s) => ({
