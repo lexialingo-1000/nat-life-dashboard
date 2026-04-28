@@ -161,7 +161,7 @@ function FeaturedKpi({
   return (
     <Link
       href={href}
-      className={`group relative col-span-2 row-span-2 flex flex-col justify-between overflow-hidden rounded-sm border bg-white p-6 transition-colors duration-200 ease-out-quart hover:border-zinc-300 ${
+      className={`group relative col-span-2 row-span-2 flex flex-col justify-between overflow-hidden rounded-sm border bg-[#fbf8f0] p-6 transition-colors duration-200 ease-out-quart hover:border-zinc-300 ${
         accent ? 'border-zinc-300' : 'border-zinc-200'
       }`}
     >
@@ -200,7 +200,7 @@ function Kpi({
   return (
     <Link
       href={href}
-      className="group flex flex-col justify-between rounded-sm border border-zinc-200 bg-white p-4 transition-colors duration-200 ease-out-quart hover:border-zinc-300"
+      className="group flex flex-col justify-between rounded-sm border border-zinc-200 bg-[#fbf8f0] p-4 transition-colors duration-200 ease-out-quart hover:border-zinc-300"
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
@@ -228,7 +228,7 @@ function RoadmapBlock({
 }) {
   const isActive = status === 'active';
   return (
-    <div className="card p-6">
+    <div className="card bg-[#fbf8f0] p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-medium text-zinc-900">{title}</h3>
         <span className={isActive ? 'badge-emerald' : 'badge-neutral'}>

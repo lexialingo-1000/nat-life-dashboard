@@ -42,12 +42,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Display serif for distinctive moments */
+/* Display — Geist en weight bold avec tracking serré pour les moments distinctifs */
 .display-serif {
   font-family: var(--font-serif);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  font-feature-settings: 'liga' 1;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  font-feature-settings: 'ss01' 1, 'ss02' 1, 'liga' 1, 'tnum' 1;
 }
 
 /* Numbers tabular */
