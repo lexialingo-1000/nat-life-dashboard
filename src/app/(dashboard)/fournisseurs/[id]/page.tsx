@@ -15,9 +15,17 @@ import { Plus, Mail, Phone, Briefcase, ArrowLeft } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
 import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
+import { Tabs, type TabItem } from '@/components/tabs';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
+
+const INVOICING_LABELS: Record<string, string> = {
+  pennylane: 'Pennylane',
+  email_forward: 'Email',
+  scraping_required: 'Scraping requis',
+  manual_upload: 'Manuel',
+};
 
 export default async function FournisseurDetailPage({ params }: { params: { id: string } }) {
   const supplierRow = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
@@ -58,6 +66,178 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   const displayName =
     s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
 
+  const expiringDocsCount = docs.filter((d) => {
+    if (!d.expiresAt) return false;
+    const days = Math.floor(
+      (new Date(d.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return days < 30;
+  }).length;
+
+  const overviewTab = (
+    <div className="grid gap-4 md:grid-cols-3">
+      <Kpi label="Contacts" value={contacts.length} />
+      <Kpi label="Documents" value={docs.length} />
+      <Kpi
+        label="Docs à renouveler"
+        value={expiringDocsCount}
+        variant={expiringDocsCount > 0 ? 'warn' : 'default'}
+      />
+    </div>
+  );
+
+  const identityTab = (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="card p-5">
+        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Identité
+        </h2>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="Raison sociale">{s.companyName ?? '—'}</Row>
+          <Row label="Prénom">{s.firstName ?? '—'}</Row>
+          <Row label="Nom">{s.lastName ?? '—'}</Row>
+          <Row label="Adresse">{s.address ?? '—'}</Row>
+        </dl>
+      </div>
+      <div className="card p-5">
+        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Coordonnées & facturation
+        </h2>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="Email">{s.email ?? '—'}</Row>
+          <Row label="Téléphone">
+            <span className="font-mono">{s.phone ?? '—'}</span>
+          </Row>
+          <Row label="Mode facturation">
+            <span className="badge-neutral">
+              {INVOICING_LABELS[s.invoicingType] ?? s.invoicingType}
+            </span>
+          </Row>
+          <Row label="Pennylane ID">
+            <span className="font-mono text-[12px]">{s.pennylaneSupplierId ?? '—'}</span>
+          </Row>
+        </dl>
+      </div>
+    </div>
+  );
+
+  const contactsTab = (
+    <div className="card p-6">
+      <ul className="space-y-2">
+        {contacts.length === 0 && (
+          <li className="rounded-md border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+            Aucun contact pour l'instant.
+          </li>
+        )}
+        {contacts.map((c) => {
+          const contactLabel =
+            `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || c.email || 'contact';
+          return (
+            <li
+              key={c.id}
+              className="flex items-start justify-between rounded-md border border-slate-100 p-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium">
+                  {`${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || '—'}
+                </div>
+                {c.function && (
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                    <Briefcase className="h-3 w-3" />
+                    {c.function}
+                  </div>
+                )}
+                <div className="mt-1 space-y-0.5 text-xs text-slate-500">
+                  {c.email && (
+                    <div className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {c.email}
+                    </div>
+                  )}
+                  {c.phone && (
+                    <div className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {c.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <ContactDeleteButton
+                action={deleteContactAction}
+                contactId={c.id}
+                supplierId={s.id}
+                contactLabel={contactLabel}
+              />
+            </li>
+          );
+        })}
+      </ul>
+
+      <form
+        key={contacts.length}
+        action={addContactAction}
+        className="mt-6 space-y-2 border-t border-slate-100 pt-6"
+      >
+        <input type="hidden" name="supplierId" value={s.id} />
+        <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          Ajouter un contact
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          <input name="firstName" placeholder="Prénom" className="input" />
+          <input name="lastName" placeholder="Nom" className="input" />
+        </div>
+        <input name="function" placeholder="Fonction (ex: commercial)" className="input" />
+        <div className="grid grid-cols-2 gap-2">
+          <input name="email" type="email" placeholder="Email" className="input" />
+          <input name="phone" placeholder="Téléphone" className="input" />
+        </div>
+        <button type="submit" className="btn-secondary w-full">
+          <Plus className="mr-2 h-4 w-4" />
+          Ajouter
+        </button>
+      </form>
+    </div>
+  );
+
+  const documentsTab = (
+    <div className="card p-6">
+      <DocumentsManager
+        scope="suppliers"
+        parentId={s.id}
+        parentSlug={slugify(displayName)}
+        parentIdFieldName="supplierId"
+        documents={docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+        }))}
+        availableTypes={supplierTypes}
+        uploadAction={uploadSupplierDocumentAction}
+        deleteAction={deleteSupplierDocumentAction}
+        getUrlAction={getSupplierDocumentUrlAction}
+      />
+    </div>
+  );
+
+  const notesTab = (
+    <div className="card p-5">
+      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
+        {s.notes ?? 'Aucune note.'}
+      </p>
+    </div>
+  );
+
+  const tabs: TabItem[] = [
+    { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
+    { id: 'identity', label: 'Identité', content: identityTab },
+    { id: 'contacts', label: 'Contacts', count: contacts.length, content: contactsTab },
+    { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
+    { id: 'notes', label: 'Notes', content: notesTab },
+  ];
+
   return (
     <div className="space-y-8">
       <Link
@@ -89,106 +269,40 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         />
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Contacts</h2>
-            <span className="text-xs text-slate-400">{contacts.length}</span>
-          </div>
-          {contacts.length === 0 && (
-            <p className="text-sm text-slate-500">Aucun contact</p>
-          )}
-          <ul className="space-y-2">
-            {contacts.map((c) => {
-              const contactLabel =
-                `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || c.email || 'contact';
-              return (
-                <li
-                  key={c.id}
-                  className="flex items-start justify-between rounded-md border border-slate-100 p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">
-                      {`${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || '—'}
-                    </div>
-                    {c.function && (
-                      <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
-                        <Briefcase className="h-3 w-3" />
-                        {c.function}
-                      </div>
-                    )}
-                    <div className="mt-1 space-y-0.5 text-xs text-slate-500">
-                      {c.email && (
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {c.email}
-                        </div>
-                      )}
-                      {c.phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {c.phone}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <ContactDeleteButton
-                    action={deleteContactAction}
-                    contactId={c.id}
-                    supplierId={s.id}
-                    contactLabel={contactLabel}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+      <Tabs tabs={tabs} />
+    </div>
+  );
+}
 
-          <form
-            key={contacts.length}
-            action={addContactAction}
-            className="mt-4 space-y-2 border-t border-slate-100 pt-4"
-          >
-            <input type="hidden" name="supplierId" value={s.id} />
-            <div className="grid grid-cols-2 gap-2">
-              <input name="firstName" placeholder="Prénom" className="input" />
-              <input name="lastName" placeholder="Nom" className="input" />
-            </div>
-            <input name="function" placeholder="Fonction (ex: commercial)" className="input" />
-            <div className="grid grid-cols-2 gap-2">
-              <input name="email" type="email" placeholder="Email" className="input" />
-              <input name="phone" placeholder="Téléphone" className="input" />
-            </div>
-            <button type="submit" className="btn-secondary w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter un contact
-            </button>
-          </form>
-        </div>
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</dt>
+      <dd className="text-right text-zinc-700">{children}</dd>
+    </div>
+  );
+}
 
-        <div className="card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Documents</h2>
-            <span className="text-xs text-slate-400">{docs.length}</span>
-          </div>
-          <DocumentsManager
-            scope="suppliers"
-            parentId={s.id}
-            parentSlug={slugify(displayName)}
-            parentIdFieldName="supplierId"
-            documents={docs.map((d) => ({
-              id: d.id,
-              name: d.name,
-              typeLabel: d.typeLabel,
-              storageKey: d.storageKey,
-              documentDate: d.documentDate,
-              expiresAt: d.expiresAt,
-            }))}
-            availableTypes={supplierTypes}
-            uploadAction={uploadSupplierDocumentAction}
-            deleteAction={deleteSupplierDocumentAction}
-            getUrlAction={getSupplierDocumentUrlAction}
-          />
-        </div>
+function Kpi({
+  label,
+  value,
+  variant = 'default',
+}: {
+  label: string;
+  value: number | string;
+  variant?: 'default' | 'warn';
+}) {
+  return (
+    <div className="card p-5">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </div>
+      <div
+        className={`mt-2 text-3xl font-medium tabular-nums ${
+          variant === 'warn' && value !== 0 ? 'text-amber-700' : 'text-zinc-900'
+        }`}
+      >
+        {value}
       </div>
     </div>
   );

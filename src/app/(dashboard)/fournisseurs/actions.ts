@@ -83,6 +83,7 @@ export async function addContactAction(formData: FormData): Promise<void> {
     function: data.function || null,
   });
   revalidatePath(`/fournisseurs/${data.supplierId}`);
+  revalidatePath('/fournisseurs');
 }
 
 export async function deleteContactAction(formData: FormData): Promise<void> {
@@ -91,6 +92,7 @@ export async function deleteContactAction(formData: FormData): Promise<void> {
   if (!contactId || !supplierId) throw new Error('IDs manquants');
   await db.delete(supplierContacts).where(eq(supplierContacts.id, contactId));
   revalidatePath(`/fournisseurs/${supplierId}`);
+  revalidatePath('/fournisseurs');
 }
 
 const supplierDocumentSchema = z.object({
@@ -119,6 +121,7 @@ export async function uploadSupplierDocumentAction(formData: FormData): Promise<
     notes: data.notes || null,
   });
   revalidatePath(`/fournisseurs/${data.supplierId}`);
+  revalidatePath('/fournisseurs');
 }
 
 export async function deleteSupplierDocumentAction(formData: FormData): Promise<void> {
@@ -138,6 +141,7 @@ export async function deleteSupplierDocumentAction(formData: FormData): Promise<
 
   await db.delete(supplierDocuments).where(eq(supplierDocuments.id, documentId));
   revalidatePath(`/fournisseurs/${supplierId}`);
+  revalidatePath('/fournisseurs');
 }
 
 export async function getSupplierDocumentUrlAction(

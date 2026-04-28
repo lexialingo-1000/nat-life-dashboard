@@ -88,7 +88,10 @@ export async function createSocieteAction(formData: FormData) {
 
 const updateSchema = createSchema.extend({
   id: z.string().uuid(),
-  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()).optional(),
+  isActive: z.preprocess(
+    (v) => v === 'on' || v === 'true' || v === true,
+    z.boolean()
+  ),
 });
 
 export async function updateSocieteAction(formData: FormData): Promise<void> {
@@ -101,7 +104,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     address: formData.get('address'),
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
-    isActive: formData.get('isActive') ?? undefined,
+    isActive: formData.get('isActive'),
   });
 
   if (!parsed.success) {
@@ -120,7 +123,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
       address: address || null,
       activitePrincipale: activitePrincipale || null,
       nafCode: nafCode || null,
-      ...(isActive !== undefined ? { isActive } : {}),
+      isActive,
       updatedAt: new Date(),
     })
     .where(eq(companies.id, id));

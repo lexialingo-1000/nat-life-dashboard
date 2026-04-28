@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
 import { deleteMarcheAction } from '../actions';
+import { Tabs, type TabItem } from '@/components/tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,15 @@ const STATUS_LABELS: Record<string, string> = {
   livre: 'Livré',
   conteste: 'Contesté',
   annule: 'Annulé',
+};
+
+const STATUS_VARIANT: Record<string, 'good' | 'warn' | 'default'> = {
+  devis_recu: 'default',
+  signe: 'default',
+  en_cours: 'warn',
+  livre: 'good',
+  conteste: 'warn',
+  annule: 'default',
 };
 
 export default async function MarcheDetailPage({ params }: { params: { id: string } }) {
@@ -37,6 +47,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       dateSignature: marchesTravaux.dateSignature,
       dateDebutPrevu: marchesTravaux.dateDebutPrevu,
       dateFinPrevu: marchesTravaux.dateFinPrevu,
+      dateDebutReel: marchesTravaux.dateDebutReel,
+      dateFinReelle: marchesTravaux.dateFinReelle,
       status: marchesTravaux.status,
       notes: marchesTravaux.notes,
       propertyId: properties.id,
@@ -70,18 +82,148 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
     '—';
 
+  const overviewTab = (
+    <div className="grid gap-4 md:grid-cols-3">
+      <Kpi
+        label="Montant HT"
+        value={
+          marche.amountHt
+            ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
+            : '—'
+        }
+      />
+      <Kpi label="Lots concernés" value={affectedLots.length || 'communs'} />
+      <Kpi
+        label="Statut"
+        value={STATUS_LABELS[marche.status] ?? marche.status}
+        variant={STATUS_VARIANT[marche.status] ?? 'default'}
+      />
+    </div>
+  );
+
+  const identityTab = (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="card p-5">
+        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Identité
+        </h2>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="Nom">{marche.name}</Row>
+          <Row label="Bien">
+            <Link
+              href={`/biens/properties/${marche.propertyId}`}
+              className="hover:text-amber-700"
+            >
+              {marche.propertyName}
+            </Link>
+          </Row>
+          <Row label="Fournisseur">
+            <Link
+              href={`/fournisseurs/${marche.supplierId}`}
+              className="hover:text-amber-700"
+            >
+              {supplierLabel}
+            </Link>
+          </Row>
+          <Row label="Description">{marche.description ?? '—'}</Row>
+        </dl>
+      </div>
+      <div className="card p-5">
+        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Montants & dates
+        </h2>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="HT">
+            <span className="tnum">
+              {marche.amountHt
+                ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
+                : '—'}
+            </span>
+          </Row>
+          <Row label="TTC">
+            <span className="tnum">
+              {marche.amountTtc
+                ? `${Number(marche.amountTtc).toLocaleString('fr-FR')} €`
+                : '—'}
+            </span>
+          </Row>
+          <Row label="Date devis">{marche.dateDevis ?? '—'}</Row>
+          <Row label="Date signature">{marche.dateSignature ?? '—'}</Row>
+          <Row label="Début prévu">{marche.dateDebutPrevu ?? '—'}</Row>
+          <Row label="Fin prévue">{marche.dateFinPrevu ?? '—'}</Row>
+          <Row label="Début réel">{marche.dateDebutReel ?? '—'}</Row>
+          <Row label="Fin réelle">{marche.dateFinReelle ?? '—'}</Row>
+        </dl>
+      </div>
+    </div>
+  );
+
+  const lotsTab = (
+    <div className="card p-6">
+      {affectedLots.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Aucun lot affecté — marché de parties communes / structurel (toiture, façade,
+          ascenseur, etc.).
+        </p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {affectedLots.map((l) => (
+            <li key={l.id}>
+              <Link
+                href={`/biens/lots/${l.id}`}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 hover:text-amber-700"
+              >
+                {l.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  const documentsTab = (
+    <div className="card p-6">
+      <p className="text-sm text-zinc-500">
+        Documents (devis, contrat signé, factures acompte/solde, photos avant/après…) — UI
+        upload à venir en V1.5 (Lot 4 suivi travaux étendu).
+      </p>
+    </div>
+  );
+
+  const notesTab = (
+    <div className="card p-5">
+      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
+        {marche.notes ?? 'Aucune note.'}
+      </p>
+    </div>
+  );
+
+  const tabs: TabItem[] = [
+    { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
+    { id: 'identity', label: 'Identité', content: identityTab },
+    {
+      id: 'lots',
+      label: 'Lots concernés',
+      count: affectedLots.length || undefined,
+      content: lotsTab,
+    },
+    { id: 'documents', label: 'Documents', content: documentsTab },
+    { id: 'notes', label: 'Notes', content: notesTab },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/marches"
-        className="inline-flex items-center text-sm text-slate-600 hover:underline"
+        className="inline-flex items-center text-sm text-zinc-500 hover:text-amber-700"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         Marchés de travaux
       </Link>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <header className="flex items-start justify-between gap-6">
+        <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
             <Link href={`/societes/${marche.companyId}`} className="hover:text-amber-800">
               {marche.companyName}
@@ -94,27 +236,22 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
               {marche.propertyName}
             </Link>
           </div>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight">{marche.name}</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+            <span className="display-serif">{marche.name}</span>
+          </h1>
+          <p className="mt-1.5 text-[13px] text-zinc-500">
             Fournisseur :{' '}
             <Link
               href={`/fournisseurs/${marche.supplierId}`}
               className="font-medium hover:underline"
             >
               {supplierLabel}
-            </Link>{' '}
-            · Statut :{' '}
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
-              {STATUS_LABELS[marche.status] ?? marche.status}
-            </span>
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/marches/${marche.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Pencil className="h-4 w-4" />
+          <Link href={`/marches/${marche.id}/edit`} className="btn-secondary">
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Modifier
           </Link>
           <DeleteButton
@@ -125,84 +262,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             description={`Cette action est irréversible. Le marché "${marche.name}" sera supprimé. Les sous-lots techniques et documents associés seront aussi supprimés.`}
           />
         </div>
-      </div>
+      </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">
-            Montants
-          </h2>
-          <dl className="space-y-2 text-sm">
-            <Row label="HT">
-              {marche.amountHt
-                ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
-                : '—'}
-            </Row>
-            <Row label="TTC">
-              {marche.amountTtc
-                ? `${Number(marche.amountTtc).toLocaleString('fr-FR')} €`
-                : '—'}
-            </Row>
-          </dl>
-        </div>
-
-        <div className="card p-5">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">
-            Dates
-          </h2>
-          <dl className="space-y-2 text-sm">
-            <Row label="Devis">{marche.dateDevis ?? '—'}</Row>
-            <Row label="Signature">{marche.dateSignature ?? '—'}</Row>
-            <Row label="Début prévu">{marche.dateDebutPrevu ?? '—'}</Row>
-            <Row label="Fin prévue">{marche.dateFinPrevu ?? '—'}</Row>
-          </dl>
-        </div>
-      </div>
-
-      <div className="card p-5">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">
-          Lots concernés
-        </h2>
-        {affectedLots.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Aucun lot affecté — marché de parties communes / structurel.
-          </p>
-        ) : (
-          <ul className="flex flex-wrap gap-2">
-            {affectedLots.map((l) => (
-              <li key={l.id}>
-                <Link
-                  href={`/biens/lots/${l.id}`}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm hover:bg-slate-50"
-                >
-                  {l.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {(marche.description || marche.notes) && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {marche.description && (
-            <div className="card p-5">
-              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">
-                Description
-              </h2>
-              <p className="whitespace-pre-wrap text-sm">{marche.description}</p>
-            </div>
-          )}
-          {marche.notes && (
-            <div className="card p-5">
-              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">
-                Notes
-              </h2>
-              <p className="whitespace-pre-wrap text-sm">{marche.notes}</p>
-            </div>
-          )}
-        </div>
-      )}
+      <Tabs tabs={tabs} />
     </div>
   );
 }
@@ -210,8 +272,37 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-xs uppercase tracking-wider text-slate-500">{label}</dt>
-      <dd className="text-right">{children}</dd>
+      <dt className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</dt>
+      <dd className="text-right text-zinc-700">{children}</dd>
+    </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  variant = 'default',
+}: {
+  label: string;
+  value: number | string;
+  variant?: 'default' | 'good' | 'warn';
+}) {
+  return (
+    <div className="card p-5">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </div>
+      <div
+        className={`mt-2 text-3xl font-medium tabular-nums ${
+          variant === 'good'
+            ? 'text-emerald-700'
+            : variant === 'warn'
+            ? 'text-amber-700'
+            : 'text-zinc-900'
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
