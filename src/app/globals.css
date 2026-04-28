@@ -3,20 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 98%;
-  --foreground: 0 0% 9%;
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 40%;
-  --border: 0 0% 90%;
-  --sidebar: 0 0% 4%;
-  --sidebar-foreground: 0 0% 75%;
-  --sidebar-active: 0 0% 100%;
-  --accent-color: 217 91% 60%;
-  --accent-amber: 38 92% 50%;
+  /* OKLCH tokens — neutres tintés warm (hue 75), accent amber (hue 67) */
+  --bg: oklch(0.985 0.003 75);
+  --fg: oklch(0.21 0.005 75);
+  --muted: oklch(0.96 0.003 75);
+  --muted-fg: oklch(0.55 0.005 75);
+  --border: oklch(0.92 0.004 75);
+  --sidebar: oklch(0.18 0.006 75);
+  --sidebar-fg: oklch(0.78 0.005 75);
+  --sidebar-active: oklch(1 0 0);
+  --accent: oklch(0.71 0.16 67);
+  --accent-soft: oklch(0.96 0.06 80);
+
+  /* Motion */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 
 html {
@@ -24,8 +28,8 @@ html {
 }
 
 body {
-  color: hsl(var(--foreground));
-  background: hsl(var(--background));
+  color: var(--fg);
+  background: var(--bg);
   font-feature-settings: 'cv11', 'ss01', 'ss03', 'liga' 1;
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
@@ -150,7 +154,12 @@ h3 {
     top: 6px;
     bottom: 6px;
     width: 2px;
-    background: hsl(var(--accent-amber));
+    background: var(--accent);
+  }
+
+  /* Warning intermédiaire entre amber (info) et red (danger) */
+  .badge-orange {
+    @apply badge border-orange-200 bg-orange-50 text-orange-700;
   }
 }
 
@@ -172,5 +181,5 @@ h3 {
 
 /* Selection */
 ::selection {
-  background: hsl(var(--accent-amber) / 0.3);
+  background: oklch(0.71 0.16 67 / 0.3);
 }

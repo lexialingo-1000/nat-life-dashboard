@@ -50,10 +50,10 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-[260px] flex-col bg-zinc-950 text-zinc-300">
+    <aside className="flex h-screen w-[260px] flex-col bg-sidebar text-sidebar-fg">
       {/* Logo */}
       <div className="flex h-16 items-baseline gap-2 px-6 pt-6">
-        <span className="font-serif text-[22px] leading-none tracking-tight text-white">
+        <span className="font-serif text-[22px] leading-none tracking-tight text-sidebar-active">
           Nat Life
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -62,7 +62,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
       </div>
 
       {/* Subtitle */}
-      <div className="px-6 pb-6 text-[11px] leading-relaxed text-zinc-500">
+      <div className="px-6 pb-6 text-[12px] leading-relaxed text-zinc-500">
         Gestion patrimoniale<br />multi-société
       </div>
 
@@ -86,9 +86,9 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors ${
+                      className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart ${
                         isActive
-                          ? 'bg-zinc-900 text-white'
+                          ? 'bg-zinc-900 text-sidebar-active'
                           : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
                       }`}
                     >
@@ -97,7 +97,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                       )}
                       <Icon
                         className={`h-[15px] w-[15px] ${
-                          isActive ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'
+                          isActive ? 'text-sidebar-active' : 'text-zinc-500 group-hover:text-zinc-300'
                         }`}
                         strokeWidth={1.75}
                       />
@@ -114,11 +114,11 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
       {/* Footer / user */}
       <div className="mx-6 border-t border-zinc-900" />
       <div className="px-3 py-4">
-        <div className="mb-1 px-3 text-[11px] text-zinc-500">{userEmail ?? 'Non authentifié'}</div>
+        <div className="mb-1 px-3 text-[12px] text-zinc-500">{userEmail ?? 'Non authentifié'}</div>
         <form action="/auth/logout" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-sm px-3 py-1.5 text-[13px] text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200"
+            className="flex w-full items-center gap-3 rounded-sm px-3 py-1.5 text-[13px] text-zinc-400 transition-colors duration-150 ease-out-quart hover:bg-zinc-900/50 hover:text-zinc-200"
           >
             <LogOut className="h-[15px] w-[15px]" strokeWidth={1.75} />
             Déconnexion

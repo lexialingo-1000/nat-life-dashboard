@@ -40,14 +40,14 @@ export default async function DashboardHome() {
     <div className="space-y-12">
       {/* Hero header */}
       <header>
-        <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-500">
           {today}
         </div>
         <h1 className="mt-2 text-[40px] font-normal leading-[1.1]">
-          <span className="display-serif text-zinc-900">Bonjour</span>{' '}
-          <span className="text-zinc-900">— vue d'ensemble.</span>
+          <span className="display-serif text-zinc-900">Bonjour.</span>{' '}
+          <span className="text-zinc-900">Vue d'ensemble.</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-zinc-500">
+        <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-zinc-500">
           Synthèse en temps réel des 6 sociétés gérées par FKA Holding. Périmètre V1 : référentiels,
           patrimoine immobilier et marchés de travaux. Compta différée post-réforme PA (sept 2026).
         </p>
@@ -100,8 +100,8 @@ export default async function DashboardHome() {
             status="active"
             title="Socle structurel"
             items={[
-              'Référentiels — sociétés, fournisseurs (multi-contacts + docs typés), clients',
-              'Patrimoine — Property → Lot → Level → Room',
+              'Référentiels : sociétés, fournisseurs (multi-contacts + docs typés), clients',
+              'Patrimoine : Property → Lot → Level → Room',
               'Marchés de travaux + sous-lots techniques + documents catégorisés',
             ]}
           />
@@ -110,9 +110,9 @@ export default async function DashboardHome() {
             status="planned"
             title="Modules différés"
             items={[
-              'Compta — différée V1.5 post-réforme PA (sept 2026)',
-              'Locatif (Rentila replacement) — V2',
-              'Saisonnier (Airbnb) — V3',
+              'Compta : différée V1.5 post-réforme PA (sept 2026)',
+              'Locatif (Rentila replacement) : V2',
+              'Saisonnier (Airbnb) : V3',
             ]}
           />
         </div>
@@ -161,7 +161,7 @@ function FeaturedKpi({
   return (
     <Link
       href={href}
-      className={`group relative col-span-2 row-span-2 flex flex-col justify-between overflow-hidden rounded-sm border bg-white p-6 transition-all hover:border-zinc-300 ${
+      className={`group relative col-span-2 row-span-2 flex flex-col justify-between overflow-hidden rounded-sm border bg-white p-6 transition-colors duration-200 ease-out-quart hover:border-zinc-300 ${
         accent ? 'border-zinc-300' : 'border-zinc-200'
       }`}
     >
@@ -179,7 +179,7 @@ function FeaturedKpi({
           {value ?? '—'}
         </div>
         {sublabel && (
-          <div className="mt-2 text-[11px] uppercase tracking-wider text-zinc-500">{sublabel}</div>
+          <div className="mt-2 text-[10px] uppercase tracking-wider text-zinc-500">{sublabel}</div>
         )}
       </div>
     </Link>
@@ -200,7 +200,7 @@ function Kpi({
   return (
     <Link
       href={href}
-      className="group flex flex-col justify-between rounded-sm border border-zinc-200 bg-white p-4 transition-all hover:border-zinc-300"
+      className="group flex flex-col justify-between rounded-sm border border-zinc-200 bg-white p-4 transition-colors duration-200 ease-out-quart hover:border-zinc-300"
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
@@ -230,7 +230,7 @@ function RoadmapBlock({
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-[14px] font-medium text-zinc-900">{title}</h3>
+        <h3 className="text-[13px] font-medium text-zinc-900">{title}</h3>
         <span className={isActive ? 'badge-amber' : 'badge-neutral'}>
           {isActive ? 'En cours' : phase}
         </span>

@@ -18,9 +18,19 @@ const config: Config = {
           light: '#fbbf24',
           subtle: '#fef3c7',
         },
+        surface: 'var(--bg)',
+        ink: 'var(--fg)',
+        sidebar: {
+          DEFAULT: 'var(--sidebar)',
+          fg: 'var(--sidebar-fg)',
+          active: 'var(--sidebar-active)',
+        },
       },
       borderRadius: {
         sm: '2px',
+      },
+      transitionTimingFunction: {
+        'out-quart': 'var(--ease-out-quart)',
       },
     },
   },
