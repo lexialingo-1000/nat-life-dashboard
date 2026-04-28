@@ -53,7 +53,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
     <aside className="flex h-screen w-[260px] flex-col bg-zinc-950 text-zinc-300">
       {/* Logo */}
       <div className="flex h-16 items-baseline gap-2 px-6 pt-6">
-        <span className="font-serif text-[22px] italic leading-none tracking-tight text-white">
+        <span className="font-serif text-[22px] leading-none tracking-tight text-white">
           Nat Life
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">

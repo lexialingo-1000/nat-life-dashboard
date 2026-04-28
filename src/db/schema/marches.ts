@@ -1,15 +1,15 @@
-import { pgTable, uuid, text, timestamp, date, integer, numeric } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, integer, numeric, primaryKey } from 'drizzle-orm/pg-core';
 import { marcheStatusEnum } from './enums';
-import { lots } from './properties';
+import { properties, lots } from './properties';
 import { suppliers } from './suppliers';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
 export const marchesTravaux = pgTable('marches_travaux', {
   id: uuid('id').primaryKey().defaultRandom(),
-  lotId: uuid('lot_id')
+  propertyId: uuid('property_id')
     .notNull()
-    .references(() => lots.id, { onDelete: 'restrict' }),
+    .references(() => properties.id, { onDelete: 'restrict' }),
   supplierId: uuid('supplier_id')
     .notNull()
     .references(() => suppliers.id, { onDelete: 'restrict' }),
@@ -30,7 +30,32 @@ export const marchesTravaux = pgTable('marches_travaux', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const marcheLots = pgTable('marche_lots', {
+/**
+ * Affectation d'un marché à un ou plusieurs lots immobiliers.
+ * Optionnelle : un marché peut concerner 0 lot (parties communes / structurel).
+ */
+export const marcheLotAffectations = pgTable(
+  'marche_lot_affectations',
+  {
+    marcheId: uuid('marche_id')
+      .notNull()
+      .references(() => marchesTravaux.id, { onDelete: 'cascade' }),
+    lotId: uuid('lot_id')
+      .notNull()
+      .references(() => lots.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.marcheId, t.lotId] }),
+  })
+);
+
+/**
+ * Sous-lots techniques d'un marché (corps d'état : plomberie, électricité, etc.).
+ * À ne pas confondre avec les lots immobiliers (table `lots`) — ceux-ci sont liés
+ * via `marche_lot_affectations`.
+ */
+export const marcheSousLots = pgTable('marche_sous_lots', {
   id: uuid('id').primaryKey().defaultRandom(),
   marcheId: uuid('marche_id')
     .notNull()
@@ -71,7 +96,9 @@ export const marcheDocuments = pgTable('marche_documents', {
 
 export type MarcheTravaux = typeof marchesTravaux.$inferSelect;
 export type NewMarcheTravaux = typeof marchesTravaux.$inferInsert;
-export type MarcheLot = typeof marcheLots.$inferSelect;
-export type NewMarcheLot = typeof marcheLots.$inferInsert;
+export type MarcheLotAffectation = typeof marcheLotAffectations.$inferSelect;
+export type NewMarcheLotAffectation = typeof marcheLotAffectations.$inferInsert;
+export type MarcheSousLot = typeof marcheSousLots.$inferSelect;
+export type NewMarcheSousLot = typeof marcheSousLots.$inferInsert;
 export type MarcheDocument = typeof marcheDocuments.$inferSelect;
 export type NewMarcheDocument = typeof marcheDocuments.$inferInsert;

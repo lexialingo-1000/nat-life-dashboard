@@ -85,3 +85,47 @@ export async function createSocieteAction(formData: FormData) {
   revalidatePath('/societes');
   redirect('/societes');
 }
+
+const updateSchema = createSchema.extend({
+  id: z.string().uuid(),
+  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()).optional(),
+});
+
+export async function updateSocieteAction(formData: FormData): Promise<void> {
+  const parsed = updateSchema.safeParse({
+    id: formData.get('id'),
+    name: formData.get('name'),
+    siren: formData.get('siren'),
+    type: formData.get('type'),
+    formeJuridique: formData.get('formeJuridique') || undefined,
+    address: formData.get('address'),
+    activitePrincipale: formData.get('activitePrincipale'),
+    nafCode: formData.get('nafCode'),
+    isActive: formData.get('isActive') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+
+  const { id, siren, address, activitePrincipale, nafCode, formeJuridique, isActive, ...rest } =
+    parsed.data;
+
+  await db
+    .update(companies)
+    .set({
+      ...rest,
+      siren: siren || null,
+      formeJuridique: formeJuridique ?? null,
+      address: address || null,
+      activitePrincipale: activitePrincipale || null,
+      nafCode: nafCode || null,
+      ...(isActive !== undefined ? { isActive } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(companies.id, id));
+
+  revalidatePath('/societes');
+  revalidatePath(`/societes/${id}`);
+  redirect(`/societes/${id}`);
+}

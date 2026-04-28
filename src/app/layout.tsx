@@ -11,7 +11,7 @@ const sans = Instrument_Sans({
 const serif = Instrument_Serif({
   subsets: ['latin'],
   weight: '400',
-  style: ['normal', 'italic'],
+  style: ['normal'],
   display: 'swap',
   variable: '--font-serif',
 });

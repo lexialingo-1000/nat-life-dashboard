@@ -44,7 +44,7 @@ export default async function DashboardHome() {
           {today}
         </div>
         <h1 className="mt-2 text-[40px] font-normal leading-[1.1]">
-          <span className="display-serif italic text-zinc-900">Bonjour</span>{' '}
+          <span className="display-serif text-zinc-900">Bonjour</span>{' '}
           <span className="text-zinc-900">— vue d'ensemble.</span>
         </h1>
         <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-zinc-500">

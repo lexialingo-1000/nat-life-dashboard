@@ -3,7 +3,7 @@ import { companies, properties, lots } from '@/db/schema';
 import { eq, sql, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
 import { deleteSocieteAction } from '../actions';
 
@@ -57,13 +57,22 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
             <span className="font-mono">{company.siren ?? '—'}</span>
           </p>
         </div>
-        <DeleteButton
-          action={deleteSocieteAction}
-          id={company.id}
-          label="Supprimer la société"
-          confirmationPhrase={company.name}
-          description={`Cette action est irréversible. La société "${company.name}" sera supprimée. Les biens immobiliers rattachés seront orphelins (à réaffecter).`}
-        />
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/societes/${company.id}/edit`}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Modifier
+          </Link>
+          <DeleteButton
+            action={deleteSocieteAction}
+            id={company.id}
+            label="Supprimer la société"
+            confirmationPhrase={company.name}
+            description={`Cette action est irréversible. La société "${company.name}" sera supprimée. Les biens immobiliers rattachés seront orphelins (à réaffecter).`}
+          />
+        </div>
       </div>
 
       <div className="card p-6">

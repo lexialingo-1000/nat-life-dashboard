@@ -1,9 +1,10 @@
 'use server';
 
 import { db } from '@/db/client';
-import { suppliers, supplierContacts } from '@/db/schema';
+import { suppliers, supplierContacts, supplierDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
+import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -82,4 +83,72 @@ export async function addContactAction(formData: FormData): Promise<void> {
     function: data.function || null,
   });
   revalidatePath(`/fournisseurs/${data.supplierId}`);
+}
+
+export async function deleteContactAction(formData: FormData): Promise<void> {
+  const contactId = String(formData.get('contactId') ?? '');
+  const supplierId = String(formData.get('supplierId') ?? '');
+  if (!contactId || !supplierId) throw new Error('IDs manquants');
+  await db.delete(supplierContacts).where(eq(supplierContacts.id, contactId));
+  revalidatePath(`/fournisseurs/${supplierId}`);
+}
+
+const supplierDocumentSchema = z.object({
+  supplierId: z.string().uuid(),
+  typeId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  storageKey: z.string().min(1),
+  documentDate: z.string().optional().or(z.literal('')),
+  expiresAt: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function uploadSupplierDocumentAction(formData: FormData): Promise<void> {
+  const parsed = supplierDocumentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db.insert(supplierDocuments).values({
+    supplierId: data.supplierId,
+    typeId: data.typeId,
+    name: data.name,
+    storageKey: data.storageKey,
+    documentDate: data.documentDate || null,
+    expiresAt: data.expiresAt || null,
+    notes: data.notes || null,
+  });
+  revalidatePath(`/fournisseurs/${data.supplierId}`);
+}
+
+export async function deleteSupplierDocumentAction(formData: FormData): Promise<void> {
+  const documentId = String(formData.get('documentId') ?? '');
+  const supplierId = String(formData.get('supplierId') ?? '');
+  if (!documentId || !supplierId) throw new Error('IDs manquants');
+
+  const rows = await db
+    .select({ storageKey: supplierDocuments.storageKey })
+    .from(supplierDocuments)
+    .where(eq(supplierDocuments.id, documentId))
+    .limit(1);
+
+  if (rows[0]?.storageKey) {
+    await deleteObject(rows[0].storageKey);
+  }
+
+  await db.delete(supplierDocuments).where(eq(supplierDocuments.id, documentId));
+  revalidatePath(`/fournisseurs/${supplierId}`);
+}
+
+export async function getSupplierDocumentUrlAction(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!storageKey) return { error: 'Clé manquante' };
+  try {
+    const url = await getDownloadUrl(storageKey);
+    return { url };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur MinIO' };
+  }
 }

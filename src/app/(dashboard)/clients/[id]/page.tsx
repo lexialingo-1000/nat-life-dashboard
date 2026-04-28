@@ -1,33 +1,57 @@
 import { db } from '@/db/client';
-import { customers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { customers, customerDocuments, documentTypes } from '@/db/schema';
+import { eq, and, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import {
+  uploadCustomerDocumentAction,
+  deleteCustomerDocumentAction,
+  getCustomerDocumentUrlAction,
+} from '../actions';
+import { DocumentsManager } from '@/components/documents-manager';
+import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
-  let customer: any = null;
-  let dbError: string | null = null;
-  try {
-    const rows = await db.select().from(customers).where(eq(customers.id, params.id)).limit(1);
-    if (rows.length === 0) notFound();
-    customer = rows[0];
-  } catch (e) {
-    dbError = e instanceof Error ? e.message : 'Erreur inconnue';
-  }
+  const customerRow = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.id, params.id))
+    .limit(1);
+  if (customerRow.length === 0) notFound();
+  const customer = customerRow[0];
 
-  if (!customer) {
-    return (
-      <div className="card p-6 text-sm text-amber-700">
-        Connexion DB indisponible : {dbError}
-      </div>
-    );
-  }
+  const docs = await db
+    .select({
+      id: customerDocuments.id,
+      name: customerDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: customerDocuments.storageKey,
+      expiresAt: customerDocuments.expiresAt,
+      documentDate: customerDocuments.documentDate,
+      uploadedAt: customerDocuments.uploadedAt,
+    })
+    .from(customerDocuments)
+    .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))
+    .where(eq(customerDocuments.customerId, customer.id))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const customerTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(and(eq(documentTypes.scope, 'customer'), eq(documentTypes.isActive, true)))
+    .orderBy(asc(documentTypes.sortOrder));
 
   const displayName =
-    customer.companyName ?? `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() ?? 'Client';
+    customer.companyName ??
+    `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() ??
+    'Client';
 
   return (
     <div className="space-y-6">
@@ -58,10 +82,28 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </div>
 
       <div className="card p-6">
-        <h2 className="text-base font-semibold">Documents</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Documents typés (Pièce d'identité, KBis, etc.) : à brancher sur MinIO une fois les credentials fournis.
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold">Documents</h2>
+          <span className="text-xs text-slate-400">{docs.length}</span>
+        </div>
+        <DocumentsManager
+          scope="customers"
+          parentId={customer.id}
+          parentSlug={slugify(displayName)}
+          parentIdFieldName="customerId"
+          documents={docs.map((d) => ({
+            id: d.id,
+            name: d.name,
+            typeLabel: d.typeLabel,
+            storageKey: d.storageKey,
+            documentDate: d.documentDate,
+            expiresAt: d.expiresAt,
+          }))}
+          availableTypes={customerTypes}
+          uploadAction={uploadCustomerDocumentAction}
+          deleteAction={deleteCustomerDocumentAction}
+          getUrlAction={getCustomerDocumentUrlAction}
+        />
       </div>
     </div>
   );

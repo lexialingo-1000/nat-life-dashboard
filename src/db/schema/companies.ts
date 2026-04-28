@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
 import { companyTypeEnum, formeJuridiqueEnum } from './enums';
 
 export const companies = pgTable('companies', {
@@ -10,6 +10,7 @@ export const companies = pgTable('companies', {
   address: text('address'),
   activitePrincipale: text('activite_principale'),
   nafCode: varchar('naf_code', { length: 10 }),
+  isActive: boolean('is_active').notNull().default(true),
   settings: jsonb('settings').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

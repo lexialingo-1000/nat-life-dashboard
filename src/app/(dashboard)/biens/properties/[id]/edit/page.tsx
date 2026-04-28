@@ -57,7 +57,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
           Édition
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-          <span className="display-serif italic">Modifier</span>{' '}
+          <span className="display-serif">Modifier</span>{' '}
           <span className="text-zinc-900">{p.name}</span>
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">{p.companyName}</p>

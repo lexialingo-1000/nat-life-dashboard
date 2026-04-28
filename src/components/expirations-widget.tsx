@@ -70,7 +70,7 @@ export async function ExpirationsWidget() {
     return (
       <div className="card p-10">
         <div className="flex flex-col items-center text-center">
-          <div className="display-serif text-[32px] italic text-zinc-300">RAS</div>
+          <div className="display-serif text-[32px] text-zinc-300">RAS</div>
           <p className="mt-2 text-[13px] text-zinc-500">
             Aucun document n'expire dans les 30 prochains jours.
           </p>

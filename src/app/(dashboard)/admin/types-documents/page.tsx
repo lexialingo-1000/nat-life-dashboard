@@ -45,7 +45,7 @@ export default async function TypesDocumentsPage() {
           Administration
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-          <span className="display-serif italic">Types de documents</span>
+          <span className="display-serif">Types de documents</span>
           <span className="ml-2 font-mono text-[13px] tnum text-zinc-400">{rows.length}</span>
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-zinc-500">
@@ -130,7 +130,7 @@ export default async function TypesDocumentsPage() {
             Catalogue
           </div>
           <h2 className="mt-1.5 text-[20px] font-medium tracking-tight text-zinc-900">
-            <span className="display-serif italic">Ajouter</span> un nouveau type
+            <span className="display-serif">Ajouter</span> un nouveau type
           </h2>
         </div>
 
