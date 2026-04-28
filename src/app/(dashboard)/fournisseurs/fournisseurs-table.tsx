@@ -27,7 +27,7 @@ const columns: ColumnDef<FournisseurRow>[] = [
     cell: ({ row }) => (
       <Link
         href={`/fournisseurs/${row.original.id}`}
-        className="font-medium text-zinc-900 hover:text-amber-700"
+        className="font-medium text-zinc-900 hover:text-emerald-700"
       >
         {row.original.displayName}
       </Link>

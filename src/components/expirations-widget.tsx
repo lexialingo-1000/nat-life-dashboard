@@ -59,7 +59,7 @@ export async function ExpirationsWidget() {
   if (dbError) {
     return (
       <div className="card p-6">
-        <p className="text-[13px] text-amber-700">
+        <p className="text-[13px] text-emerald-700">
           Connexion DB indisponible — vérifie <span className="kbd">DATABASE_URL</span>
         </p>
       </div>

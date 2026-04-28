@@ -208,29 +208,29 @@ export function MarcheForm({
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+      <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-medium">Lots concernés sur {propertyName}</h3>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-zinc-500">
             {selectedLotIds.size === 0
               ? 'Aucun (parties communes / structurel)'
               : `${selectedLotIds.size} sélectionné${selectedLotIds.size > 1 ? 's' : ''}`}
           </span>
         </div>
         {lots.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-zinc-500">
             Ce bien n'a pas encore de lots. Le marché sera rattaché au bien (parties communes).
           </p>
         ) : (
           <ul className="space-y-1.5">
             {lots.map((lot) => (
               <li key={lot.id}>
-                <label className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-white">
+                <label className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-[#fbf8f0]">
                   <input
                     type="checkbox"
                     checked={selectedLotIds.has(lot.id)}
                     onChange={() => toggleLot(lot.id)}
-                    className="h-4 w-4 rounded border-slate-300"
+                    className="h-4 w-4 rounded border-zinc-300"
                   />
                   {lot.name}
                 </label>
@@ -238,7 +238,7 @@ export function MarcheForm({
             ))}
           </ul>
         )}
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-zinc-500">
           Laisse vide pour un marché de parties communes (toiture, façade, ascenseur…). Coche un
           ou plusieurs lots si les travaux sont localisés.
         </p>

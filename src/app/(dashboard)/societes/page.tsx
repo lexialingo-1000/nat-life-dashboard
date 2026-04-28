@@ -30,7 +30,7 @@ export default async function SocietesPage() {
     <div className="space-y-8">
       <header className="flex items-end justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
             Référentiel
           </div>
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -48,7 +48,7 @@ export default async function SocietesPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-[13px] text-amber-700">
+        <div className="card p-6 text-[13px] text-emerald-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}

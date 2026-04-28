@@ -41,7 +41,7 @@ export default async function TypesDocumentsPage() {
   return (
     <div className="space-y-8">
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
           Administration
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -55,7 +55,7 @@ export default async function TypesDocumentsPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-[13px] text-amber-700">
+        <div className="card p-6 text-[13px] text-emerald-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}
@@ -85,7 +85,7 @@ export default async function TypesDocumentsPage() {
                   <td className="font-mono text-[12px] text-zinc-500">{t.code}</td>
                   <td>
                     {t.hasExpiration ? (
-                      <span className="inline-flex items-center gap-1 text-[12px] text-amber-700">
+                      <span className="inline-flex items-center gap-1 text-[12px] text-emerald-700">
                         <Clock className="h-3 w-3" strokeWidth={2} />
                         Avec date
                       </span>
@@ -111,7 +111,7 @@ export default async function TypesDocumentsPage() {
                       <input type="hidden" name="id" value={t.id} />
                       <button
                         type="submit"
-                        className="text-[12px] text-zinc-500 transition hover:text-amber-700"
+                        className="text-[12px] text-zinc-500 transition hover:text-emerald-700"
                       >
                         {t.isActive ? 'Désactiver' : 'Réactiver'}
                       </button>
@@ -126,7 +126,7 @@ export default async function TypesDocumentsPage() {
 
       <section>
         <div className="page-header mb-5">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
             Catalogue
           </div>
           <h2 className="mt-1.5 text-[20px] font-medium tracking-tight text-zinc-900">

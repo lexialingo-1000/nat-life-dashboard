@@ -50,7 +50,7 @@ export default async function EditLotPage({ params }: { params: { id: string } }
     <div className="max-w-2xl space-y-6">
       <Link
         href={`/biens/lots/${lot.id}`}
-        className="inline-flex items-center text-sm text-slate-600 hover:underline"
+        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         {lot.name}
@@ -58,7 +58,7 @@ export default async function EditLotPage({ params }: { params: { id: string } }
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Modifier le lot</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-zinc-500">
           {lot.companyName} · {lot.propertyName}
         </p>
       </div>

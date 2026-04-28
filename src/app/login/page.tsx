@@ -56,11 +56,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
       <div className="w-full max-w-md">
         <div className="card p-8">
           <h1 className="text-2xl font-bold tracking-tight">Nat Life</h1>
-          <p className="mt-1 text-sm text-slate-500">Dashboard de gestion multi-société</p>
+          <p className="mt-1 text-sm text-zinc-500">Dashboard de gestion multi-société</p>
 
           {step === 'email' && (
             <form onSubmit={requestCode} className="mt-6 space-y-4">
@@ -92,7 +92,7 @@ export default function LoginPage() {
 
           {step === 'otp' && (
             <form onSubmit={verifyCode} className="mt-6 space-y-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-zinc-600">
                 Un code à 6 chiffres a été envoyé à <span className="font-medium">{email}</span>.
                 Saisis-le ci-dessous (le code expire après 1 heure).
               </p>
@@ -127,7 +127,7 @@ export default function LoginPage() {
                   setError(null);
                   setStatus('idle');
                 }}
-                className="block w-full text-center text-xs text-slate-500 underline-offset-2 hover:underline"
+                className="block w-full text-center text-xs text-zinc-500 underline-offset-2 hover:underline"
               >
                 Utiliser une autre adresse email
               </button>

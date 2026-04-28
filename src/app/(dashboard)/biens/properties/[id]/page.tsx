@@ -82,7 +82,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   if (!property) {
     return (
-      <div className="card p-6 text-[13px] text-amber-700">
+      <div className="card p-6 text-[13px] text-emerald-700">
         Connexion DB indisponible : {dbError}
       </div>
     );
@@ -121,7 +121,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               : '—'}
           </Row>
           <Row label="Société">
-            <Link href={`/societes/${property.companyId}`} className="hover:text-amber-700">
+            <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-700">
               {property.companyName}
             </Link>
           </Row>
@@ -182,7 +182,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             {propertyLots.map((l, i) => (
               <tr key={l.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
                 <td className="font-medium text-zinc-900">
-                  <Link href={`/biens/lots/${l.id}`} className="hover:text-amber-700">
+                  <Link href={`/biens/lots/${l.id}`} className="hover:text-emerald-700">
                     {l.name}
                   </Link>
                 </td>
@@ -241,13 +241,13 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               {propertyMarches.map((m, i) => (
                 <tr key={m.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
                   <td className="font-medium text-zinc-900">
-                    <Link href={`/marches/${m.id}`} className="hover:text-amber-700">
+                    <Link href={`/marches/${m.id}`} className="hover:text-emerald-700">
                       {m.name}
                     </Link>
                   </td>
                   <td className="text-[12px] text-zinc-500">
                     {m.lotsConcernes ?? (
-                      <span className="text-slate-400">parties communes</span>
+                      <span className="text-zinc-400">parties communes</span>
                     )}
                   </td>
                   <td className="text-[12px] text-zinc-600">{m.supplierName ?? '—'}</td>
@@ -301,7 +301,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     <div className="space-y-8">
       <Link
         href="/biens"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-amber-700"
+        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Biens immobiliers
@@ -309,8 +309,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
-            <Link href={`/societes/${property.companyId}`} className="hover:text-amber-800">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+            <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-800">
               {property.companyName}
             </Link>
           </div>

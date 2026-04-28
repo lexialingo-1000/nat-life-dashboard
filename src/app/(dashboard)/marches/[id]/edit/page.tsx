@@ -72,7 +72,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
     <div className="max-w-3xl space-y-6">
       <Link
         href={`/marches/${marche.id}`}
-        className="inline-flex items-center text-sm text-slate-600 hover:underline"
+        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         {marche.name}

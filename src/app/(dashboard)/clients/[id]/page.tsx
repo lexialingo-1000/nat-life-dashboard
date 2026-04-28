@@ -148,14 +148,14 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     <div className="space-y-8">
       <Link
         href="/clients"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-amber-700"
+        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Clients
       </Link>
 
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
           Client
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -196,7 +196,7 @@ function Kpi({
       </div>
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
-          variant === 'warn' && value !== 0 ? 'text-amber-700' : 'text-zinc-900'
+          variant === 'warn' && value !== 0 ? 'text-emerald-700' : 'text-zinc-900'
         }`}
       >
         {value}

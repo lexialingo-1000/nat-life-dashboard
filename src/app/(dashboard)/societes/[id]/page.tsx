@@ -46,7 +46,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   if (!company) {
     return (
-      <div className="card p-6 text-sm text-amber-700">
+      <div className="card p-6 text-sm text-emerald-700">
         Connexion DB indisponible : {dbError}
       </div>
     );
@@ -124,7 +124,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
             {props.map((p, i) => (
               <tr key={p.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
                 <td className="font-medium text-zinc-900">
-                  <Link href={`/biens/properties/${p.id}`} className="hover:text-amber-700">
+                  <Link href={`/biens/properties/${p.id}`} className="hover:text-emerald-700">
                     {p.name}
                   </Link>
                 </td>
@@ -149,14 +149,14 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   return (
     <div className={`space-y-8 ${isActive ? '' : 'opacity-75'}`}>
-      <Link href="/societes" className="inline-flex items-center text-sm text-zinc-500 hover:text-amber-700">
+      <Link href="/societes" className="inline-flex items-center text-sm text-zinc-500 hover:text-emerald-700">
         <ArrowLeft className="mr-1 h-4 w-4" />
         Sociétés
       </Link>
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
             Société {!isActive && <span className="ml-2 badge-neutral">Inactive</span>}
           </div>
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -215,7 +215,7 @@ function Kpi({
           variant === 'good'
             ? 'text-emerald-700'
             : variant === 'warn'
-            ? 'text-amber-700'
+            ? 'text-emerald-700'
             : 'text-zinc-900'
         }`}
       >

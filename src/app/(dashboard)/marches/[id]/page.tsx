@@ -112,7 +112,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           <Row label="Bien">
             <Link
               href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-amber-700"
+              className="hover:text-emerald-700"
             >
               {marche.propertyName}
             </Link>
@@ -120,7 +120,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           <Row label="Fournisseur">
             <Link
               href={`/fournisseurs/${marche.supplierId}`}
-              className="hover:text-amber-700"
+              className="hover:text-emerald-700"
             >
               {supplierLabel}
             </Link>
@@ -171,7 +171,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             <li key={l.id}>
               <Link
                 href={`/biens/lots/${l.id}`}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 hover:text-amber-700"
+                className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1.5 text-sm hover:bg-zinc-50 hover:text-emerald-700"
               >
                 {l.name}
               </Link>
@@ -216,7 +216,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     <div className="space-y-8">
       <Link
         href="/marches"
-        className="inline-flex items-center text-sm text-zinc-500 hover:text-amber-700"
+        className="inline-flex items-center text-sm text-zinc-500 hover:text-emerald-700"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         Marchés de travaux
@@ -224,14 +224,14 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
-            <Link href={`/societes/${marche.companyId}`} className="hover:text-amber-800">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+            <Link href={`/societes/${marche.companyId}`} className="hover:text-emerald-800">
               {marche.companyName}
             </Link>{' '}
             ·{' '}
             <Link
               href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-amber-800"
+              className="hover:text-emerald-800"
             >
               {marche.propertyName}
             </Link>
@@ -297,7 +297,7 @@ function Kpi({
           variant === 'good'
             ? 'text-emerald-700'
             : variant === 'warn'
-            ? 'text-amber-700'
+            ? 'text-emerald-700'
             : 'text-zinc-900'
         }`}
       >

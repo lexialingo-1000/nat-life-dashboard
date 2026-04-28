@@ -5,7 +5,7 @@ export default function NewFournisseurPage() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ajouter un fournisseur</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-zinc-500">
           Étape 1 — informations générales. Tu pourras ajouter contacts et documents (RC, décennale, KBis…) une fois le fournisseur créé.
         </p>
       </div>
@@ -14,7 +14,7 @@ export default function NewFournisseurPage() {
         <div>
           <label className="block text-sm font-medium">Raison sociale</label>
           <input name="companyName" className="input mt-1" placeholder="Plomberie Dupont SARL" />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-zinc-500">
             Pour un artisan en nom propre, laisse vide et utilise prénom/nom.
           </p>
         </div>

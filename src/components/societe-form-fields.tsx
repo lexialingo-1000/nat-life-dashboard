@@ -192,18 +192,18 @@ export function SocieteFormFields({
       </div>
 
       {showActiveToggle && (
-        <div className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3">
           <input
             type="checkbox"
             id="isActive"
             name="isActive"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-zinc-300"
           />
           <label htmlFor="isActive" className="text-sm">
             Société active
-            <span className="ml-2 text-xs text-slate-500">
+            <span className="ml-2 text-xs text-zinc-500">
               (décocher pour archiver sans supprimer)
             </span>
           </label>

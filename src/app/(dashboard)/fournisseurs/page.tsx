@@ -45,7 +45,7 @@ export default async function FournisseursPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fournisseurs</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-zinc-500">
             Carnet d'adresses fournisseurs — multi-contacts + documents typés
           </p>
         </div>
@@ -56,7 +56,7 @@ export default async function FournisseursPage() {
       </div>
 
       {dbError && (
-        <div className="card p-6 text-sm text-amber-700">
+        <div className="card p-6 text-sm text-emerald-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}

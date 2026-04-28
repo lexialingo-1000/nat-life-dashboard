@@ -45,7 +45,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
     <div className="max-w-3xl space-y-6">
       <Link
         href={`/biens/properties/${property.id}`}
-        className="inline-flex items-center text-sm text-slate-600 hover:underline"
+        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         {property.name}
@@ -53,7 +53,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Nouveau marché de travaux</h1>
-        <p className="mt-1 text-sm text-slate-500">Sur le bien {property.name}.</p>
+        <p className="mt-1 text-sm text-zinc-500">Sur le bien {property.name}.</p>
       </div>
 
       <MarcheForm

@@ -48,7 +48,7 @@ export default async function BiensPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Biens immobiliers</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-zinc-500">
             Vue plate au niveau lot · {rows.length} lot{rows.length > 1 ? 's' : ''} · tri et
             filtre par colonne
           </p>
@@ -60,7 +60,7 @@ export default async function BiensPage() {
       </div>
 
       {dbError && (
-        <div className="card p-6 text-sm text-amber-700">
+        <div className="card p-6 text-sm text-emerald-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}

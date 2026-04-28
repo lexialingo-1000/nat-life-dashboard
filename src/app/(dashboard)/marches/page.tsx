@@ -48,19 +48,19 @@ export default async function MarchesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Marchés de travaux</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-zinc-500">
           Vue transversale des contrats fournisseur ↔ bien (et lots concernés)
         </p>
       </div>
 
       {dbError && (
-        <div className="card p-6 text-sm text-amber-700">
+        <div className="card p-6 text-sm text-emerald-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}
 
       {!dbError && rows.length === 0 && (
-        <div className="card p-12 text-center text-sm text-slate-500">
+        <div className="card p-12 text-center text-sm text-zinc-500">
           Aucun marché pour l'instant. La création de marchés se fait depuis la fiche d'un{' '}
           <Link href="/biens" className="text-blue-600 hover:underline">bien</Link>.
         </div>
@@ -69,7 +69,7 @@ export default async function MarchesPage() {
       {!dbError && rows.length > 0 && (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-zinc-500">
               <tr>
                 <th className="px-4 py-3">Nom</th>
                 <th className="px-4 py-3">Société</th>
@@ -80,9 +80,9 @@ export default async function MarchesPage() {
                 <th className="px-4 py-3">Statut</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-zinc-100">
               {rows.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-50">
+                <tr key={m.id} className="hover:bg-zinc-50">
                   <td className="px-4 py-3 font-medium">
                     <Link href={`/marches/${m.id}`} className="hover:underline">
                       {m.name}
@@ -94,8 +94,8 @@ export default async function MarchesPage() {
                       {m.propertyName}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {m.lotsConcernes ?? <span className="text-slate-400">parties communes</span>}
+                  <td className="px-4 py-3 text-xs text-zinc-500">
+                    {m.lotsConcernes ?? <span className="text-zinc-400">parties communes</span>}
                   </td>
                   <td className="px-4 py-3 text-xs">{m.supplierName ?? '—'}</td>
                   <td className="px-4 py-3 tabular-nums">

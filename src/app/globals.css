@@ -78,7 +78,7 @@ h3 {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   .btn-secondary {
-    @apply btn border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50;
+    @apply btn border border-zinc-200 bg-[#fbf8f0] text-zinc-900 hover:bg-[#f3eedf];
   }
   .btn-ghost {
     @apply btn text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900;
@@ -86,7 +86,7 @@ h3 {
 
   /* Inputs — sharper edges */
   .input {
-    @apply flex h-9 w-full rounded-sm border border-zinc-200 bg-white px-3 text-[13px];
+    @apply flex h-9 w-full rounded-sm border border-zinc-200 bg-[#fbf8f0] px-3 text-[13px];
     @apply placeholder:text-zinc-400;
     @apply focus-visible:outline-none focus-visible:border-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-900;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
@@ -99,9 +99,9 @@ h3 {
     @apply pr-8 cursor-pointer;
   }
 
-  /* Cards — refined surface */
+  /* Cards — refined surface (ivoire chaud Direction A) */
   .card {
-    @apply rounded-sm border border-zinc-200 bg-white;
+    @apply rounded-sm border border-zinc-200 bg-[#fbf8f0];
   }
 
   /* Tables — ultra-thin dividers */
@@ -145,7 +145,7 @@ h3 {
   }
 
   .kbd {
-    @apply rounded border border-zinc-300 bg-white px-1.5 py-0.5 font-mono text-[10px] text-zinc-700;
+    @apply rounded border border-zinc-300 bg-[#fbf8f0] px-1.5 py-0.5 font-mono text-[10px] text-zinc-700;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
   }
 

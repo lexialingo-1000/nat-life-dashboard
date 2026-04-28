@@ -21,7 +21,7 @@ export default function NewSocietePage() {
     <div className="max-w-2xl space-y-6">
       <Link
         href="/societes"
-        className="inline-flex items-center text-sm text-slate-600 hover:underline"
+        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
       >
         <ArrowLeft className="mr-1 h-4 w-4" />
         Sociétés
@@ -29,7 +29,7 @@ export default function NewSocietePage() {
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ajouter une société</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-zinc-500">
           Renseigne les champs ci-dessous. Si tu connais le SIREN, le bouton « Auto-remplir »
           appelle l'API gouvernementale pour pré-remplir les autres champs.
         </p>

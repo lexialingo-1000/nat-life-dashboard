@@ -89,7 +89,7 @@ export function DataTable<T>({
                           value={(header.column.getFilterValue() as string) ?? ''}
                           onChange={(e) => header.column.setFilterValue(e.target.value)}
                           placeholder="Filtrer"
-                          className="block w-full rounded-sm border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-400"
+                          className="block w-full rounded-sm border border-zinc-200 bg-[#fbf8f0] px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-400"
                         />
                       )}
                     </div>

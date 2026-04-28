@@ -53,7 +53,7 @@ export function Tabs({ tabs, defaultTabId }: Props) {
               {isActive && (
                 <span
                   aria-hidden
-                  className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber-700"
+                  className="absolute -bottom-px left-0 right-0 h-0.5 bg-emerald-700"
                 />
               )}
             </button>

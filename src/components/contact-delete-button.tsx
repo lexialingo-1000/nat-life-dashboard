@@ -31,7 +31,7 @@ export function ContactDeleteButton({ action, contactId, supplierId, contactLabe
       onClick={handleClick}
       disabled={pending}
       title={`Supprimer ${contactLabel}`}
-      className="rounded p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+      className="rounded p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
     </button>

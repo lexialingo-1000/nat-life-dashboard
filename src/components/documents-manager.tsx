@@ -161,7 +161,7 @@ export function DocumentsManager({
     <div className="space-y-4">
       <ul className="space-y-2">
         {documents.length === 0 && (
-          <li className="rounded-md border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+          <li className="rounded-md border border-dashed border-zinc-200 p-4 text-center text-sm text-zinc-500">
             Aucun document pour l'instant.
           </li>
         )}
@@ -170,11 +170,11 @@ export function DocumentsManager({
           return (
             <li
               key={d.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-slate-100 p-3"
+              className="flex items-center justify-between gap-3 rounded-md border border-zinc-100 p-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{d.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-zinc-500">
                   {d.typeLabel}
                   {d.documentDate &&
                     ` · daté du ${new Date(d.documentDate).toLocaleDateString('fr-FR')}`}
@@ -186,7 +186,7 @@ export function DocumentsManager({
                     exp.color === 'red'
                       ? 'bg-red-100 text-red-800'
                       : exp.color === 'orange'
-                      ? 'bg-amber-100 text-amber-800'
+                      ? 'bg-emerald-100 text-emerald-800'
                       : 'bg-emerald-100 text-emerald-800'
                   }`}
                 >
@@ -199,7 +199,7 @@ export function DocumentsManager({
                   onClick={() => handleDownload(d.storageKey)}
                   disabled={pendingTransition}
                   title="Télécharger"
-                  className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                  className="rounded p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-50"
                 >
                   <Download className="h-4 w-4" />
                 </button>
@@ -208,7 +208,7 @@ export function DocumentsManager({
                   onClick={() => handleDelete(d)}
                   disabled={pendingTransition}
                   title="Supprimer"
-                  className="rounded p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                  className="rounded p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -230,7 +230,7 @@ export function DocumentsManager({
       )}
 
       {availableTypes.length === 0 && (
-        <p className="rounded-md bg-amber-50 p-3 text-xs text-amber-800">
+        <p className="rounded-md bg-emerald-50 p-3 text-xs text-emerald-800">
           Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de
           documents ».
         </p>
@@ -239,10 +239,10 @@ export function DocumentsManager({
       {showForm && (
         <form
           onSubmit={handleUpload}
-          className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4"
+          className="space-y-3 rounded-md border border-zinc-200 bg-zinc-50 p-4"
         >
           <div>
-            <label className="block text-xs font-medium text-slate-700">Type *</label>
+            <label className="block text-xs font-medium text-zinc-700">Type *</label>
             <select
               value={typeId}
               onChange={(e) => setTypeId(e.target.value)}
@@ -259,7 +259,7 @@ export function DocumentsManager({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700">Fichier *</label>
+            <label className="block text-xs font-medium text-zinc-700">Fichier *</label>
             <input
               type="file"
               onChange={(e) => {
@@ -268,12 +268,12 @@ export function DocumentsManager({
                 if (f && !docName) setDocName(f.name.replace(/\.[^.]+$/, ''));
               }}
               required
-              className="input mt-1 file:mr-3 file:rounded file:border-0 file:bg-slate-200 file:px-3 file:py-1 file:text-xs"
+              className="input mt-1 file:mr-3 file:rounded file:border-0 file:bg-zinc-200 file:px-3 file:py-1 file:text-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700">Nom *</label>
+            <label className="block text-xs font-medium text-zinc-700">Nom *</label>
             <input
               value={docName}
               onChange={(e) => setDocName(e.target.value)}
@@ -285,7 +285,7 @@ export function DocumentsManager({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700">Date du document</label>
+              <label className="block text-xs font-medium text-zinc-700">Date du document</label>
               <input
                 type="date"
                 value={documentDate}
@@ -295,7 +295,7 @@ export function DocumentsManager({
             </div>
             {selectedType?.hasExpiration && (
               <div>
-                <label className="block text-xs font-medium text-slate-700">Expire le</label>
+                <label className="block text-xs font-medium text-zinc-700">Expire le</label>
                 <input
                   type="date"
                   value={expiresAt}
