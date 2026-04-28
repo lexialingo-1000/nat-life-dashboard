@@ -1,0 +1,87 @@
+import { db } from '@/db/client';
+import { suppliers, supplierContacts, supplierDocuments } from '@/db/schema';
+import { eq, asc, sql } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
+import { SheetWrapper } from '@/components/sheet-wrapper';
+import { Mail, Phone } from 'lucide-react';
+
+export const dynamic = 'force-dynamic';
+
+const INVOICING_LABELS: Record<string, string> = {
+  pennylane: 'Pennylane',
+  email_forward: 'Email',
+  scraping_required: 'Scraping requis',
+  manual_upload: 'Manuel',
+};
+
+export default async function FournisseurSheetPage({ params }: { params: { id: string } }) {
+  const rows = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
+  if (rows.length === 0) notFound();
+  const s = rows[0];
+
+  const [contactsCountRow] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(supplierContacts)
+    .where(eq(supplierContacts.supplierId, s.id));
+
+  const [docsCountRow] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(supplierDocuments)
+    .where(eq(supplierDocuments.supplierId, s.id));
+
+  const displayName =
+    s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
+
+  return (
+    <SheetWrapper fullPageHref={`/fournisseurs/${s.id}`}>
+      <div className={s.isActive ? '' : 'opacity-75'}>
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          Fournisseur
+        </div>
+        <h1 className="mt-1.5 flex items-baseline gap-3 text-[24px] font-normal leading-tight text-zinc-900">
+          <span className="display-serif">{displayName}</span>
+          {!s.isActive && <span className="badge-neutral">Inactif</span>}
+        </h1>
+        <p className="mt-1.5 text-[13px] text-zinc-500">
+          <span className="badge-neutral">
+            {INVOICING_LABELS[s.invoicingType] ?? s.invoicingType}
+          </span>
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <Stat label="Contacts" value={contactsCountRow.n} />
+          <Stat label="Documents" value={docsCountRow.n} />
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {s.email && (
+            <div className="flex items-center gap-2 text-[13px] text-zinc-700">
+              <Mail className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
+              {s.email}
+            </div>
+          )}
+          {s.phone && (
+            <div className="flex items-center gap-2 text-[13px] text-zinc-700">
+              <Phone className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
+              <span className="font-mono">{s.phone}</span>
+            </div>
+          )}
+          {s.address && (
+            <div className="text-[13px] text-zinc-600">{s.address}</div>
+          )}
+        </div>
+      </div>
+    </SheetWrapper>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="card p-4">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-medium tabular-nums text-zinc-900">{value}</div>
+    </div>
+  );
+}

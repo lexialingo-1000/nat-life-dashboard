@@ -4,7 +4,13 @@ import { redirect } from 'next/navigation';
 
 const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({
+  children,
+  sheet,
+}: {
+  children: React.ReactNode;
+  sheet: React.ReactNode;
+}) {
   let userEmail: string | null = null;
 
   if (DEV_BYPASS) {
@@ -39,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         )}
         <div className="mx-auto max-w-[1280px] px-12 py-10">{children}</div>
       </main>
+      {sheet}
     </div>
   );
 }
