@@ -4,30 +4,22 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 
-export type FournisseurRow = {
+export type ClientRow = {
   id: string;
   displayName: string;
   email: string | null;
   phone: string | null;
-  invoicingType: string;
-  contactsCount: number;
+  address: string | null;
   isActive: boolean;
 };
 
-const INVOICING_LABELS: Record<string, string> = {
-  pennylane: 'Pennylane',
-  email_forward: 'Email',
-  scraping_required: 'Scraping',
-  manual_upload: 'Manuel',
-};
-
-const columns: ColumnDef<FournisseurRow>[] = [
+const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: 'displayName',
     header: 'Société / Nom',
     cell: ({ row }) => (
       <Link
-        href={`/fournisseurs/${row.original.id}`}
+        href={`/clients/${row.original.id}`}
         className="font-medium text-zinc-900 hover:text-emerald-700"
       >
         {row.original.displayName}
@@ -70,23 +62,15 @@ const columns: ColumnDef<FournisseurRow>[] = [
     ),
   },
   {
-    accessorKey: 'contactsCount',
-    header: 'Contacts',
-    enableColumnFilter: false,
-    cell: ({ getValue }) => (
-      <span className="tnum tabular-nums text-zinc-600">{getValue() as number}</span>
-    ),
-  },
-  {
-    accessorKey: 'invoicingType',
-    header: 'Facturation',
+    accessorKey: 'address',
+    header: 'Adresse',
     cell: ({ getValue }) => {
-      const v = getValue() as string;
-      return <span className="badge-neutral">{INVOICING_LABELS[v] ?? v}</span>;
+      const v = getValue() as string | null;
+      return <span className="text-[12px] text-zinc-500">{v?.split(',')[0] ?? '—'}</span>;
     },
   },
 ];
 
-export function FournisseursTable({ rows }: { rows: FournisseurRow[] }) {
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." />;
+export function ClientsTable({ rows }: { rows: ClientRow[] }) {
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucun client." />;
 }

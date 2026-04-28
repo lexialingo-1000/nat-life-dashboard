@@ -68,6 +68,23 @@ export async function deleteSupplierAction(formData: FormData): Promise<void> {
   redirect('/fournisseurs');
 }
 
+export async function toggleSupplierActiveAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+  const current = await db
+    .select({ isActive: suppliers.isActive })
+    .from(suppliers)
+    .where(eq(suppliers.id, id))
+    .limit(1);
+  if (current.length === 0) throw new Error('Fournisseur introuvable');
+  await db
+    .update(suppliers)
+    .set({ isActive: !current[0].isActive, updatedAt: new Date() })
+    .where(eq(suppliers.id, id));
+  revalidatePath('/fournisseurs');
+  revalidatePath(`/fournisseurs/${id}`);
+}
+
 export async function addContactAction(formData: FormData): Promise<void> {
   const parsed = contactSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

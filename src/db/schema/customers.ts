@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, date, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, varchar, boolean } from 'drizzle-orm/pg-core';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -13,6 +13,7 @@ export const customers = pgTable('customers', {
   storagePath: text('storage_path'),
   pennylaneCustomerId: varchar('pennylane_customer_id', { length: 64 }),
   notes: text('notes'),
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

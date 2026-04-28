@@ -20,6 +20,7 @@ export default async function FournisseursPage() {
         email: suppliers.email,
         phone: suppliers.phone,
         invoicingType: suppliers.invoicingType,
+        isActive: suppliers.isActive,
         contactsCount: sql<number>`count(${supplierContacts.id})::int`,
       })
       .from(suppliers)
@@ -35,6 +36,7 @@ export default async function FournisseursPage() {
       phone: s.phone,
       invoicingType: s.invoicingType,
       contactsCount: s.contactsCount,
+      isActive: s.isActive,
     }));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';

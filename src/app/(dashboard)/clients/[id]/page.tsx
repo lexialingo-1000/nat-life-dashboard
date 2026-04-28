@@ -8,9 +8,12 @@ import {
   uploadCustomerDocumentAction,
   deleteCustomerDocumentAction,
   getCustomerDocumentUrlAction,
+  toggleCustomerActiveAction,
+  deleteCustomerAction,
 } from '../actions';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { DeleteButton } from '@/components/delete-button';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +66,12 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   }).length;
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-4">
+      <Kpi
+        label="État"
+        value={customer.isActive ? 'Actif' : 'Inactif'}
+        variant={customer.isActive ? 'good' : 'warn'}
+      />
       <Kpi label="Documents" value={docs.length} />
       <Kpi
         label="Docs à renouveler"
@@ -145,7 +153,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   ];
 
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${customer.isActive ? '' : 'opacity-75'}`}>
       <Link
         href="/clients"
         className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
@@ -154,16 +162,34 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         Clients
       </Link>
 
-      <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
-          Client
+      <header className="flex items-start justify-between gap-6">
+        <div className="page-header">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+            Client
+          </div>
+          <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
+            <span className="display-serif">{displayName}</span>
+            {!customer.isActive && <span className="badge-neutral">Inactif</span>}
+          </h1>
+          <p className="mt-1.5 text-[13px] text-zinc-500">
+            {customer.email ?? '—'} · {customer.phone ?? '—'}
+          </p>
         </div>
-        <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-          <span className="display-serif">{displayName}</span>
-        </h1>
-        <p className="mt-1.5 text-[13px] text-zinc-500">
-          {customer.email ?? '—'} · {customer.phone ?? '—'}
-        </p>
+        <div className="flex items-center gap-2">
+          <form action={toggleCustomerActiveAction}>
+            <input type="hidden" name="id" value={customer.id} />
+            <button type="submit" className="btn-secondary">
+              {customer.isActive ? 'Désactiver' : 'Réactiver'}
+            </button>
+          </form>
+          <DeleteButton
+            action={deleteCustomerAction}
+            id={customer.id}
+            label="Supprimer"
+            confirmationPhrase={displayName}
+            description={`Cette action est irréversible. Le client "${displayName}" et ses documents seront supprimés.`}
+          />
+        </div>
       </header>
 
       <Tabs tabs={tabs} />
@@ -187,7 +213,7 @@ function Kpi({
 }: {
   label: string;
   value: number | string;
-  variant?: 'default' | 'warn';
+  variant?: 'default' | 'warn' | 'good';
 }) {
   return (
     <div className="card p-5">
@@ -196,7 +222,11 @@ function Kpi({
       </div>
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
-          variant === 'warn' && value !== 0 ? 'text-emerald-700' : 'text-zinc-900'
+          variant === 'good'
+            ? 'text-emerald-700'
+            : variant === 'warn' && value !== 0 && value !== 'Actif'
+            ? 'text-zinc-500'
+            : 'text-zinc-900'
         }`}
       >
         {value}

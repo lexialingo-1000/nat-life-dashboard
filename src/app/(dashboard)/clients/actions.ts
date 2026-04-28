@@ -46,6 +46,31 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
   redirect(`/clients/${inserted[0].id}`);
 }
 
+export async function deleteCustomerAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+  await db.delete(customers).where(eq(customers.id, id));
+  revalidatePath('/clients');
+  redirect('/clients');
+}
+
+export async function toggleCustomerActiveAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+  const current = await db
+    .select({ isActive: customers.isActive })
+    .from(customers)
+    .where(eq(customers.id, id))
+    .limit(1);
+  if (current.length === 0) throw new Error('Client introuvable');
+  await db
+    .update(customers)
+    .set({ isActive: !current[0].isActive, updatedAt: new Date() })
+    .where(eq(customers.id, id));
+  revalidatePath('/clients');
+  revalidatePath(`/clients/${id}`);
+}
+
 const customerDocumentSchema = z.object({
   customerId: z.string().uuid(),
   typeId: z.string().uuid(),

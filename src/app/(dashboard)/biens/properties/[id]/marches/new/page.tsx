@@ -33,6 +33,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
       lastName: suppliers.lastName,
     })
     .from(suppliers)
+    .where(eq(suppliers.isActive, true))
     .orderBy(asc(suppliers.companyName));
 
   const supplierOptions = supplierRows.map((s) => ({

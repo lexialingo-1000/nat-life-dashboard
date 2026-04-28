@@ -7,6 +7,7 @@ import {
   addContactAction,
   deleteContactAction,
   deleteSupplierAction,
+  toggleSupplierActiveAction,
   uploadSupplierDocumentAction,
   deleteSupplierDocumentAction,
   getSupplierDocumentUrlAction,
@@ -75,7 +76,12 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   }).length;
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-4">
+      <Kpi
+        label="État"
+        value={s.isActive ? 'Actif' : 'Inactif'}
+        variant={s.isActive ? 'good' : 'warn'}
+      />
       <Kpi label="Contacts" value={contacts.length} />
       <Kpi label="Documents" value={docs.length} />
       <Kpi
@@ -239,7 +245,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   ];
 
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${s.isActive ? '' : 'opacity-75'}`}>
       <Link
         href="/fournisseurs"
         className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
@@ -253,20 +259,29 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
             Fournisseur
           </div>
-          <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+          <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{displayName}</span>
+            {!s.isActive && <span className="badge-neutral">Inactif</span>}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
             {s.address ?? '—'} · {s.email ?? '—'} · {s.phone ?? '—'}
           </p>
         </div>
-        <DeleteButton
-          action={deleteSupplierAction}
-          id={s.id}
-          label="Supprimer"
-          confirmationPhrase={displayName}
-          description={`Cette action est irréversible. Le fournisseur "${displayName}", ses contacts et ses documents seront supprimés.`}
-        />
+        <div className="flex items-center gap-2">
+          <form action={toggleSupplierActiveAction}>
+            <input type="hidden" name="id" value={s.id} />
+            <button type="submit" className="btn-secondary">
+              {s.isActive ? 'Désactiver' : 'Réactiver'}
+            </button>
+          </form>
+          <DeleteButton
+            action={deleteSupplierAction}
+            id={s.id}
+            label="Supprimer"
+            confirmationPhrase={displayName}
+            description={`Cette action est irréversible. Le fournisseur "${displayName}", ses contacts et ses documents seront supprimés.`}
+          />
+        </div>
       </header>
 
       <Tabs tabs={tabs} />
@@ -290,7 +305,7 @@ function Kpi({
 }: {
   label: string;
   value: number | string;
-  variant?: 'default' | 'warn';
+  variant?: 'default' | 'warn' | 'good';
 }) {
   return (
     <div className="card p-5">
@@ -299,7 +314,11 @@ function Kpi({
       </div>
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
-          variant === 'warn' && value !== 0 ? 'text-emerald-700' : 'text-zinc-900'
+          variant === 'good'
+            ? 'text-emerald-700'
+            : variant === 'warn' && value !== 0 && value !== 'Actif'
+            ? 'text-zinc-500'
+            : 'text-zinc-900'
         }`}
       >
         {value}
