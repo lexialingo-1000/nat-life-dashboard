@@ -41,15 +41,22 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/auth');
 
-  if (!user && !isAuthPage) {
+  // Routes /auth/* (callback, logout) doivent toujours être accessibles,
+  // que l'utilisateur soit authentifié ou non.
+  if (pathname.startsWith('/auth/')) {
+    return response;
+  }
+
+  const isLoginPage = pathname === '/login';
+
+  if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  if (user && isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
