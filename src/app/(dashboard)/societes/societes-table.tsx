@@ -95,5 +95,5 @@ const columns: ColumnDef<SocieteRow>[] = [
 ];
 
 export function SocietesTable({ rows }: { rows: SocieteRow[] }) {
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucune société." />;
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucune société." enableSelection />;
 }

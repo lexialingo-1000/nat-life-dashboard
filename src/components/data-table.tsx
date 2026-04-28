@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -10,6 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
+  type RowSelectionState,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
@@ -20,8 +21,38 @@ interface Props<T> {
   enableFilters?: boolean;
   /** Lignes alternées (zebra). Default: true. */
   striped?: boolean;
+  /** Active une colonne checkbox de sélection multi (header + lignes). Default: false. */
+  enableSelection?: boolean;
   /** Message vide. */
   emptyMessage?: string;
+}
+
+function IndeterminateCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+  'aria-label': ariaLabel,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  'aria-label': string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = !!indeterminate && !checked;
+  }, [indeterminate, checked]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={ariaLabel}
+      className="h-3.5 w-3.5 cursor-pointer rounded-sm border border-zinc-300 text-emerald-600 accent-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:ring-offset-1"
+    />
+  );
 }
 
 export function DataTable<T>({
@@ -29,21 +60,54 @@ export function DataTable<T>({
   data,
   enableFilters = true,
   striped = true,
+  enableSelection = false,
   emptyMessage = 'Aucune donnée.',
 }: Props<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  const allColumns = enableSelection
+    ? [
+        {
+          id: 'select',
+          enableSorting: false,
+          enableColumnFilter: false,
+          size: 36,
+          header: ({ table }: { table: any }) => (
+            <IndeterminateCheckbox
+              checked={table.getIsAllPageRowsSelected()}
+              indeterminate={table.getIsSomePageRowsSelected()}
+              onChange={table.getToggleAllPageRowsSelectedHandler()}
+              aria-label="Tout sélectionner"
+            />
+          ),
+          cell: ({ row }: { row: any }) => (
+            <IndeterminateCheckbox
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              aria-label="Sélectionner la ligne"
+            />
+          ),
+        } as ColumnDef<T, any>,
+        ...columns,
+      ]
+    : columns;
 
   const table = useReactTable({
     data,
-    columns,
-    state: { sorting, columnFilters },
+    columns: allColumns,
+    state: { sorting, columnFilters, rowSelection },
+    enableRowSelection: enableSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  const selectedCount = enableSelection ? Object.keys(rowSelection).length : 0;
 
   return (
     <div className="overflow-hidden">
@@ -128,11 +192,18 @@ export function DataTable<T>({
         </tbody>
       </table>
       {data.length > 0 && (
-        <div className="border-t border-zinc-100 px-5 py-2.5 text-[11px] text-zinc-500">
-          {table.getFilteredRowModel().rows.length} ligne
-          {table.getFilteredRowModel().rows.length > 1 ? 's' : ''}
-          {columnFilters.length > 0 && data.length !== table.getFilteredRowModel().rows.length && (
-            <span> (sur {data.length})</span>
+        <div className="flex items-center justify-between gap-4 border-t border-zinc-100 px-5 py-2.5 text-[11px] text-zinc-500">
+          <span>
+            {table.getFilteredRowModel().rows.length} ligne
+            {table.getFilteredRowModel().rows.length > 1 ? 's' : ''}
+            {columnFilters.length > 0 && data.length !== table.getFilteredRowModel().rows.length && (
+              <span> (sur {data.length})</span>
+            )}
+          </span>
+          {enableSelection && selectedCount > 0 && (
+            <span className="text-emerald-700">
+              {selectedCount} sélectionnée{selectedCount > 1 ? 's' : ''}
+            </span>
           )}
         </div>
       )}

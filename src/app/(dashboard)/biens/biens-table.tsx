@@ -97,5 +97,5 @@ const columns: ColumnDef<BienLotRow>[] = [
 ];
 
 export function BiensTable({ rows }: { rows: BienLotRow[] }) {
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucun lot." />;
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucun lot." enableSelection />;
 }

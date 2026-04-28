@@ -72,5 +72,5 @@ const columns: ColumnDef<ClientRow>[] = [
 ];
 
 export function ClientsTable({ rows }: { rows: ClientRow[] }) {
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucun client." />;
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucun client." enableSelection />;
 }

@@ -88,5 +88,5 @@ const columns: ColumnDef<FournisseurRow>[] = [
 ];
 
 export function FournisseursTable({ rows }: { rows: FournisseurRow[] }) {
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." />;
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." enableSelection />;
 }
