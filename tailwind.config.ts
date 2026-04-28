@@ -14,9 +14,13 @@ const config: Config = {
       },
       colors: {
         accent: {
-          DEFAULT: '#d97706',
-          light: '#fbbf24',
-          subtle: '#fef3c7',
+          DEFAULT: '#059669',
+          light: '#10b981',
+          subtle: '#d1fae5',
+        },
+        accent2: {
+          DEFAULT: '#0e7490',
+          light: '#0891b2',
         },
         surface: 'var(--bg)',
         ink: 'var(--fg)',

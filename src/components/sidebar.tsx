@@ -93,7 +93,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-amber-500" />
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-emerald-500" />
                       )}
                       <Icon
                         className={`h-[15px] w-[15px] ${

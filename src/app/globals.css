@@ -3,17 +3,23 @@
 @tailwind utilities;
 
 :root {
-  /* OKLCH tokens — neutres tintés warm (hue 75), accent amber (hue 67) */
-  --bg: oklch(0.985 0.003 75);
-  --fg: oklch(0.21 0.005 75);
-  --muted: oklch(0.96 0.003 75);
-  --muted-fg: oklch(0.55 0.005 75);
-  --border: oklch(0.92 0.004 75);
-  --sidebar: oklch(0.18 0.006 75);
-  --sidebar-fg: oklch(0.78 0.005 75);
-  --sidebar-active: oklch(1 0 0);
-  --accent: oklch(0.71 0.16 67);
-  --accent-soft: oklch(0.96 0.06 80);
+  /* Direction A "Patrimoine moderne" — warm sand background + emerald accent + bleu canard secondary */
+  /* Surfaces — neutres warm sand (hue 80, chroma 0.02 perceptible) */
+  --bg: oklch(0.95 0.018 80);          /* #f5f1e8 sable chaud */
+  --fg: oklch(0.21 0.005 80);          /* #1a1a1a charcoal tinté warm */
+  --muted: oklch(0.91 0.022 80);       /* #ebe6d9 */
+  --muted-fg: oklch(0.50 0.012 80);
+  --border: oklch(0.83 0.025 80);      /* #d9d2bf */
+
+  /* Sidebar — charcoal warm */
+  --sidebar: oklch(0.20 0.005 80);
+  --sidebar-fg: oklch(0.78 0.012 80);
+  --sidebar-active: oklch(0.95 0.018 80);  /* sand pour le contraste sur charcoal */
+
+  /* Accents — émeraude profond (action/CTA) + bleu canard (secondaire) */
+  --accent: oklch(0.58 0.13 165);      /* #059669 emerald-600 */
+  --accent-soft: oklch(0.92 0.05 165); /* emerald-100 wash */
+  --accent-2: oklch(0.50 0.10 215);    /* #0e7490 cyan-700 bleu canard */
 
   /* Motion */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -181,5 +187,5 @@ h3 {
 
 /* Selection */
 ::selection {
-  background: oklch(0.71 0.16 67 / 0.3);
+  background: oklch(0.58 0.13 165 / 0.3);
 }

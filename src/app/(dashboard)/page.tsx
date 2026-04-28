@@ -132,7 +132,7 @@ function SectionHeader({
 }) {
   return (
     <div className="page-header">
-      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-amber-700">
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
         {eyebrow}
       </div>
       <h2 className="mt-1.5 text-[20px] font-medium tracking-tight text-zinc-900">{title}</h2>
@@ -166,7 +166,7 @@ function FeaturedKpi({
       }`}
     >
       {accent && (
-        <span className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-amber-500" />
+        <span className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-emerald-500" />
       )}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
@@ -231,7 +231,7 @@ function RoadmapBlock({
     <div className="card p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-medium text-zinc-900">{title}</h3>
-        <span className={isActive ? 'badge-amber' : 'badge-neutral'}>
+        <span className={isActive ? 'badge-emerald' : 'badge-neutral'}>
           {isActive ? 'En cours' : phase}
         </span>
       </div>
@@ -240,7 +240,7 @@ function RoadmapBlock({
           <li key={i} className="flex items-baseline gap-2.5">
             <span
               className={`inline-block h-1 w-1 shrink-0 translate-y-[-3px] rounded-full ${
-                isActive ? 'bg-amber-500' : 'bg-zinc-300'
+                isActive ? 'bg-emerald-500' : 'bg-zinc-300'
               }`}
             />
             <span className={isActive ? 'text-zinc-700' : 'text-zinc-500'}>{item}</span>
