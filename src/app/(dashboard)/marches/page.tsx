@@ -45,13 +45,19 @@ export default async function MarchesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Marchés de travaux</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Vue transversale des contrats fournisseur ↔ bien (et lots concernés)
+    <div className="space-y-8">
+      <header className="page-header">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          Patrimoine
+        </div>
+        <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+          <span className="display-serif">Marchés de travaux</span>
+          <span className="ml-2 font-mono text-[13px] tnum text-zinc-400">{rows.length}</span>
+        </h1>
+        <p className="mt-1.5 max-w-xl text-[13px] text-zinc-500">
+          Vue transversale des contrats fournisseur ↔ bien (et lots concernés).
         </p>
-      </div>
+      </header>
 
       {dbError && (
         <div className="card p-6 text-sm text-emerald-700">
