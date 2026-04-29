@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { X, Maximize2 } from 'lucide-react';
 
@@ -11,22 +11,20 @@ export function SheetWrapper({
   children: React.ReactNode;
   fullPageHref: string;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
 
   // Liste racine de l'entité (1er segment) pour fermer le sheet
   // /fournisseurs/abc -> /fournisseurs, /clients/xyz -> /clients, etc.
   const listPath = `/${pathname?.split('/').filter(Boolean)[0] ?? ''}`;
 
-  const close = () => router.push(listPath);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key === 'Escape') {
+        window.location.href = listPath;
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listPath]);
 
   return (
@@ -43,14 +41,13 @@ export function SheetWrapper({
           >
             <Maximize2 className="h-3.5 w-3.5" strokeWidth={1.75} />
           </a>
-          <button
-            type="button"
-            onClick={close}
+          <a
+            href={listPath}
             className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-zinc-500 transition-colors duration-150 ease-out-quart hover:bg-zinc-200/60 hover:text-zinc-900"
             aria-label="Fermer"
           >
             <X className="h-3.5 w-3.5" strokeWidth={1.75} />
-          </button>
+          </a>
         </div>
       </div>
       <div className="flex-1 px-6 py-6">{children}</div>
