@@ -1,8 +1,10 @@
 import { db } from '@/db/client';
 import { suppliers, supplierContacts, supplierDocuments } from '@/db/schema';
-import { eq, asc, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { SheetWrapper } from '@/components/sheet-wrapper';
+import { DeleteButton } from '@/components/delete-button';
+import { deleteSupplierAction, toggleSupplierActiveAction } from '../../../fournisseurs/actions';
 import { Mail, Phone } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -69,6 +71,22 @@ export default async function FournisseurSheetPage({ params }: { params: { id: s
           {s.address && (
             <div className="text-[13px] text-zinc-600">{s.address}</div>
           )}
+        </div>
+
+        <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
+          <form action={toggleSupplierActiveAction}>
+            <input type="hidden" name="id" value={s.id} />
+            <button type="submit" className="btn-secondary w-full">
+              {s.isActive ? 'Désactiver' : 'Réactiver'}
+            </button>
+          </form>
+          <DeleteButton
+            action={deleteSupplierAction}
+            id={s.id}
+            label="Supprimer"
+            confirmationPhrase={displayName}
+            description={`Cette action est irréversible. Le fournisseur "${displayName}", ses contacts et ses documents seront supprimés.`}
+          />
         </div>
       </div>
     </SheetWrapper>

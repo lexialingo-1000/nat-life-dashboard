@@ -3,6 +3,8 @@ import { customers, customerDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { SheetWrapper } from '@/components/sheet-wrapper';
+import { DeleteButton } from '@/components/delete-button';
+import { deleteCustomerAction, toggleCustomerActiveAction } from '../../../clients/actions';
 import { Mail, Phone } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +54,22 @@ export default async function ClientSheetPage({ params }: { params: { id: string
           {c.address && (
             <div className="text-[13px] text-zinc-600">{c.address}</div>
           )}
+        </div>
+
+        <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
+          <form action={toggleCustomerActiveAction}>
+            <input type="hidden" name="id" value={c.id} />
+            <button type="submit" className="btn-secondary w-full">
+              {c.isActive ? 'Désactiver' : 'Réactiver'}
+            </button>
+          </form>
+          <DeleteButton
+            action={deleteCustomerAction}
+            id={c.id}
+            label="Supprimer"
+            confirmationPhrase={displayName}
+            description={`Cette action est irréversible. Le client "${displayName}" et ses documents seront supprimés.`}
+          />
         </div>
       </div>
     </SheetWrapper>

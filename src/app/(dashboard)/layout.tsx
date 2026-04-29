@@ -43,7 +43,7 @@ export default async function DashboardLayout({
             <span className="kbd">.env.local</span> pour réactiver Supabase Auth.
           </div>
         )}
-        <div className="mx-auto max-w-[1280px] px-12 py-10">{children}</div>
+        <div className="max-w-[1280px] px-12 py-10">{children}</div>
       </main>
       {sheet}
     </div>

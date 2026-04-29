@@ -2,7 +2,11 @@ import { db } from '@/db/client';
 import { companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { Pencil } from 'lucide-react';
 import { SheetWrapper } from '@/components/sheet-wrapper';
+import { DeleteButton } from '@/components/delete-button';
+import { deleteSocieteAction } from '../../../societes/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +55,23 @@ export default async function SocieteSheetPage({ params }: { params: { id: strin
           </Block>
           <Block label="Activité">{c.activitePrincipale ?? '—'}</Block>
           <Block label="Siège">{c.address ?? '—'}</Block>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
+          <Link
+            href={`/societes/${c.id}/edit`}
+            className="btn-secondary inline-flex items-center justify-center"
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Modifier
+          </Link>
+          <DeleteButton
+            action={deleteSocieteAction}
+            id={c.id}
+            label="Supprimer"
+            confirmationPhrase={c.name}
+            description={`Cette action est irréversible. La société "${c.name}" sera supprimée.`}
+          />
         </div>
       </div>
     </SheetWrapper>
