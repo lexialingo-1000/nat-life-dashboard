@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db/client';
-import { lots } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { lots, levels, rooms } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -57,4 +57,88 @@ export async function updateLotAction(formData: FormData): Promise<void> {
 
   revalidatePath(`/biens/lots/${id}`);
   redirect(`/biens/lots/${id}`);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Niveaux & pièces (vague 3 retours Natacha) — édition in-place sur fiche lot.
+// Pas de redirect : les actions revalidatent le path et le form se reset.
+// ──────────────────────────────────────────────────────────────────────────
+
+const levelCreateSchema = z.object({
+  lotId: z.string().uuid(),
+  name: z.string().min(1).max(120),
+});
+
+export async function createLevelAction(formData: FormData): Promise<void> {
+  const parsed = levelCreateSchema.safeParse({
+    lotId: formData.get('lotId'),
+    name: formData.get('name'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+
+  // Sort_order = max + 1 pour l'ordre d'affichage
+  const [{ next }] = await db
+    .select({ next: sql<number>`coalesce(max(${levels.sortOrder}), -1) + 1` })
+    .from(levels)
+    .where(eq(levels.lotId, parsed.data.lotId));
+
+  await db.insert(levels).values({
+    lotId: parsed.data.lotId,
+    name: parsed.data.name,
+    sortOrder: Number(next ?? 0),
+  });
+
+  revalidatePath(`/biens/lots/${parsed.data.lotId}`);
+}
+
+export async function deleteLevelAction(formData: FormData): Promise<void> {
+  const levelId = String(formData.get('levelId') ?? '');
+  const lotId = String(formData.get('lotId') ?? '');
+  if (!levelId || !lotId) throw new Error('IDs manquants');
+
+  await db.delete(levels).where(eq(levels.id, levelId));
+  revalidatePath(`/biens/lots/${lotId}`);
+}
+
+const roomCreateSchema = z.object({
+  levelId: z.string().uuid(),
+  lotId: z.string().uuid(),
+  name: z.string().min(1).max(120),
+  surfaceM2: z
+    .preprocess(
+      (v) => (v === '' || v == null ? null : Number(v)),
+      z.number().nonnegative().nullable()
+    )
+    .optional(),
+});
+
+export async function createRoomAction(formData: FormData): Promise<void> {
+  const parsed = roomCreateSchema.safeParse({
+    levelId: formData.get('levelId'),
+    lotId: formData.get('lotId'),
+    name: formData.get('name'),
+    surfaceM2: formData.get('surfaceM2'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+
+  await db.insert(rooms).values({
+    levelId: parsed.data.levelId,
+    name: parsed.data.name,
+    surfaceM2: parsed.data.surfaceM2 != null ? String(parsed.data.surfaceM2) : null,
+  });
+
+  revalidatePath(`/biens/lots/${parsed.data.lotId}`);
+}
+
+export async function deleteRoomAction(formData: FormData): Promise<void> {
+  const roomId = String(formData.get('roomId') ?? '');
+  const lotId = String(formData.get('lotId') ?? '');
+  if (!roomId || !lotId) throw new Error('IDs manquants');
+
+  await db.delete(rooms).where(eq(rooms.id, roomId));
+  revalidatePath(`/biens/lots/${lotId}`);
 }

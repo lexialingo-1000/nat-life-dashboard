@@ -228,6 +228,20 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
+  const facturesTab = (
+    <div className="card p-6">
+      <p className="text-sm text-zinc-500">
+        Aucune facture pour l'instant. La synchronisation Pennylane (achats) arrivera en V1.5
+        après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
+        septembre 2026).
+      </p>
+      <p className="mt-3 text-[12px] text-zinc-400">
+        En attendant, les factures peuvent être archivées dans l'onglet « Documents » avec le
+        type « Autre ».
+      </p>
+    </div>
+  );
+
   const notesTab = (
     <div className="card p-5">
       <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
@@ -241,6 +255,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'contacts', label: 'Contacts', count: contacts.length, content: contactsTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
+    { id: 'factures', label: 'Factures', content: facturesTab },
     { id: 'notes', label: 'Notes', content: notesTab },
   ];
 

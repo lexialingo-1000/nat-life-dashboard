@@ -1,9 +1,16 @@
 import { db } from '@/db/client';
-import { customers, customerDocuments, documentTypes } from '@/db/schema';
+import {
+  customers,
+  customerDocuments,
+  documentTypes,
+  locations,
+  lots,
+  properties,
+} from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   uploadCustomerDocumentAction,
   deleteCustomerDocumentAction,
@@ -11,10 +18,27 @@ import {
   toggleCustomerActiveAction,
   deleteCustomerAction,
 } from '../actions';
+import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DeleteButton } from '@/components/delete-button';
 import { slugify } from '@/lib/storage/minio';
+import { formatDate } from '@/lib/utils';
+
+const LOCATION_TYPE_LABELS: Record<string, string> = {
+  bail_meuble_annuel: 'Bail meublé annuel',
+  bail_nu_annuel: 'Bail nu annuel',
+  saisonnier_direct: 'Saisonnier direct',
+  saisonnier_plateforme: 'Saisonnier plateforme',
+};
+
+const PERIODICITE_LABELS: Record<string, string> = {
+  forfait: 'forfait',
+  jour: '/ jour',
+  semaine: '/ semaine',
+  mois: '/ mois',
+  annee: '/ an',
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +76,26 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .where(and(eq(documentTypes.scope, 'customer'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
 
+  const customerLocations = await db
+    .select({
+      id: locations.id,
+      typeLocation: locations.typeLocation,
+      dateDebut: locations.dateDebut,
+      dateFin: locations.dateFin,
+      prixLocation: locations.prixLocation,
+      prix: locations.prix,
+      periodicite: locations.periodicite,
+      lotId: lots.id,
+      lotName: lots.name,
+      propertyId: properties.id,
+      propertyName: properties.name,
+    })
+    .from(locations)
+    .innerJoin(lots, eq(lots.id, locations.lotId))
+    .innerJoin(properties, eq(properties.id, lots.propertyId))
+    .where(eq(locations.customerId, customer.id))
+    .orderBy(asc(locations.dateDebut));
+
   const displayName =
     customer.companyName ??
     `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() ??
@@ -78,7 +122,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         value={expiringDocsCount}
         variant={expiringDocsCount > 0 ? 'warn' : 'default'}
       />
-      <Kpi label="Locations" value="—" />
+      <Kpi label="Locations" value={customerLocations.length} />
     </div>
   );
 
@@ -137,6 +181,87 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  const locationsTab = (
+    <div className="card p-6">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Lots & contrats
+        </h2>
+        <Link
+          href={`/locations/new?customerId=${customer.id}&returnTo=/clients/${customer.id}`}
+          className="btn-secondary"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+          Nouvelle location
+        </Link>
+      </div>
+
+      {customerLocations.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Aucune location pour ce client. Une location lie ce client à un lot d'un bien
+          (locataire annuel ou saisonnier).
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {customerLocations.map((l) => {
+            const priceText =
+              l.prixLocation
+                ? `${Number(l.prixLocation).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
+                : l.prix
+                ? `${Number(l.prix).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
+                : null;
+            return (
+              <li
+                key={l.id}
+                className="flex items-center justify-between rounded-md border border-zinc-100 p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-3">
+                    <Link href={`/biens/lots/${l.lotId}`} className="link-cell text-[13px]">
+                      {l.propertyName} · {l.lotName}
+                    </Link>
+                    <span className="badge-neutral">
+                      {LOCATION_TYPE_LABELS[l.typeLocation] ?? l.typeLocation}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-zinc-500">
+                    Du {formatDate(l.dateDebut)}
+                    {l.dateFin ? ` au ${formatDate(l.dateFin)}` : ' (en cours)'}
+                    {priceText && <span className="ml-2 tnum">· {priceText}</span>}
+                  </div>
+                </div>
+                <form action={deleteLocationAction}>
+                  <input type="hidden" name="id" value={l.id} />
+                  <button
+                    type="submit"
+                    title="Supprimer cette location"
+                    className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                </form>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+
+  const facturesTab = (
+    <div className="card p-6">
+      <p className="text-sm text-zinc-500">
+        Aucune facture pour l'instant. La synchronisation Pennylane (ventes FKA) arrivera en
+        V1.5 après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
+        septembre 2026).
+      </p>
+      <p className="mt-3 text-[12px] text-zinc-400">
+        En attendant, les factures émises peuvent être archivées dans l'onglet « Documents »
+        avec le type « Autre ».
+      </p>
+    </div>
+  );
+
   const notesTab = (
     <div className="card p-5">
       <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
@@ -148,7 +273,14 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
+    {
+      id: 'locations',
+      label: 'Locations',
+      count: customerLocations.length || undefined,
+      content: locationsTab,
+    },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
+    { id: 'factures', label: 'Factures', content: facturesTab },
     { id: 'notes', label: 'Notes', content: notesTab },
   ];
 

@@ -181,8 +181,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           <tbody>
             {propertyLots.map((l, i) => (
               <tr key={l.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                <td className="font-medium text-zinc-900">
-                  <Link href={`/biens/lots/${l.id}`} className="hover:text-emerald-700">
+                <td>
+                  <Link href={`/biens/lots/${l.id}`} className="link-cell">
                     {l.name}
                   </Link>
                 </td>
@@ -240,8 +240,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <tbody>
               {propertyMarches.map((m, i) => (
                 <tr key={m.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                  <td className="font-medium text-zinc-900">
-                    <Link href={`/marches/${m.id}`} className="hover:text-emerald-700">
+                  <td>
+                    <Link href={`/marches/${m.id}`} className="link-cell">
                       {m.name}
                     </Link>
                   </td>

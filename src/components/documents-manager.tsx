@@ -21,7 +21,14 @@ type DocumentType = {
 type ServerAction<R = void> = (formData: FormData) => Promise<R>;
 
 interface Props {
-  scope: 'suppliers' | 'customers' | 'properties' | 'lots' | 'marches' | 'locations';
+  scope:
+    | 'companies'
+    | 'suppliers'
+    | 'customers'
+    | 'properties'
+    | 'lots'
+    | 'marches'
+    | 'locations';
   parentId: string;
   parentSlug: string;
   parentIdFieldName: string;

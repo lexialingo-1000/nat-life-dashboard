@@ -89,14 +89,17 @@ export default async function MarchesPage() {
             <tbody className="divide-y divide-zinc-100">
               {rows.map((m) => (
                 <tr key={m.id} className="hover:bg-zinc-50">
-                  <td className="px-4 py-3 font-medium">
-                    <Link href={`/marches/${m.id}`} className="hover:underline">
+                  <td className="px-4 py-3">
+                    <Link href={`/marches/${m.id}`} className="link-cell">
                       {m.name}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-xs">{m.companyName}</td>
                   <td className="px-4 py-3 text-xs">
-                    <Link href={`/biens/properties/${m.propertyId}`} className="hover:underline">
+                    <Link
+                      href={`/biens/properties/${m.propertyId}`}
+                      className="link-cell-soft"
+                    >
                       {m.propertyName}
                     </Link>
                   </td>

@@ -1,12 +1,19 @@
 import { db } from '@/db/client';
-import { companies, properties, lots } from '@/db/schema';
-import { eq, sql, asc } from 'drizzle-orm';
+import { companies, properties, lots, companyDocuments, documentTypes } from '@/db/schema';
+import { eq, sql, asc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
-import { deleteSocieteAction } from '../actions';
+import {
+  deleteSocieteAction,
+  uploadCompanyDocumentAction,
+  deleteCompanyDocumentAction,
+  getCompanyDocumentUrlAction,
+} from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { DocumentsManager } from '@/components/documents-manager';
+import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +58,30 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       </div>
     );
   }
+
+  const docs = await db
+    .select({
+      id: companyDocuments.id,
+      name: companyDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: companyDocuments.storageKey,
+      expiresAt: companyDocuments.expiresAt,
+      documentDate: companyDocuments.documentDate,
+    })
+    .from(companyDocuments)
+    .innerJoin(documentTypes, eq(companyDocuments.typeId, documentTypes.id))
+    .where(eq(companyDocuments.companyId, company.id))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const companyDocTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(and(eq(documentTypes.scope, 'company'), eq(documentTypes.isActive, true)))
+    .orderBy(asc(documentTypes.sortOrder));
 
   const isActive = company.isActive ?? true;
 
@@ -123,8 +154,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           <tbody>
             {props.map((p, i) => (
               <tr key={p.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                <td className="font-medium text-zinc-900">
-                  <Link href={`/biens/properties/${p.id}`} className="hover:text-emerald-700">
+                <td>
+                  <Link href={`/biens/properties/${p.id}`} className="link-cell">
                     {p.name}
                   </Link>
                 </td>
@@ -141,10 +172,34 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     </div>
   );
 
+  const documentsTab = (
+    <div className="card p-6">
+      <DocumentsManager
+        scope="companies"
+        parentId={company.id}
+        parentSlug={slugify(company.name)}
+        parentIdFieldName="companyId"
+        documents={docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+        }))}
+        availableTypes={companyDocTypes}
+        uploadAction={uploadCompanyDocumentAction}
+        deleteAction={deleteCompanyDocumentAction}
+        getUrlAction={getCompanyDocumentUrlAction}
+      />
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'biens', label: 'Biens', count: props.length, content: biensTab },
+    { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 
   return (

@@ -65,6 +65,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
         suppliers={supplierOptions}
         cancelHref={`/biens/properties/${property.id}`}
         submitLabel="Créer le marché"
+        returnTo={`/biens/properties/${property.id}`}
       />
     </div>
   );

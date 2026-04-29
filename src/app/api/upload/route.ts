@@ -4,7 +4,15 @@ import { getPresignedUploadUrl, slugify, type StorageScope } from '@/lib/storage
 import { createClient } from '@/lib/supabase/server';
 
 const uploadRequestSchema = z.object({
-  scope: z.enum(['suppliers', 'customers', 'properties', 'lots', 'marches', 'locations']),
+  scope: z.enum([
+    'companies',
+    'suppliers',
+    'customers',
+    'properties',
+    'lots',
+    'marches',
+    'locations',
+  ]),
   parentSlug: z.string().min(1),
   parentId: z.string().uuid(),
   fileName: z.string().min(1).max(255),

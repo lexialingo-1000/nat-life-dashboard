@@ -1,9 +1,10 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations } from '@/db/schema';
+import { marchesTravaux, marcheLotAffectations, marcheDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
+import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -41,6 +42,15 @@ const marcheBaseSchema = z.object({
   status: z.enum(marcheStatusValues).default('devis_recu'),
   notes: z.string().optional().or(z.literal('')),
 });
+
+// Whitelist des chemins internes autorisés pour `returnTo` afin d'éviter les
+// open redirects. On reste sur des préfixes de l'app, jamais d'URL absolue.
+function safeReturnTo(value: unknown, fallback: string): string {
+  const v = typeof value === 'string' ? value : '';
+  if (!v.startsWith('/')) return fallback;
+  if (v.startsWith('//')) return fallback;
+  return v;
+}
 
 function parseLotIds(formData: FormData): string[] {
   const ids = formData.getAll('lotIds');
@@ -104,7 +114,9 @@ export async function createMarcheAction(formData: FormData): Promise<void> {
 
   revalidatePath(`/biens/properties/${data.propertyId}`);
   revalidatePath('/marches');
-  redirect(`/marches/${marcheId}`);
+
+  const returnTo = safeReturnTo(formData.get('returnTo'), `/marches/${marcheId}`);
+  redirect(returnTo);
 }
 
 const marcheUpdateSchema = marcheBaseSchema.extend({
@@ -188,4 +200,64 @@ export async function deleteMarcheAction(formData: FormData): Promise<void> {
   }
   revalidatePath('/marches');
   redirect('/marches');
+}
+
+const marcheDocumentSchema = z.object({
+  marcheId: z.string().uuid(),
+  typeId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  storageKey: z.string().min(1),
+  documentDate: z.string().optional().or(z.literal('')),
+  expiresAt: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function uploadMarcheDocumentAction(formData: FormData): Promise<void> {
+  const parsed = marcheDocumentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db.insert(marcheDocuments).values({
+    marcheId: data.marcheId,
+    typeId: data.typeId,
+    name: data.name,
+    storageKey: data.storageKey,
+    documentDate: data.documentDate || null,
+    expiresAt: data.expiresAt || null,
+    notes: data.notes || null,
+  });
+  revalidatePath(`/marches/${data.marcheId}`);
+}
+
+export async function deleteMarcheDocumentAction(formData: FormData): Promise<void> {
+  const documentId = String(formData.get('documentId') ?? '');
+  const marcheId = String(formData.get('marcheId') ?? '');
+  if (!documentId || !marcheId) throw new Error('IDs manquants');
+
+  const rows = await db
+    .select({ storageKey: marcheDocuments.storageKey })
+    .from(marcheDocuments)
+    .where(eq(marcheDocuments.id, documentId))
+    .limit(1);
+
+  if (rows[0]?.storageKey) {
+    await deleteObject(rows[0].storageKey);
+  }
+
+  await db.delete(marcheDocuments).where(eq(marcheDocuments.id, documentId));
+  revalidatePath(`/marches/${marcheId}`);
+}
+
+export async function getMarcheDocumentUrlAction(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!storageKey) return { error: 'Clé manquante' };
+  try {
+    const url = await getDownloadUrl(storageKey);
+    return { url };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur MinIO' };
+  }
 }

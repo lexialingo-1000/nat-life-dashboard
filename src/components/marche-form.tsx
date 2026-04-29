@@ -47,6 +47,10 @@ interface Props {
   defaultValues?: MarcheFormValues;
   cancelHref: string;
   submitLabel?: string;
+  /** Si fourni, l'action serveur redirige vers ce chemin après création/édition
+   * au lieu d'aller sur la fiche marché. Permet de rester sur la fiche bien
+   * lorsqu'on crée un marché depuis le contexte d'un bien. */
+  returnTo?: string;
 }
 
 export function MarcheForm({
@@ -58,6 +62,7 @@ export function MarcheForm({
   defaultValues = {},
   cancelHref,
   submitLabel = 'Enregistrer',
+  returnTo,
 }: Props) {
   const [selectedLotIds, setSelectedLotIds] = useState<Set<string>>(
     new Set(defaultValues.lotIds ?? [])
@@ -74,6 +79,7 @@ export function MarcheForm({
     <form action={action} className="card space-y-5 p-6">
       <input type="hidden" name="propertyId" value={propertyId} />
       {defaultValues.id && <input type="hidden" name="id" value={defaultValues.id} />}
+      {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
       {Array.from(selectedLotIds).map((lotId) => (
         <input key={lotId} type="hidden" name="lotIds" value={lotId} />
       ))}

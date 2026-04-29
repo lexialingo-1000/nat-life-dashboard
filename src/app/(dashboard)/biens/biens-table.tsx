@@ -37,7 +37,7 @@ const columns: ColumnDef<BienLotRow>[] = [
     cell: ({ row }) => (
       <Link
         href={`/societes/${row.original.companyId}`}
-        className="text-[12px] text-zinc-600 hover:text-emerald-700"
+        className="link-cell-soft text-[12px]"
       >
         {row.original.companyName}
       </Link>
@@ -49,7 +49,7 @@ const columns: ColumnDef<BienLotRow>[] = [
     cell: ({ row }) => (
       <Link
         href={`/biens/properties/${row.original.propertyId}`}
-        className="text-zinc-700 hover:text-emerald-700"
+        className="link-cell-soft"
       >
         {row.original.propertyName}
       </Link>
@@ -59,10 +59,7 @@ const columns: ColumnDef<BienLotRow>[] = [
     accessorKey: 'lotName',
     header: 'Lot',
     cell: ({ row }) => (
-      <Link
-        href={`/biens/lots/${row.original.lotId}`}
-        className="font-medium text-zinc-900 hover:text-emerald-700"
-      >
+      <Link href={`/biens/lots/${row.original.lotId}`} className="link-cell">
         {row.original.lotName}
       </Link>
     ),

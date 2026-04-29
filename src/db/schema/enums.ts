@@ -21,6 +21,7 @@ export const supplierInvoicingTypeEnum = pgEnum('supplier_invoicing_type', [
 ]);
 
 export const documentScopeEnum = pgEnum('document_scope', [
+  'company',
   'supplier',
   'customer',
   'property',

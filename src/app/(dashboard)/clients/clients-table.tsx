@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 
@@ -18,12 +17,9 @@ const columns: ColumnDef<ClientRow>[] = [
     accessorKey: 'displayName',
     header: 'Société / Nom',
     cell: ({ row }) => (
-      <Link
-        href={`/clients/${row.original.id}`}
-        className="font-medium text-zinc-900 hover:text-emerald-700"
-      >
+      <a href={`/clients/${row.original.id}`} className="link-cell">
         {row.original.displayName}
-      </Link>
+      </a>
     ),
   },
   {

@@ -2,18 +2,27 @@ import { db } from '@/db/client';
 import {
   marchesTravaux,
   marcheLotAffectations,
+  marcheDocuments,
   lots,
   properties,
   companies,
   suppliers,
+  documentTypes,
 } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
-import { deleteMarcheAction } from '../actions';
+import {
+  deleteMarcheAction,
+  uploadMarcheDocumentAction,
+  deleteMarcheDocumentAction,
+  getMarcheDocumentUrlAction,
+} from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { DocumentsManager } from '@/components/documents-manager';
+import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +85,30 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
     .where(eq(marcheLotAffectations.marcheId, marche.id))
     .orderBy(asc(lots.name));
+
+  const docs = await db
+    .select({
+      id: marcheDocuments.id,
+      name: marcheDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: marcheDocuments.storageKey,
+      expiresAt: marcheDocuments.expiresAt,
+      documentDate: marcheDocuments.documentDate,
+    })
+    .from(marcheDocuments)
+    .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))
+    .where(eq(marcheDocuments.marcheId, marche.id))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const marcheDocTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(and(eq(documentTypes.scope, 'marche'), eq(documentTypes.isActive, true)))
+    .orderBy(asc(documentTypes.sortOrder));
 
   const supplierLabel =
     marche.supplierName ??
@@ -184,10 +217,24 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
   const documentsTab = (
     <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Documents (devis, contrat signé, factures acompte/solde, photos avant/après…) — UI
-        upload à venir en V1.5 (Lot 4 suivi travaux étendu).
-      </p>
+      <DocumentsManager
+        scope="marches"
+        parentId={marche.id}
+        parentSlug={slugify(marche.name)}
+        parentIdFieldName="marcheId"
+        documents={docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+        }))}
+        availableTypes={marcheDocTypes}
+        uploadAction={uploadMarcheDocumentAction}
+        deleteAction={deleteMarcheDocumentAction}
+        getUrlAction={getMarcheDocumentUrlAction}
+      />
     </div>
   );
 
@@ -208,7 +255,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       count: affectedLots.length || undefined,
       content: lotsTab,
     },
-    { id: 'documents', label: 'Documents', content: documentsTab },
+    { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
     { id: 'notes', label: 'Notes', content: notesTab },
   ];
 

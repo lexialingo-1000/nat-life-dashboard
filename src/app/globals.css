@@ -108,6 +108,16 @@ h3 {
   .table-base {
     @apply w-full text-[13px];
   }
+
+  /* Liens dans les listes — affordance "cliquable" identifiable au repos.
+     `.link-cell` pour la colonne primaire (nom), `.link-cell-soft` pour les
+     colonnes secondaires (rattachements société/bien dans une table biens). */
+  .link-cell {
+    @apply font-medium text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:decoration-emerald-700;
+  }
+  .link-cell-soft {
+    @apply text-emerald-700/85 underline decoration-emerald-700/20 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:text-emerald-700 hover:decoration-emerald-700/60;
+  }
   .table-base thead {
     @apply border-b border-zinc-200;
   }
