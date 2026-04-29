@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { X, Maximize2 } from 'lucide-react';
 
@@ -12,14 +12,22 @@ export function SheetWrapper({
   fullPageHref: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Liste racine de l'entité (1er segment) pour fermer le sheet
+  // /fournisseurs/abc -> /fournisseurs, /clients/xyz -> /clients, etc.
+  const listPath = `/${pathname?.split('/').filter(Boolean)[0] ?? ''}`;
+
+  const close = () => router.push(listPath);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') router.back();
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listPath]);
 
   return (
     <aside className="hidden w-[480px] shrink-0 flex-col overflow-y-auto border-l border-zinc-200 bg-[#fbf8f0] xl:flex">
@@ -37,7 +45,7 @@ export function SheetWrapper({
           </a>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={close}
             className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-zinc-500 transition-colors duration-150 ease-out-quart hover:bg-zinc-200/60 hover:text-zinc-900"
             aria-label="Fermer"
           >
