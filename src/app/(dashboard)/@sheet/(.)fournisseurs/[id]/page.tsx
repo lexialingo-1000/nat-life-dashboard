@@ -75,13 +75,13 @@ export default async function FournisseurSheetPage({ params }: { params: { id: s
         </div>
 
         <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
-          <Link
+          <a
             href={`/fournisseurs/${s.id}/edit`}
             className="btn-secondary inline-flex items-center justify-center"
           >
             <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Modifier
-          </Link>
+          </a>
           <form action={toggleSupplierActiveAction}>
             <input type="hidden" name="id" value={s.id} />
             <button type="submit" className="btn-secondary w-full">

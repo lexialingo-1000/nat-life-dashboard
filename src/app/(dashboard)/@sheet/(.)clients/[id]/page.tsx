@@ -58,13 +58,13 @@ export default async function ClientSheetPage({ params }: { params: { id: string
         </div>
 
         <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
-          <Link
+          <a
             href={`/clients/${c.id}/edit`}
             className="btn-secondary inline-flex items-center justify-center"
           >
             <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Modifier
-          </Link>
+          </a>
           <form action={toggleCustomerActiveAction}>
             <input type="hidden" name="id" value={c.id} />
             <button type="submit" className="btn-secondary w-full">

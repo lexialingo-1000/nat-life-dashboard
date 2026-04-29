@@ -4,6 +4,9 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { X, Maximize2 } from 'lucide-react';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ALLOWED_ENTITIES = new Set(['societes', 'fournisseurs', 'clients']);
+
 export function SheetWrapper({
   children,
   fullPageHref,
@@ -12,12 +15,23 @@ export function SheetWrapper({
   fullPageHref: string;
 }) {
   const pathname = usePathname();
+  const segments = pathname?.split('/').filter(Boolean) ?? [];
+
+  // Le slot @sheet n'a de sens que sur une URL fiche exacte « /X/<uuid> ».
+  // Sur /X/<uuid>/edit, /X/new ou autres sous-routes, Next.js garde le slot
+  // précédemment rendu en soft navigation (intentionnel pour drawers
+  // persistants — ici on veut le contraire). On force le retour à null.
+  const isExactFiche =
+    segments.length === 2 &&
+    ALLOWED_ENTITIES.has(segments[0]!) &&
+    UUID_RE.test(segments[1]!);
 
   // Liste racine de l'entité (1er segment) pour fermer le sheet
   // /fournisseurs/abc -> /fournisseurs, /clients/xyz -> /clients, etc.
-  const listPath = `/${pathname?.split('/').filter(Boolean)[0] ?? ''}`;
+  const listPath = `/${segments[0] ?? ''}`;
 
   useEffect(() => {
+    if (!isExactFiche) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         window.location.href = listPath;
@@ -25,7 +39,9 @@ export function SheetWrapper({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [listPath]);
+  }, [listPath, isExactFiche]);
+
+  if (!isExactFiche) return null;
 
   return (
     <aside className="hidden w-[480px] shrink-0 flex-col overflow-y-auto border-l border-zinc-200 bg-[#fbf8f0] xl:flex">

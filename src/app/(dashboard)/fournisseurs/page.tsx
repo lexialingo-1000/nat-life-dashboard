@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { suppliers, supplierContacts } from '@/db/schema';
 import { asc, sql, eq } from 'drizzle-orm';
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { FournisseursTable, type FournisseurRow } from './fournisseurs-table';
 
@@ -57,10 +56,10 @@ export default async function FournisseursPage() {
             Carnet d'adresses · multi-contacts et documents typés (RC, décennale, KBis).
           </p>
         </div>
-        <Link href="/fournisseurs/new" className="btn-primary">
+        <a href="/fournisseurs/new" className="btn-primary">
           <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
           Ajouter un fournisseur
-        </Link>
+        </a>
       </header>
 
       {dbError && (

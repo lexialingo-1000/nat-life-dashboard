@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { companies } from '@/db/schema';
 import { asc } from 'drizzle-orm';
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { SocietesTable, type SocieteRow } from './societes-table';
 
@@ -41,10 +40,10 @@ export default async function SocietesPage() {
             Multi-société · entités juridiques gérées par FKA Holding.
           </p>
         </div>
-        <Link href="/societes/new" className="btn-primary">
+        <a href="/societes/new" className="btn-primary">
           <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
           Ajouter une société
-        </Link>
+        </a>
       </header>
 
       {dbError && (
