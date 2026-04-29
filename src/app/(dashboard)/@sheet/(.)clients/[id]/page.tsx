@@ -24,7 +24,7 @@ export default async function ClientSheetPage({ params }: { params: { id: string
     c.companyName ?? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() ?? 'Client';
 
   return (
-    <SheetWrapper fullPageHref={`/clients/${c.id}`}>
+    <SheetWrapper key={c.id} fullPageHref={`/clients/${c.id}`}>
       <div className={c.isActive ? '' : 'opacity-75'}>
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
           Client

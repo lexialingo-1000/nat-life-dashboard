@@ -32,7 +32,7 @@ export default async function SocieteSheetPage({ params }: { params: { id: strin
   const c = rows[0];
 
   return (
-    <SheetWrapper fullPageHref={`/societes/${c.id}`}>
+    <SheetWrapper key={c.id} fullPageHref={`/societes/${c.id}`}>
       <div className={c.isActive ? '' : 'opacity-75'}>
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
           Société

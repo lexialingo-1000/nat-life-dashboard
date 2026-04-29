@@ -1,5 +1,14 @@
 import { db } from '@/db/client';
-import { properties, lots, companies, marchesTravaux, marcheLotAffectations, suppliers } from '@/db/schema';
+import {
+  properties,
+  lots,
+  companies,
+  marchesTravaux,
+  marcheLotAffectations,
+  suppliers,
+  levels,
+  rooms,
+} from '@/db/schema';
 import { eq, asc, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +17,7 @@ import { DeleteButton } from '@/components/delete-button';
 import { deletePropertyAction } from '../actions';
 import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
   devis_recu: 'Devis reçu',
@@ -55,6 +65,56 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       .orderBy(asc(lots.name));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
+  }
+
+  let lotsLevels: { lotId: string; lotName: string; levels: LevelWithRooms[] }[] = [];
+  let totalLevels = 0;
+  if (property && propertyLots.length > 0) {
+    const lotIds = propertyLots.map((l) => l.id);
+
+    const levelRows = await db
+      .select({
+        id: levels.id,
+        name: levels.name,
+        sortOrder: levels.sortOrder,
+        lotId: levels.lotId,
+      })
+      .from(levels)
+      .innerJoin(lots, eq(lots.id, levels.lotId))
+      .where(eq(lots.propertyId, property.id))
+      .orderBy(asc(levels.sortOrder));
+
+    const roomRows = levelRows.length
+      ? await db
+          .select({
+            id: rooms.id,
+            name: rooms.name,
+            surfaceM2: rooms.surfaceM2,
+            levelId: rooms.levelId,
+          })
+          .from(rooms)
+          .innerJoin(levels, eq(levels.id, rooms.levelId))
+          .innerJoin(lots, eq(lots.id, levels.lotId))
+          .where(eq(lots.propertyId, property.id))
+          .orderBy(asc(rooms.name))
+      : [];
+
+    totalLevels = levelRows.length;
+
+    lotsLevels = propertyLots.map((lot) => ({
+      lotId: lot.id,
+      lotName: lot.name,
+      levels: levelRows
+        .filter((lv) => lv.lotId === lot.id)
+        .map((lv) => ({
+          id: lv.id,
+          name: lv.name,
+          sortOrder: lv.sortOrder,
+          rooms: roomRows
+            .filter((r) => r.levelId === lv.id)
+            .map((r) => ({ id: r.id, name: r.name, surfaceM2: r.surfaceM2 })),
+        })),
+    }));
   }
 
   let propertyMarches: any[] = [];
@@ -270,6 +330,53 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
+  const niveauxTab = (() => {
+    if (propertyLots.length === 0) {
+      return (
+        <div className="card p-6">
+          <p className="text-sm text-zinc-500">
+            Ajoute un lot d'abord pour pouvoir y déclarer des niveaux et pièces. Un niveau est
+            rattaché à un lot précis (un immeuble peut héberger plusieurs lots avec leur propre
+            découpage).
+          </p>
+          <p className="mt-3 text-[12px] text-zinc-400">
+            Un lot se crée depuis la fiche de ce bien (à venir) ou via la page Biens.
+          </p>
+        </div>
+      );
+    }
+
+    if (propertyLots.length === 1) {
+      const only = lotsLevels[0];
+      return (
+        <div className="card p-6">
+          <LevelsRoomsManager lotId={only.lotId} levels={only.levels} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {lotsLevels.map((bucket) => (
+          <div key={bucket.lotId} className="card p-6">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+                {bucket.lotName}
+              </h3>
+              <Link
+                href={`/biens/lots/${bucket.lotId}`}
+                className="text-[12px] text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] hover:decoration-emerald-700"
+              >
+                Ouvrir la fiche du lot →
+              </Link>
+            </div>
+            <LevelsRoomsManager lotId={bucket.lotId} levels={bucket.levels} />
+          </div>
+        ))}
+      </div>
+    );
+  })();
+
   const documentsTab = (
     <div className="card p-6">
       <p className="text-sm text-zinc-500">
@@ -292,6 +399,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'notaire', label: 'Notaire', content: notaireTab },
     { id: 'lots', label: 'Lots', count: propertyLots.length, content: lotsTab },
+    {
+      id: 'niveaux',
+      label: 'Niveaux & pièces',
+      count: totalLevels || undefined,
+      content: niveauxTab,
+    },
     { id: 'marches', label: 'Marchés', count: propertyMarches.length, content: marchesTab },
     { id: 'documents', label: 'Documents', content: documentsTab },
     { id: 'notes', label: 'Notes', content: notesTab },

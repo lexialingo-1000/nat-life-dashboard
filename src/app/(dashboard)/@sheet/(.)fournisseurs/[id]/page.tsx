@@ -36,7 +36,7 @@ export default async function FournisseurSheetPage({ params }: { params: { id: s
     s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
 
   return (
-    <SheetWrapper fullPageHref={`/fournisseurs/${s.id}`}>
+    <SheetWrapper key={s.id} fullPageHref={`/fournisseurs/${s.id}`}>
       <div className={s.isActive ? '' : 'opacity-75'}>
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
           Fournisseur
