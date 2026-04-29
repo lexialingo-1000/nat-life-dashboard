@@ -19,6 +19,46 @@ const customerSchema = z.object({
   notes: z.string().optional().or(z.literal('')),
 });
 
+const customerUpdateSchema = customerSchema.extend({
+  id: z.string().uuid(),
+  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()),
+});
+
+export async function updateCustomerAction(formData: FormData): Promise<void> {
+  const parsed = customerUpdateSchema.safeParse({
+    id: formData.get('id'),
+    companyName: formData.get('companyName'),
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    address: formData.get('address'),
+    phone: formData.get('phone'),
+    email: formData.get('email'),
+    notes: formData.get('notes'),
+    isActive: formData.get('isActive'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db
+    .update(customers)
+    .set({
+      companyName: data.companyName || null,
+      firstName: data.firstName || null,
+      lastName: data.lastName || null,
+      address: data.address || null,
+      phone: data.phone || null,
+      email: data.email || null,
+      notes: data.notes || null,
+      isActive: data.isActive,
+      updatedAt: new Date(),
+    })
+    .where(eq(customers.id, data.id));
+  revalidatePath('/clients');
+  revalidatePath(`/clients/${data.id}`);
+  redirect(`/clients/${data.id}`);
+}
+
 export async function createCustomerAction(formData: FormData): Promise<void> {
   const parsed = customerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

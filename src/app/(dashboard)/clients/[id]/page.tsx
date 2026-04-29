@@ -3,7 +3,7 @@ import { customers, customerDocuments, documentTypes } from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import {
   uploadCustomerDocumentAction,
   deleteCustomerDocumentAction,
@@ -176,6 +176,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href={`/clients/${customer.id}/edit`} className="btn-secondary inline-flex items-center">
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Modifier
+          </Link>
           <form action={toggleCustomerActiveAction}>
             <input type="hidden" name="id" value={customer.id} />
             <button type="submit" className="btn-secondary">

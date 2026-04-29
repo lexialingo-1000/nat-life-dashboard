@@ -5,6 +5,25 @@ import { sql } from 'drizzle-orm';
 import { Building2, Hammer, UserCircle, Briefcase, HardHat, Home as HomeIcon } from 'lucide-react';
 import Link from 'next/link';
 
+const FORME_LABELS: Record<string, string> = {
+  sas: 'SAS',
+  sarl: 'SARL',
+  sci: 'SCI',
+  indivision: 'Indivision',
+  eurl: 'EURL',
+  sa: 'SA',
+  auto_entrepreneur: 'Auto-entrepreneur',
+  autre: 'Autre',
+};
+
+function formatFormesBreakdown(rows: { formeJuridique: string | null; n: number }[]): string {
+  const ordered = rows
+    .filter((r) => r.n > 0)
+    .map((r) => ({ label: FORME_LABELS[r.formeJuridique ?? 'autre'] ?? 'Autre', n: r.n }))
+    .sort((a, b) => b.n - a.n);
+  return ordered.map((r) => `${r.n} ${r.label}`).join(' · ');
+}
+
 async function fetchCounts() {
   try {
     const [c1] = await db.select({ n: sql<number>`count(*)::int` }).from(companies);
@@ -13,8 +32,16 @@ async function fetchCounts() {
     const [c4] = await db.select({ n: sql<number>`count(*)::int` }).from(properties);
     const [c5] = await db.select({ n: sql<number>`count(*)::int` }).from(lots);
     const [c6] = await db.select({ n: sql<number>`count(*)::int` }).from(marchesTravaux);
+    const formesRows = await db
+      .select({
+        formeJuridique: companies.formeJuridique,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(companies)
+      .groupBy(companies.formeJuridique);
     return {
       societes: c1.n,
+      societesBreakdown: formatFormesBreakdown(formesRows),
       fournisseurs: c2.n,
       clients: c3.n,
       properties: c4.n,
@@ -58,6 +85,7 @@ export default async function DashboardHome() {
         <FeaturedKpi
           label="Sociétés"
           value={counts?.societes}
+          sublabel={counts?.societesBreakdown}
           icon={Briefcase}
           href="/societes"
           accent

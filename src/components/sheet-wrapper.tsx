@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { X, Maximize2 } from 'lucide-react';
 
 export function SheetWrapper({
@@ -29,13 +28,13 @@ export function SheetWrapper({
           Fiche
         </span>
         <div className="flex items-center gap-1">
-          <Link
+          <a
             href={fullPageHref}
             className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-zinc-500 transition-colors duration-150 ease-out-quart hover:bg-zinc-200/60 hover:text-zinc-900"
             aria-label="Ouvrir en pleine page"
           >
             <Maximize2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-          </Link>
+          </a>
           <button
             type="button"
             onClick={() => router.back()}

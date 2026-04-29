@@ -22,6 +22,48 @@ const supplierSchema = z.object({
   notes: z.string().optional().or(z.literal('')),
 });
 
+const supplierUpdateSchema = supplierSchema.extend({
+  id: z.string().uuid(),
+  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()),
+});
+
+export async function updateSupplierAction(formData: FormData): Promise<void> {
+  const parsed = supplierUpdateSchema.safeParse({
+    id: formData.get('id'),
+    companyName: formData.get('companyName'),
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    address: formData.get('address'),
+    phone: formData.get('phone'),
+    email: formData.get('email'),
+    invoicingType: formData.get('invoicingType') ?? 'manual_upload',
+    notes: formData.get('notes'),
+    isActive: formData.get('isActive'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db
+    .update(suppliers)
+    .set({
+      companyName: data.companyName || null,
+      firstName: data.firstName || null,
+      lastName: data.lastName || null,
+      address: data.address || null,
+      phone: data.phone || null,
+      email: data.email || null,
+      invoicingType: data.invoicingType,
+      notes: data.notes || null,
+      isActive: data.isActive,
+      updatedAt: new Date(),
+    })
+    .where(eq(suppliers.id, data.id));
+  revalidatePath('/fournisseurs');
+  revalidatePath(`/fournisseurs/${data.id}`);
+  redirect(`/fournisseurs/${data.id}`);
+}
+
 export async function createSupplierAction(formData: FormData): Promise<void> {
   const parsed = supplierSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

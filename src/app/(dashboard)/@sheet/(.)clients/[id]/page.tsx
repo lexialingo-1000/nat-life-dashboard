@@ -2,10 +2,11 @@ import { db } from '@/db/client';
 import { customers, customerDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { SheetWrapper } from '@/components/sheet-wrapper';
 import { DeleteButton } from '@/components/delete-button';
 import { deleteCustomerAction, toggleCustomerActiveAction } from '../../../clients/actions';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, Pencil } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,13 @@ export default async function ClientSheetPage({ params }: { params: { id: string
         </div>
 
         <div className="mt-8 flex flex-col gap-2 border-t border-zinc-200 pt-6">
+          <Link
+            href={`/clients/${c.id}/edit`}
+            className="btn-secondary inline-flex items-center justify-center"
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Modifier
+          </Link>
           <form action={toggleCustomerActiveAction}>
             <input type="hidden" name="id" value={c.id} />
             <button type="submit" className="btn-secondary w-full">

@@ -12,7 +12,7 @@ import {
   deleteSupplierDocumentAction,
   getSupplierDocumentUrlAction,
 } from '../actions';
-import { Plus, Mail, Phone, Briefcase, ArrowLeft } from 'lucide-react';
+import { Plus, Mail, Phone, Briefcase, ArrowLeft, Pencil } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
 import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
@@ -268,6 +268,10 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href={`/fournisseurs/${s.id}/edit`} className="btn-secondary inline-flex items-center">
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Modifier
+          </Link>
           <form action={toggleSupplierActiveAction}>
             <input type="hidden" name="id" value={s.id} />
             <button type="submit" className="btn-secondary">
