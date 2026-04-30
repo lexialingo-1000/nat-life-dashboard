@@ -59,6 +59,12 @@ export async function updateCustomerAction(formData: FormData): Promise<void> {
   redirect(`/clients/${data.id}`);
 }
 
+function safeReturnTo(value: unknown, fallback: string): string {
+  const v = typeof value === 'string' ? value : '';
+  if (!v.startsWith('/') || v.startsWith('//')) return fallback;
+  return v;
+}
+
 export async function createCustomerAction(formData: FormData): Promise<void> {
   const parsed = customerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -83,7 +89,9 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
     .returning({ id: customers.id });
 
   revalidatePath('/clients');
-  redirect(`/clients/${inserted[0].id}`);
+  revalidatePath('/locations');
+  const fallback = `/clients/${inserted[0].id}`;
+  redirect(safeReturnTo(formData.get('returnTo'), fallback));
 }
 
 /**

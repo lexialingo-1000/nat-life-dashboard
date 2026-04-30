@@ -24,11 +24,11 @@ const INVOICING_LABELS: Record<string, string> = {
 const columns: ColumnDef<FournisseurRow>[] = [
   {
     accessorKey: 'displayName',
-    header: 'Société / Nom',
+    header: 'Fournisseur',
     cell: ({ row }) => (
       <EntityLink
         href={`/fournisseurs/${row.original.id}`}
-        className="link-cell"
+        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
         title="Clic : aperçu · Double-clic : fiche complète"
       >
         {row.original.displayName}

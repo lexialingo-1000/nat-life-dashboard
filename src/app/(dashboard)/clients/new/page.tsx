@@ -1,16 +1,31 @@
 import { createCustomerAction } from '../actions';
 
-export default function NewClientPage() {
+interface SearchParams {
+  returnTo?: string;
+}
+
+export default function NewClientPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const returnTo = searchParams.returnTo ?? '';
+  const fromLocations = returnTo === '/locations';
+  const cancelHref = fromLocations ? '/locations' : '/clients';
+
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Ajouter un client</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {fromLocations ? 'Ajouter un locataire' : 'Ajouter un client'}
+        </h1>
         <p className="mt-1 text-sm text-zinc-500">
           Cette table couvre clients FKA (B2B) et locataires Valrose/KAPIMMO.
         </p>
       </div>
 
       <form action={createCustomerAction} className="card space-y-4 p-6">
+        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
         <div>
           <label className="block text-sm font-medium">Raison sociale</label>
           <input name="companyName" className="input mt-1" />
@@ -57,8 +72,10 @@ export default function NewClientPage() {
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <a href="/clients" className="btn-secondary">Annuler</a>
-          <button type="submit" className="btn-primary">Créer le client</button>
+          <a href={cancelHref} className="btn-secondary">Annuler</a>
+          <button type="submit" className="btn-primary">
+            {fromLocations ? 'Créer le locataire' : 'Créer le client'}
+          </button>
         </div>
       </form>
     </div>

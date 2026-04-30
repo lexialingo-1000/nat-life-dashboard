@@ -53,12 +53,25 @@ const PERIODICITE_SUFFIX: Record<string, string> = {
 
 const columns: ColumnDef<LocationRow>[] = [
   {
+    accessorKey: 'customerLabel',
+    header: 'Locataire',
+    cell: ({ row }) => (
+      <EntityLink
+        href={`/locations/${row.original.id}`}
+        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
+        title="Clic : aperçu · Double-clic : fiche complète location"
+      >
+        {row.original.customerLabel}
+      </EntityLink>
+    ),
+  },
+  {
     accessorKey: 'propertyName',
     header: 'Bien',
     cell: ({ row }) => (
       <Link
         href={`/biens/properties/${row.original.propertyId}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
+        className="link-cell-soft whitespace-nowrap"
       >
         {row.original.propertyName}
       </Link>
@@ -74,19 +87,6 @@ const columns: ColumnDef<LocationRow>[] = [
       >
         {row.original.lotName}
       </Link>
-    ),
-  },
-  {
-    accessorKey: 'customerLabel',
-    header: 'Locataire',
-    cell: ({ row }) => (
-      <EntityLink
-        href={`/locations/${row.original.id}`}
-        className="link-cell whitespace-nowrap"
-        title="Clic : aperçu · Double-clic : fiche complète location"
-      >
-        {row.original.customerLabel}
-      </EntityLink>
     ),
   },
   {

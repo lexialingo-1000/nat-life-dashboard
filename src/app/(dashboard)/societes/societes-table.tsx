@@ -18,11 +18,11 @@ export type SocieteRow = {
 const columns: ColumnDef<SocieteRow>[] = [
   {
     accessorKey: 'name',
-    header: 'Nom',
+    header: 'Société',
     cell: ({ row }) => (
       <EntityLink
         href={`/societes/${row.original.id}`}
-        className="link-cell"
+        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
         title="Clic : aperçu · Double-clic : fiche complète"
       >
         {row.original.name}

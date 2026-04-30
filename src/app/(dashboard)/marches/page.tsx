@@ -77,7 +77,7 @@ export default async function MarchesPage() {
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-zinc-500">
               <tr>
-                <th className="px-4 py-3">Nom</th>
+                <th className="px-4 py-3">Marché</th>
                 <th className="px-4 py-3">Société</th>
                 <th className="px-4 py-3">Bien</th>
                 <th className="px-4 py-3">Lots concernés</th>
@@ -90,7 +90,10 @@ export default async function MarchesPage() {
               {rows.map((m) => (
                 <tr key={m.id} className="hover:bg-zinc-50">
                   <td className="px-4 py-3">
-                    <Link href={`/marches/${m.id}`} className="link-cell">
+                    <Link
+                      href={`/marches/${m.id}`}
+                      className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
+                    >
                       {m.name}
                     </Link>
                   </td>
