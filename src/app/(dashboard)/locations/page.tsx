@@ -97,14 +97,17 @@ export default async function LocationsListPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
+          {/* <a href> et pas <Link> : full reload pour bypass l'intercept
+              @sheet/(.)clients/[id] qui capturerait sinon le segment "new"
+              et laisserait /locations affiché derrière. */}
+          <a
             href="/clients/new?returnTo=/locations"
             className="btn-secondary"
             title="Créer un locataire (sans le rattacher tout de suite à une location)"
           >
             <UserPlus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Nouveau locataire
-          </Link>
+          </a>
           <Link href="/locations/new" className="btn-primary">
             <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Nouvelle location
