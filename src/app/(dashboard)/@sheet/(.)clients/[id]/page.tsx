@@ -10,7 +10,13 @@ import { Mail, Phone, Pencil } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function ClientSheetPage({ params }: { params: { id: string } }) {
+  // Garde : l'intercept [id] capture aussi /clients/new, /clients/[uuid]/edit, etc.
+  // Si l'id n'est pas un UUID, on ne rend pas le sheet (laisse @sheet vide).
+  if (!UUID_RE.test(params.id)) return null;
+
   const rows = await db.select().from(customers).where(eq(customers.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const c = rows[0];

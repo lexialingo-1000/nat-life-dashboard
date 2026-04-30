@@ -17,7 +17,12 @@ const INVOICING_LABELS: Record<string, string> = {
   manual_upload: 'Manuel',
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function FournisseurSheetPage({ params }: { params: { id: string } }) {
+  // Garde : l'intercept [id] capture aussi /fournisseurs/new, /fournisseurs/[uuid]/edit.
+  if (!UUID_RE.test(params.id)) return null;
+
   const rows = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const s = rows[0];

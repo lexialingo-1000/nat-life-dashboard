@@ -26,7 +26,12 @@ const FORME_LABELS: Record<string, string> = {
   autre: 'Autre',
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function SocieteSheetPage({ params }: { params: { id: string } }) {
+  // Garde : l'intercept [id] capture aussi /societes/new, /societes/[uuid]/edit.
+  if (!UUID_RE.test(params.id)) return null;
+
   const rows = await db.select().from(companies).where(eq(companies.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const c = rows[0];
