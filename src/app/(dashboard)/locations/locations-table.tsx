@@ -54,7 +54,7 @@ const PERIODICITE_SUFFIX: Record<string, string> = {
 const columns: ColumnDef<LocationRow>[] = [
   {
     accessorKey: 'customerLabel',
-    header: 'Locataire',
+    header: 'Location',
     cell: ({ row }) => (
       <EntityLink
         href={`/locations/${row.original.id}`}

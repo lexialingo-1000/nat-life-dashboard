@@ -1,6 +1,7 @@
 import { db } from '@/db/client';
 import {
   lots,
+  lotDocuments,
   properties,
   companies,
   levels,
@@ -10,15 +11,23 @@ import {
   suppliers,
   locations,
   customers,
+  documentTypes,
 } from '@/db/schema';
-import { eq, asc, desc } from 'drizzle-orm';
+import { eq, asc, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { DocumentsManager } from '@/components/documents-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
+import {
+  uploadLotDocumentAction,
+  deleteLotDocumentAction,
+  getLotDocumentUrlAction,
+} from '../../actions';
 import { formatDate } from '@/lib/utils';
+import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
   devis_recu: 'Devis reçu',
@@ -150,6 +159,34 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       .innerJoin(customers, eq(customers.id, locations.customerId))
       .where(eq(locations.lotId, lot.id))
       .orderBy(desc(locations.dateDebut));
+  }
+
+  let lotDocs: any[] = [];
+  let lotDocTypes: any[] = [];
+  if (lot) {
+    lotDocs = await db
+      .select({
+        id: lotDocuments.id,
+        name: lotDocuments.name,
+        typeLabel: documentTypes.label,
+        storageKey: lotDocuments.storageKey,
+        expiresAt: lotDocuments.expiresAt,
+        documentDate: lotDocuments.documentDate,
+      })
+      .from(lotDocuments)
+      .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
+      .where(eq(lotDocuments.lotId, lot.id))
+      .orderBy(asc(documentTypes.sortOrder));
+
+    lotDocTypes = await db
+      .select({
+        id: documentTypes.id,
+        label: documentTypes.label,
+        hasExpiration: documentTypes.hasExpiration,
+      })
+      .from(documentTypes)
+      .where(and(eq(documentTypes.scope, 'lot'), eq(documentTypes.isActive, true)))
+      .orderBy(asc(documentTypes.sortOrder));
   }
 
   if (!lot) {
@@ -337,10 +374,24 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
   const documentsTab = (
     <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Diagnostics, photos, etc. — branchement MinIO à venir sur ce scope. L'upload est déjà
-        actif sur les fournisseurs, clients, sociétés et marchés.
-      </p>
+      <DocumentsManager
+        scope="lots"
+        parentId={lot.id}
+        parentSlug={slugify(`${lot.propertyName}-${lot.name}`)}
+        parentIdFieldName="lotId"
+        documents={lotDocs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+        }))}
+        availableTypes={lotDocTypes}
+        uploadAction={uploadLotDocumentAction}
+        deleteAction={deleteLotDocumentAction}
+        getUrlAction={getLotDocumentUrlAction}
+      />
     </div>
   );
 
@@ -365,7 +416,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       count: lotMarches.length || undefined,
       content: marchesTab,
     },
-    { id: 'documents', label: 'Documents', content: documentsTab },
+    { id: 'documents', label: 'Documents', count: lotDocs.length, content: documentsTab },
   ];
 
   return (

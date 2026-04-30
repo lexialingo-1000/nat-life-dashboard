@@ -1,8 +1,9 @@
 'use server';
 
 import { db } from '@/db/client';
-import { lots, levels, rooms } from '@/db/schema';
+import { lots, levels, rooms, lotDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -141,4 +142,68 @@ export async function deleteRoomAction(formData: FormData): Promise<void> {
 
   await db.delete(rooms).where(eq(rooms.id, roomId));
   revalidatePath(`/biens/lots/${lotId}`);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Documents lot — diagnostiques DPE/amiante, photos, etc. (V1.4.2)
+// ──────────────────────────────────────────────────────────────────────────
+
+const lotDocumentSchema = z.object({
+  lotId: z.string().uuid(),
+  typeId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  storageKey: z.string().min(1),
+  documentDate: z.string().optional().or(z.literal('')),
+  expiresAt: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function uploadLotDocumentAction(formData: FormData): Promise<void> {
+  const parsed = lotDocumentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db.insert(lotDocuments).values({
+    lotId: data.lotId,
+    typeId: data.typeId,
+    name: data.name,
+    storageKey: data.storageKey,
+    documentDate: data.documentDate || null,
+    expiresAt: data.expiresAt || null,
+    notes: data.notes || null,
+  });
+  revalidatePath(`/biens/lots/${data.lotId}`);
+}
+
+export async function deleteLotDocumentAction(formData: FormData): Promise<void> {
+  const documentId = String(formData.get('documentId') ?? '');
+  const lotId = String(formData.get('lotId') ?? '');
+  if (!documentId || !lotId) throw new Error('IDs manquants');
+
+  const rows = await db
+    .select({ storageKey: lotDocuments.storageKey })
+    .from(lotDocuments)
+    .where(eq(lotDocuments.id, documentId))
+    .limit(1);
+
+  if (rows[0]?.storageKey) {
+    await deleteObject(rows[0].storageKey);
+  }
+
+  await db.delete(lotDocuments).where(eq(lotDocuments.id, documentId));
+  revalidatePath(`/biens/lots/${lotId}`);
+}
+
+export async function getLotDocumentUrlAction(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!storageKey) return { error: 'Clé manquante' };
+  try {
+    const url = await getDownloadUrl(storageKey);
+    return { url };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur MinIO' };
+  }
 }

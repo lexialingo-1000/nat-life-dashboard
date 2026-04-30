@@ -1,6 +1,7 @@
 import { db } from '@/db/client';
 import {
   properties,
+  propertyDocuments,
   lots,
   companies,
   marchesTravaux,
@@ -8,17 +9,25 @@ import {
   suppliers,
   levels,
   rooms,
+  documentTypes,
 } from '@/db/schema';
-import { eq, asc, sql } from 'drizzle-orm';
+import { eq, asc, and, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus } from 'lucide-react';
 import { DeleteButton } from '@/components/delete-button';
-import { deletePropertyAction } from '../actions';
+import {
+  deletePropertyAction,
+  uploadPropertyDocumentAction,
+  deletePropertyDocumentAction,
+  getPropertyDocumentUrlAction,
+} from '../actions';
 import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
+import { DocumentsManager } from '@/components/documents-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
+import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
   devis_recu: 'Devis reçu',
@@ -148,6 +157,30 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       </div>
     );
   }
+
+  const propertyDocs = await db
+    .select({
+      id: propertyDocuments.id,
+      name: propertyDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: propertyDocuments.storageKey,
+      expiresAt: propertyDocuments.expiresAt,
+      documentDate: propertyDocuments.documentDate,
+    })
+    .from(propertyDocuments)
+    .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
+    .where(eq(propertyDocuments.propertyId, property.id))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const propertyDocTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(and(eq(documentTypes.scope, 'property'), eq(documentTypes.isActive, true)))
+    .orderBy(asc(documentTypes.sortOrder));
 
   const notaire = (property.notaire as any) ?? {};
 
@@ -383,10 +416,24 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   const documentsTab = (
     <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Documents (compromis, acte d'achat, règlement de copro, PV AG…) — branchement MinIO à
-        venir sur ce scope. L'upload est déjà actif sur les fournisseurs et clients.
-      </p>
+      <DocumentsManager
+        scope="properties"
+        parentId={property.id}
+        parentSlug={slugify(property.name)}
+        parentIdFieldName="propertyId"
+        documents={propertyDocs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+        }))}
+        availableTypes={propertyDocTypes}
+        uploadAction={uploadPropertyDocumentAction}
+        deleteAction={deletePropertyDocumentAction}
+        getUrlAction={getPropertyDocumentUrlAction}
+      />
     </div>
   );
 
@@ -402,7 +449,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       content: niveauxTab,
     },
     { id: 'marches', label: 'Marchés', count: propertyMarches.length, content: marchesTab },
-    { id: 'documents', label: 'Documents', content: documentsTab },
+    { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
 
   return (
