@@ -110,7 +110,7 @@ export function DataTable<T>({
   const selectedCount = enableSelection ? Object.keys(rowSelection).length : 0;
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-x-auto">
       <table className="w-full text-[13px]">
         <thead className="border-b border-zinc-200">
           {table.getHeaderGroups().map((headerGroup) => (

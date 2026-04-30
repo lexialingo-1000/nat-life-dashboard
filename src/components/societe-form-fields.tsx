@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 import { lookupSirenAction } from '@/app/(dashboard)/societes/actions';
+import { normalizeSirenOrSiret } from '@/lib/recherche-entreprises';
 
 const FORME_OPTIONS = [
   { value: 'sas', label: 'SAS' },
@@ -57,14 +58,14 @@ export function SocieteFormFields({
 
   const handleLookup = async () => {
     setLookupError(null);
-    const cleaned = siren.replace(/\s/g, '');
-    if (!/^\d{9}$/.test(cleaned)) {
-      setLookupError('SIREN invalide (9 chiffres)');
+    const normalized = normalizeSirenOrSiret(siren);
+    if (!normalized) {
+      setLookupError('Saisissez un numéro SIREN (9 chiffres) ou SIRET (14 chiffres).');
       return;
     }
     setLookupLoading(true);
     const fd = new FormData();
-    fd.set('siren', cleaned);
+    fd.set('siren', normalized);
     const res = await lookupSirenAction(fd);
     setLookupLoading(false);
     if (res.error) {
@@ -72,6 +73,7 @@ export function SocieteFormFields({
       return;
     }
     if (res.data) {
+      setSiren(res.data.siren);
       setName(res.data.name);
       setFormeJuridique(res.data.formeJuridique);
       setAddress(res.data.address ?? '');
@@ -126,7 +128,7 @@ export function SocieteFormFields({
       </div>
 
       <div>
-        <label className="block text-sm font-medium">SIREN</label>
+        <label className="block text-sm font-medium">SIREN ou SIRET</label>
         <div className="mt-1 flex gap-2">
           <input
             type="text"
@@ -134,8 +136,11 @@ export function SocieteFormFields({
             value={siren}
             onChange={(e) => setSiren(e.target.value)}
             className="input flex-1 font-mono text-sm"
-            placeholder="123456789"
-            maxLength={11}
+            placeholder="123456789 (SIREN) ou 12345678900012 (SIRET)"
+            maxLength={20}
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
           />
           {enableSirenLookup && (
             <button

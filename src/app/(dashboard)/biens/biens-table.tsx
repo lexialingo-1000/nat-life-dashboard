@@ -32,24 +32,12 @@ const STATUS_BADGES: Record<string, string> = {
 
 const columns: ColumnDef<BienLotRow>[] = [
   {
-    accessorKey: 'companyName',
-    header: 'Société',
-    cell: ({ row }) => (
-      <Link
-        href={`/societes/${row.original.companyId}`}
-        className="link-cell-soft text-[12px]"
-      >
-        {row.original.companyName}
-      </Link>
-    ),
-  },
-  {
     accessorKey: 'propertyName',
     header: 'Bien',
     cell: ({ row }) => (
       <Link
         href={`/biens/properties/${row.original.propertyId}`}
-        className="link-cell-soft"
+        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
       >
         {row.original.propertyName}
       </Link>
@@ -59,8 +47,23 @@ const columns: ColumnDef<BienLotRow>[] = [
     accessorKey: 'lotName',
     header: 'Lot',
     cell: ({ row }) => (
-      <Link href={`/biens/lots/${row.original.lotId}`} className="link-cell">
+      <Link
+        href={`/biens/lots/${row.original.lotId}`}
+        className="link-cell-soft whitespace-nowrap"
+      >
         {row.original.lotName}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'companyName',
+    header: 'Société',
+    cell: ({ row }) => (
+      <Link
+        href={`/societes/${row.original.companyId}`}
+        className="link-cell-soft whitespace-nowrap text-[12px]"
+      >
+        {row.original.companyName}
       </Link>
     ),
   },

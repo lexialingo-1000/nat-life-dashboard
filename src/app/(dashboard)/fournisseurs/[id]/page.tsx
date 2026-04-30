@@ -17,6 +17,7 @@ import { DeleteButton } from '@/components/delete-button';
 import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { NotesCard } from '@/components/notes-card';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -76,19 +77,22 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   }).length;
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-4">
-      <Kpi
-        label="État"
-        value={s.isActive ? 'Actif' : 'Inactif'}
-        variant={s.isActive ? 'good' : 'warn'}
-      />
-      <Kpi label="Contacts" value={contacts.length} />
-      <Kpi label="Documents" value={docs.length} />
-      <Kpi
-        label="Docs à renouveler"
-        value={expiringDocsCount}
-        variant={expiringDocsCount > 0 ? 'warn' : 'default'}
-      />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Kpi
+          label="État"
+          value={s.isActive ? 'Actif' : 'Inactif'}
+          variant={s.isActive ? 'good' : 'warn'}
+        />
+        <Kpi label="Contacts" value={contacts.length} />
+        <Kpi label="Documents" value={docs.length} />
+        <Kpi
+          label="Docs à renouveler"
+          value={expiringDocsCount}
+          variant={expiringDocsCount > 0 ? 'warn' : 'default'}
+        />
+      </div>
+      <NotesCard notes={s.notes} />
     </div>
   );
 
@@ -242,21 +246,12 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
-  const notesTab = (
-    <div className="card p-5">
-      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
-        {s.notes ?? 'Aucune note.'}
-      </p>
-    </div>
-  );
-
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'contacts', label: 'Contacts', count: contacts.length, content: contactsTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
     { id: 'factures', label: 'Factures', content: facturesTab },
-    { id: 'notes', label: 'Notes', content: notesTab },
   ];
 
   return (

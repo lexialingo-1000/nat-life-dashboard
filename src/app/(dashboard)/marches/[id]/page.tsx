@@ -22,6 +22,7 @@ import {
 } from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
+import { NotesCard } from '@/components/notes-card';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -116,21 +117,24 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     '—';
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Kpi
-        label="Montant HT"
-        value={
-          marche.amountHt
-            ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
-            : '—'
-        }
-      />
-      <Kpi label="Lots concernés" value={affectedLots.length || 'communs'} />
-      <Kpi
-        label="Statut"
-        value={STATUS_LABELS[marche.status] ?? marche.status}
-        variant={STATUS_VARIANT[marche.status] ?? 'default'}
-      />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Kpi
+          label="Montant HT"
+          value={
+            marche.amountHt
+              ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
+              : '—'
+          }
+        />
+        <Kpi label="Lots concernés" value={affectedLots.length || 'communs'} />
+        <Kpi
+          label="Statut"
+          value={STATUS_LABELS[marche.status] ?? marche.status}
+          variant={STATUS_VARIANT[marche.status] ?? 'default'}
+        />
+      </div>
+      <NotesCard notes={marche.notes} />
     </div>
   );
 
@@ -238,14 +242,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const notesTab = (
-    <div className="card p-5">
-      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
-        {marche.notes ?? 'Aucune note.'}
-      </p>
-    </div>
-  );
-
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
@@ -256,7 +252,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       content: lotsTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'notes', label: 'Notes', content: notesTab },
   ];
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Download, Loader2, Plus, Trash2, Upload } from 'lucide-react';
+import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
 
 type DocumentRow = {
   id: string;
@@ -58,6 +58,7 @@ export function DocumentsManager({
   const [expiresAt, setExpiresAt] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [pendingTransition, startTransition] = useTransition();
 
   const selectedType = availableTypes.find((t) => t.id === typeId);
@@ -70,6 +71,40 @@ export function DocumentsManager({
     setExpiresAt('');
     setShowForm(false);
     setError(null);
+  };
+
+  const acceptDroppedFile = (dropped: File) => {
+    setFile(dropped);
+    if (!docName) setDocName(dropped.name.replace(/\.[^.]+$/, ''));
+    setShowForm(true);
+    setError(null);
+    if (!typeId && availableTypes.length === 1) setTypeId(availableTypes[0].id);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (availableTypes.length === 0) {
+      setError(
+        'Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de documents ».'
+      );
+      return;
+    }
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) acceptDroppedFile(dropped);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget === e.target) setIsDragging(false);
   };
 
   const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -165,11 +200,30 @@ export function DocumentsManager({
   };
 
   return (
-    <div className="space-y-4">
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={handleDragLeave}
+      className={`relative space-y-4 rounded-md transition-colors ${
+        isDragging
+          ? 'bg-emerald-50/40 outline outline-2 outline-dashed outline-emerald-500/70'
+          : ''
+      }`}
+    >
+      {isDragging && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-700/90 px-4 py-1.5 text-[12px] font-medium text-white shadow-sm">
+            <UploadCloud className="h-4 w-4" />
+            Déposer pour ajouter un document
+          </div>
+        </div>
+      )}
+
       <ul className="space-y-2">
         {documents.length === 0 && (
           <li className="rounded-md border border-dashed border-zinc-200 p-4 text-center text-sm text-zinc-500">
-            Aucun document pour l'instant.
+            Aucun document pour l'instant. Glissez-déposez un fichier ici ou cliquez ci-dessous.
           </li>
         )}
         {documents.map((d) => {
@@ -233,6 +287,9 @@ export function DocumentsManager({
         >
           <Plus className="mr-2 h-4 w-4" />
           Ajouter un document
+          <span className="ml-2 hidden text-[11px] font-normal text-zinc-400 sm:inline">
+            (ou glisser-déposer)
+          </span>
         </button>
       )}
 
@@ -274,9 +331,15 @@ export function DocumentsManager({
                 setFile(f);
                 if (f && !docName) setDocName(f.name.replace(/\.[^.]+$/, ''));
               }}
-              required
+              required={!file}
               className="input mt-1 file:mr-3 file:rounded file:border-0 file:bg-zinc-200 file:px-3 file:py-1 file:text-xs"
             />
+            {file && (
+              <p className="mt-1 text-[11px] text-zinc-500">
+                Sélectionné : <span className="font-medium text-zinc-700">{file.name}</span> (
+                {Math.round(file.size / 1024)} ko)
+              </p>
+            )}
           </div>
 
           <div>

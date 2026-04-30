@@ -58,10 +58,21 @@ function toResult(r: ApiResult): CompanyLookupResult {
   };
 }
 
+/**
+ * Accepte SIREN (9 chiffres) ou SIRET (14 chiffres). Si SIRET, on extrait
+ * le SIREN (premiers 9 chiffres) pour interroger l'API gouv. Espaces ignorés.
+ */
+export function normalizeSirenOrSiret(input: string): string | null {
+  const cleaned = input.replace(/[\s.\-]/g, '');
+  if (/^\d{14}$/.test(cleaned)) return cleaned.slice(0, 9);
+  if (/^\d{9}$/.test(cleaned)) return cleaned;
+  return null;
+}
+
 export async function lookupBySiren(siren: string): Promise<CompanyLookupResult | null> {
-  const cleaned = siren.replace(/\s/g, '');
-  if (!/^\d{9}$/.test(cleaned)) {
-    throw new Error('SIREN invalide (9 chiffres requis)');
+  const cleaned = normalizeSirenOrSiret(siren);
+  if (!cleaned) {
+    throw new Error('Saisissez un numéro SIREN (9 chiffres) ou SIRET (14 chiffres).');
   }
 
   const response = await fetch(`${API_URL}?q=${cleaned}`);

@@ -93,6 +93,52 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
   redirect(`/fournisseurs/${inserted[0].id}`);
 }
 
+/**
+ * Création inline depuis un combobox (form de marché de travaux, etc.).
+ * Retourne l'id et le label, sans redirect.
+ */
+export async function createSupplierInlineAction(formData: FormData): Promise<
+  { id: string; label: string } | { error: string }
+> {
+  const parsed = supplierSchema.safeParse({
+    companyName: formData.get('companyName'),
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    address: formData.get('address'),
+    phone: formData.get('phone'),
+    email: formData.get('email'),
+    invoicingType: formData.get('invoicingType') ?? 'manual_upload',
+    notes: formData.get('notes'),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.errors.map((e) => e.message).join(', ') };
+  }
+  const data = parsed.data;
+  const displayName =
+    data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
+  if (!displayName) {
+    return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
+  }
+
+  const inserted = await db
+    .insert(suppliers)
+    .values({
+      ...data,
+      companyName: data.companyName || null,
+      firstName: data.firstName || null,
+      lastName: data.lastName || null,
+      address: data.address || null,
+      phone: data.phone || null,
+      email: data.email || null,
+      notes: data.notes || null,
+      storagePath: buildStoragePrefix('suppliers', displayName),
+    })
+    .returning({ id: suppliers.id });
+
+  revalidatePath('/fournisseurs');
+  return { id: inserted[0].id, label: displayName };
+}
+
 const contactSchema = z.object({
   supplierId: z.string().uuid(),
   firstName: z.string().optional().or(z.literal('')),

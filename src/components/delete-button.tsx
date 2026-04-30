@@ -14,6 +14,8 @@ interface DeleteButtonProps {
   confirmationPhrase: string;
   /** Description shown in the modal. */
   description: string;
+  /** Extra hidden fields passed to the action (e.g. returnTo, lotId). */
+  extraFields?: Record<string, string>;
 }
 
 export function DeleteButton({
@@ -22,6 +24,7 @@ export function DeleteButton({
   label = 'Supprimer',
   confirmationPhrase,
   description,
+  extraFields,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
@@ -34,6 +37,9 @@ export function DeleteButton({
     startTransition(async () => {
       const fd = new FormData();
       fd.set('id', id);
+      if (extraFields) {
+        for (const [k, v] of Object.entries(extraFields)) fd.set(k, v);
+      }
       await action(fd);
     });
   };

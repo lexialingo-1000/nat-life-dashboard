@@ -58,7 +58,15 @@ export default function NewFournisseurPage() {
 
         <div>
           <label className="block text-sm font-medium">Notes</label>
-          <textarea name="notes" rows={3} className="input mt-1" />
+          <textarea
+            name="notes"
+            rows={3}
+            className="input mt-1"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
+          />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">

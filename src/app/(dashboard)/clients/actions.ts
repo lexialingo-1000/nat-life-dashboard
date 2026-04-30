@@ -86,6 +86,51 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
   redirect(`/clients/${inserted[0].id}`);
 }
 
+/**
+ * Création inline depuis un combobox (formulaire de location, marché, etc.).
+ * Retourne l'id et le label pour sélection immédiate dans le combobox parent.
+ * Pas de redirect — l'appelant fait son propre revalidate.
+ */
+export async function createCustomerInlineAction(formData: FormData): Promise<
+  { id: string; label: string } | { error: string }
+> {
+  const parsed = customerSchema.safeParse({
+    companyName: formData.get('companyName'),
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    address: formData.get('address'),
+    phone: formData.get('phone'),
+    email: formData.get('email'),
+    notes: formData.get('notes'),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.errors.map((e) => e.message).join(', ') };
+  }
+  const data = parsed.data;
+  const displayName =
+    data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
+  if (!displayName) {
+    return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
+  }
+
+  const inserted = await db
+    .insert(customers)
+    .values({
+      companyName: data.companyName || null,
+      firstName: data.firstName || null,
+      lastName: data.lastName || null,
+      address: data.address || null,
+      phone: data.phone || null,
+      email: data.email || null,
+      notes: data.notes || null,
+      storagePath: buildStoragePrefix('customers', displayName),
+    })
+    .returning({ id: customers.id });
+
+  revalidatePath('/clients');
+  return { id: inserted[0].id, label: displayName };
+}
+
 export async function deleteCustomerAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');

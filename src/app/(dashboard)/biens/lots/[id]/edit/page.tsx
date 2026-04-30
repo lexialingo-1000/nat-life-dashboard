@@ -131,6 +131,10 @@ export default async function EditLotPage({ params }: { params: { id: string } }
             defaultValue={lot.notes ?? ''}
             rows={4}
             className="input mt-1"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
           />
         </div>
 

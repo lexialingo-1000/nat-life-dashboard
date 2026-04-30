@@ -14,6 +14,7 @@ import {
   Briefcase,
   HardHat,
   FileBox,
+  KeyRound,
 } from 'lucide-react';
 
 const sections = [
@@ -33,6 +34,7 @@ const sections = [
     title: 'Patrimoine',
     items: [
       { href: '/biens', label: 'Biens immobiliers', icon: Building2 },
+      { href: '/locations', label: 'Locations', icon: KeyRound },
       { href: '/marches', label: 'Marchés de travaux', icon: HardHat },
     ],
   },

@@ -155,7 +155,16 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
         </Section>
 
         <Section title="Notes">
-          <textarea name="notes" defaultValue={p.notes ?? ''} rows={4} className="input" />
+          <textarea
+            name="notes"
+            defaultValue={p.notes ?? ''}
+            rows={4}
+            className="input"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
+          />
         </Section>
 
         <div className="flex justify-end gap-3 pt-2">

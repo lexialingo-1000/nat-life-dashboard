@@ -84,6 +84,10 @@ export default async function EditClientPage({ params }: { params: { id: string 
             defaultValue={c.notes ?? ''}
             rows={3}
             className="input mt-1"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
           />
         </div>
 

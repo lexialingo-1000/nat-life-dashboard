@@ -17,6 +17,7 @@ import { DeleteButton } from '@/components/delete-button';
 import { deletePropertyAction } from '../actions';
 import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { NotesCard } from '@/components/notes-card';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
@@ -151,17 +152,20 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const notaire = (property.notaire as any) ?? {};
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Kpi label="Lots" value={propertyLots.length} />
-      <Kpi label="Marchés de travaux" value={propertyMarches.length} />
-      <Kpi
-        label="Lots loués"
-        value={
-          propertyLots.filter((l) =>
-            ['loue_annuel', 'loue_saisonnier'].includes(l.status as string)
-          ).length
-        }
-      />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Kpi label="Lots" value={propertyLots.length} />
+        <Kpi label="Marchés de travaux" value={propertyMarches.length} />
+        <Kpi
+          label="Lots loués"
+          value={
+            propertyLots.filter((l) =>
+              ['loue_annuel', 'loue_saisonnier'].includes(l.status as string)
+            ).length
+          }
+        />
+      </div>
+      <NotesCard notes={property.notes} />
     </div>
   );
 
@@ -386,14 +390,6 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
-  const notesTab = (
-    <div className="card p-5">
-      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
-        {property.notes ?? 'Aucune note.'}
-      </p>
-    </div>
-  );
-
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
@@ -407,7 +403,6 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     },
     { id: 'marches', label: 'Marchés', count: propertyMarches.length, content: marchesTab },
     { id: 'documents', label: 'Documents', content: documentsTab },
-    { id: 'notes', label: 'Notes', content: notesTab },
   ];
 
   return (

@@ -1,31 +1,26 @@
 import { db } from '@/db/client';
-import { lots, properties, customers } from '@/db/schema';
+import { locations, lots, properties, customers } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { createLocationAction } from '../actions';
+import { updateLocationAction } from '../../actions';
 import { createCustomerInlineAction } from '@/app/(dashboard)/clients/actions';
-import { LocationFormFields } from '../location-form-fields';
+import { LocationFormFields } from '../../location-form-fields';
 
 export const dynamic = 'force-dynamic';
 
-interface SearchParams {
-  lotId?: string;
-  customerId?: string;
-  returnTo?: string;
-}
+export default async function EditLocationPage({ params }: { params: { id: string } }) {
+  const rows = await db
+    .select()
+    .from(locations)
+    .where(eq(locations.id, params.id))
+    .limit(1);
+  if (rows.length === 0) notFound();
+  const loc = rows[0];
 
-export default async function NewLocationPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
   const lotRows = await db
-    .select({
-      id: lots.id,
-      name: lots.name,
-      propertyName: properties.name,
-    })
+    .select({ id: lots.id, name: lots.name, propertyName: properties.name })
     .from(lots)
     .innerJoin(properties, eq(lots.propertyId, properties.id))
     .orderBy(asc(properties.name), asc(lots.name));
@@ -42,23 +37,10 @@ export default async function NewLocationPage({
     .where(eq(customers.isActive, true))
     .orderBy(asc(customers.companyName));
 
-  const presetLotId = searchParams.lotId ?? '';
-  const presetCustomerId = searchParams.customerId ?? '';
-  const returnTo = searchParams.returnTo ?? '';
-
-  const cancelHref =
-    returnTo ||
-    (presetLotId
-      ? `/biens/lots/${presetLotId}`
-      : presetCustomerId
-      ? `/clients/${presetCustomerId}`
-      : '/locations');
-
   const lotOptions = lotRows.map((l) => ({
     id: l.id,
     label: `${l.propertyName.toUpperCase()} · ${l.name}`,
   }));
-
   const customerOptions = customerRows.map((c) => ({
     id: c.id,
     label:
@@ -71,44 +53,51 @@ export default async function NewLocationPage({
   return (
     <div className="max-w-3xl space-y-8">
       <Link
-        href={cancelHref}
+        href={`/locations/${loc.id}`}
         className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Retour
+        Retour à la fiche
       </Link>
 
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
-          Nouvelle location
+          Modifier la location
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-          <span className="display-serif">Lier un locataire à un bien ou un lot</span>
+          <span className="display-serif">Édition</span>
         </h1>
-        <p className="mt-1.5 max-w-xl text-[13px] text-zinc-500">
-          La location établit la relation locative — bail annuel meublé/nu, saisonnier direct ou
-          via plateforme. Renseignez le loyer (avec sa périodicité), le dépôt de garantie et les
-          charges associées.
-        </p>
       </header>
 
-      <form action={createLocationAction} className="card space-y-6 p-6">
-        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+      <form action={updateLocationAction} className="card space-y-6 p-6">
+        <input type="hidden" name="id" value={loc.id} />
 
         <LocationFormFields
           lotOptions={lotOptions}
           customerOptions={customerOptions}
-          defaultLotId={presetLotId}
-          defaultCustomerId={presetCustomerId}
+          defaultLotId={loc.lotId}
+          defaultCustomerId={loc.customerId}
           createCustomerAction={createCustomerInlineAction}
+          defaultValues={{
+            typeLocation: loc.typeLocation,
+            periodicite: loc.periodicite,
+            dateDebut: loc.dateDebut,
+            dateFin: loc.dateFin ?? '',
+            prixLocation: loc.prixLocation ?? '',
+            depotGarantie: loc.depotGarantie ?? '',
+            chargesCourantes: loc.chargesCourantes ?? '',
+            fraisMenage: loc.fraisMenage ?? '',
+            taxeSejour: loc.taxeSejour ?? '',
+            notes: loc.notes ?? '',
+          }}
         />
 
         <div className="flex justify-end gap-3 pt-2">
-          <Link href={cancelHref} className="btn-secondary">
+          <Link href={`/locations/${loc.id}`} className="btn-secondary">
             Annuler
           </Link>
           <button type="submit" className="btn-primary">
-            Créer la location
+            Enregistrer
           </button>
         </div>
       </form>

@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { companies, companyDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { lookupBySiren, searchByName } from '@/lib/recherche-entreprises';
+import { lookupBySiren, searchByName, normalizeSirenOrSiret } from '@/lib/recherche-entreprises';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -11,7 +11,21 @@ import { z } from 'zod';
 
 const createSchema = z.object({
   name: z.string().min(1).max(255),
-  siren: z.string().regex(/^\d{9}$/).optional().or(z.literal('')),
+  siren: z
+    .preprocess(
+      (v) => {
+        const s = typeof v === 'string' ? v.trim() : '';
+        if (!s) return '';
+        const normalized = normalizeSirenOrSiret(s);
+        return normalized ?? s;
+      },
+      z
+        .string()
+        .regex(/^\d{9}$/, 'SIREN/SIRET invalide (9 ou 14 chiffres)')
+        .optional()
+        .or(z.literal(''))
+    )
+    .optional(),
   type: z.enum(['commerciale', 'immobiliere']),
   formeJuridique: z
     .enum(['sas', 'sarl', 'sci', 'indivision', 'eurl', 'sa', 'auto_entrepreneur', 'autre'])
@@ -22,13 +36,14 @@ const createSchema = z.object({
 });
 
 export async function lookupSirenAction(formData: FormData) {
-  const siren = String(formData.get('siren') ?? '').trim();
-  if (!/^\d{9}$/.test(siren)) {
-    return { error: 'SIREN invalide (9 chiffres requis)' };
+  const raw = String(formData.get('siren') ?? '').trim();
+  const normalized = normalizeSirenOrSiret(raw);
+  if (!normalized) {
+    return { error: 'Saisissez un numéro SIREN (9 chiffres) ou SIRET (14 chiffres).' };
   }
   try {
-    const result = await lookupBySiren(siren);
-    if (!result) return { error: 'SIREN non trouvé dans la base SIRENE' };
+    const result = await lookupBySiren(normalized);
+    if (!result) return { error: 'Numéro non trouvé dans la base SIRENE' };
     return { data: result };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Erreur API' };

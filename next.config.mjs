@@ -31,6 +31,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: { bodySizeLimit: '10mb' },
+    serverComponentsExternalPackages: ['minio'],
   },
   async headers() {
     return [

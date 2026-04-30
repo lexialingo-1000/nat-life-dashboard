@@ -11,7 +11,7 @@ import {
   locations,
   customers,
 } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -149,7 +149,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       .from(locations)
       .innerJoin(customers, eq(customers.id, locations.customerId))
       .where(eq(locations.lotId, lot.id))
-      .orderBy(asc(locations.dateDebut));
+      .orderBy(desc(locations.dateDebut));
   }
 
   if (!lot) {
@@ -300,7 +300,11 @@ export default async function LotDetailPage({ params }: { params: { id: string }
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-3">
-                    <Link href={`/clients/${l.customerId}`} className="link-cell text-[13px]">
+                    <Link
+                      href={`/locations/${l.id}`}
+                      className="link-cell text-[13px]"
+                      title="Ouvrir la fiche location"
+                    >
                       {customerLabel}
                     </Link>
                     <span className="badge-neutral">

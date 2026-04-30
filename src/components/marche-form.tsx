@@ -210,6 +210,10 @@ export function MarcheForm({
             defaultValue={defaultValues.notes ?? ''}
             rows={3}
             className="input mt-1"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
           />
         </div>
       </div>

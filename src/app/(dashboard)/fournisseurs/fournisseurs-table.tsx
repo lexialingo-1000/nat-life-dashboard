@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
+import { EntityLink } from '@/components/entity-link';
 
 export type FournisseurRow = {
   id: string;
@@ -26,9 +26,13 @@ const columns: ColumnDef<FournisseurRow>[] = [
     accessorKey: 'displayName',
     header: 'Société / Nom',
     cell: ({ row }) => (
-      <Link href={`/fournisseurs/${row.original.id}`} className="link-cell">
+      <EntityLink
+        href={`/fournisseurs/${row.original.id}`}
+        className="link-cell"
+        title="Clic : aperçu · Double-clic : fiche complète"
+      >
         {row.original.displayName}
-      </Link>
+      </EntityLink>
     ),
   },
   {

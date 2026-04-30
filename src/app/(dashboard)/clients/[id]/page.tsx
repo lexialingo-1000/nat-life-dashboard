@@ -7,7 +7,7 @@ import {
   lots,
   properties,
 } from '@/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -21,6 +21,7 @@ import {
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { NotesCard } from '@/components/notes-card';
 import { DeleteButton } from '@/components/delete-button';
 import { slugify } from '@/lib/storage/minio';
 import { formatDate } from '@/lib/utils';
@@ -94,7 +95,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .innerJoin(lots, eq(lots.id, locations.lotId))
     .innerJoin(properties, eq(properties.id, lots.propertyId))
     .where(eq(locations.customerId, customer.id))
-    .orderBy(asc(locations.dateDebut));
+    .orderBy(desc(locations.dateDebut));
 
   const displayName =
     customer.companyName ??
@@ -110,19 +111,22 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   }).length;
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-4">
-      <Kpi
-        label="État"
-        value={customer.isActive ? 'Actif' : 'Inactif'}
-        variant={customer.isActive ? 'good' : 'warn'}
-      />
-      <Kpi label="Documents" value={docs.length} />
-      <Kpi
-        label="Docs à renouveler"
-        value={expiringDocsCount}
-        variant={expiringDocsCount > 0 ? 'warn' : 'default'}
-      />
-      <Kpi label="Locations" value={customerLocations.length} />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Kpi
+          label="État"
+          value={customer.isActive ? 'Actif' : 'Inactif'}
+          variant={customer.isActive ? 'good' : 'warn'}
+        />
+        <Kpi label="Documents" value={docs.length} />
+        <Kpi
+          label="Docs à renouveler"
+          value={expiringDocsCount}
+          variant={expiringDocsCount > 0 ? 'warn' : 'default'}
+        />
+        <Kpi label="Locations" value={customerLocations.length} />
+      </div>
+      <NotesCard notes={customer.notes} />
     </div>
   );
 
@@ -262,14 +266,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const notesTab = (
-    <div className="card p-5">
-      <p className="whitespace-pre-wrap text-[13px] text-zinc-700">
-        {customer.notes ?? 'Aucune note.'}
-      </p>
-    </div>
-  );
-
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
@@ -281,7 +277,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
     { id: 'factures', label: 'Factures', content: facturesTab },
-    { id: 'notes', label: 'Notes', content: notesTab },
   ];
 
   return (
