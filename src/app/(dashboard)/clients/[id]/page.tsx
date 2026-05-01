@@ -10,7 +10,9 @@ import {
 import { eq, and, asc, desc, or, isNull, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import {
   uploadCustomerDocumentAction,
   deleteCustomerDocumentAction,
@@ -196,9 +198,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Identité
-        </h2>
+        <SectionTitle>Identité</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Raison sociale">{customer.companyName ?? '—'}</Row>
           <Row label="Prénom">{customer.firstName ?? '—'}</Row>
@@ -214,9 +214,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         </dl>
       </div>
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Coordonnées & facturation
-        </h2>
+        <SectionTitle>Coordonnées &amp; facturation</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Email">{customer.email ?? '—'}</Row>
           <Row label="Téléphone">
@@ -275,9 +273,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const locationsTab = (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Lots & contrats
-        </h2>
+        <SectionTitle className="mb-0">Lots &amp; contrats</SectionTitle>
         <Link
           href={`/locations/new?customerId=${customer.id}&returnTo=/clients/${customer.id}`}
           className="btn-secondary"
@@ -327,13 +323,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   return (
     <div className={`space-y-8 ${customer.isActive ? '' : 'opacity-75'}`}>
-      <Link
-        href="/clients"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Clients
-      </Link>
+      <BackLink fallbackHref="/clients" label="Clients" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

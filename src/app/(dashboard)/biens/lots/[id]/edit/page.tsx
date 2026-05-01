@@ -3,7 +3,7 @@ import { lots, properties, companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updateLotAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -48,13 +48,7 @@ export default async function EditLotPage({ params }: { params: { id: string } }
 
   return (
     <div className="max-w-2xl space-y-6">
-      <Link
-        href={`/biens/lots/${lot.id}`}
-        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        {lot.name}
-      </Link>
+      <BackLink fallbackHref={`/biens/lots/${lot.id}`} label={lot.name} />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Modifier le lot</h1>

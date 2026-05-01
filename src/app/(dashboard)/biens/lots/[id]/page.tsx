@@ -16,8 +16,10 @@ import {
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { DeleteButton } from '@/components/delete-button';
@@ -263,9 +265,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   const marchesTab = (
     <div className="card p-6">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Travaux affectés à ce lot
-        </h2>
+        <SectionTitle className="mb-0">Travaux affectés à ce lot</SectionTitle>
         <Link
           href={`/biens/properties/${lot.propertyId}/marches/new`}
           className="text-[12px] text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] hover:decoration-emerald-700"
@@ -338,9 +338,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   const locationsTab = (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Locataires & contrats
-        </h2>
+        <SectionTitle className="mb-0">Locataires & contrats</SectionTitle>
         <Link
           href={`/locations/new?lotId=${lot.id}&returnTo=/biens/lots/${lot.id}`}
           className="btn-secondary"
@@ -411,13 +409,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
   return (
     <div className="space-y-8">
-      <Link
-        href={`/biens/properties/${lot.propertyId}`}
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {lot.propertyName}
-      </Link>
+      <BackLink fallbackHref={`/biens/properties/${lot.propertyId}`} label={lot.propertyName} />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

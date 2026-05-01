@@ -9,7 +9,7 @@ import {
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updateMarcheAction } from '../../actions';
 import { MarcheForm } from '@/components/marche-form';
 
@@ -70,13 +70,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
 
   return (
     <div className="max-w-3xl space-y-6">
-      <Link
-        href={`/marches/${marche.id}`}
-        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        {marche.name}
-      </Link>
+      <BackLink fallbackHref={`/marches/${marche.id}`} label={marche.name} />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Modifier le marché</h1>

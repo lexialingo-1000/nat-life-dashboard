@@ -3,7 +3,9 @@ import { companies, properties, lots, companyDocuments, documentTypes } from '@/
 import { eq, sql, asc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DeleteButton } from '@/components/delete-button';
 import {
   deleteSocieteAction,
@@ -101,9 +103,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Identité juridique
-        </h2>
+        <SectionTitle>Identité juridique</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Nom">{company.name}</Row>
           <Row label="Type">
@@ -120,9 +120,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         </dl>
       </div>
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Activité & siège
-        </h2>
+        <SectionTitle>Activité &amp; siège</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Activité principale">{company.activitePrincipale ?? '—'}</Row>
           <Row label="Code NAF">
@@ -206,10 +204,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   return (
     <div className={`space-y-8 ${isActive ? '' : 'opacity-75'}`}>
-      <Link href="/societes" className="inline-flex items-center text-sm text-zinc-500 hover:text-emerald-700">
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Sociétés
-      </Link>
+      <BackLink fallbackHref="/societes" label="Sociétés" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { createSocieteAction } from '../actions';
 import { SocieteFormFields } from '@/components/societe-form-fields';
 
@@ -19,13 +19,7 @@ export default function NewSocietePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <Link
-        href="/societes"
-        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Sociétés
-      </Link>
+      <BackLink fallbackHref="/societes" label="Sociétés" />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ajouter une société</h1>

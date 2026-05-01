@@ -12,7 +12,9 @@ import {
 import { eq, asc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DeleteButton } from '@/components/delete-button';
 import {
   deleteMarcheAction,
@@ -142,9 +144,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Identité
-        </h2>
+        <SectionTitle>Identité</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Nom">{marche.name}</Row>
           <Row label="Bien">
@@ -167,9 +167,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         </dl>
       </div>
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Montants & dates
-        </h2>
+        <SectionTitle>Montants &amp; dates</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="HT">
             <span className="tnum">
@@ -258,13 +256,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/marches"
-        className="inline-flex items-center text-sm text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Marchés de travaux
-      </Link>
+      <BackLink fallbackHref="/marches" label="Marchés de travaux" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

@@ -19,7 +19,9 @@ import {
   deleteSupplierDocumentAction,
   getSupplierDocumentUrlAction,
 } from '../actions';
-import { Plus, Mail, Phone, Briefcase, ArrowLeft, Pencil } from 'lucide-react';
+import { Plus, Mail, Phone, Briefcase, Pencil } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DeleteButton } from '@/components/delete-button';
 import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
@@ -123,9 +125,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Identité
-        </h2>
+        <SectionTitle>Identité</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Raison sociale">{s.companyName ?? '—'}</Row>
           <Row label="Prénom">{s.firstName ?? '—'}</Row>
@@ -134,9 +134,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         </dl>
       </div>
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Coordonnées & facturation
-        </h2>
+        <SectionTitle>Coordonnées &amp; facturation</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Email">{s.email ?? '—'}</Row>
           <Row label="Téléphone">
@@ -304,13 +302,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
 
   return (
     <div className={`space-y-8 ${s.isActive ? '' : 'opacity-75'}`}>
-      <Link
-        href="/fournisseurs"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Fournisseurs
-      </Link>
+      <BackLink fallbackHref="/fournisseurs" label="Fournisseurs" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

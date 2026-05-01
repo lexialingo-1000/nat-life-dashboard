@@ -16,7 +16,9 @@ import {
 import { eq, asc, and, sql, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, Plus } from 'lucide-react';
+import { ChevronRight, Pencil, Plus } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DeleteButton } from '@/components/delete-button';
 import {
   deletePropertyAction,
@@ -294,9 +296,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-5">
-          <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-            Identité
-          </h2>
+          <SectionTitle>Identité</SectionTitle>
           <dl className="space-y-2 text-[13px]">
             <Row label="Nom">{property.name}</Row>
             <Row label="Type">{property.type}</Row>
@@ -328,16 +328,21 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         <details open={hasNotaire} className="card p-5 group">
           <summary className="cursor-pointer list-none">
             <div className="flex items-center justify-between">
-              <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                Notaire
-              </h2>
-              <span className="text-[11px] text-zinc-400 group-open:hidden">
-                {hasNotaire ? 'Déplier' : 'Aucune information'}
-              </span>
-              <span className="hidden text-[11px] text-zinc-400 group-open:inline">Replier</span>
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className="h-4 w-4 text-zinc-500 transition-transform duration-150 group-open:rotate-90"
+                  strokeWidth={2}
+                />
+                <h2 className="text-[15px] font-medium tracking-tight text-zinc-900">
+                  Notaire
+                </h2>
+              </div>
+              {!hasNotaire && (
+                <span className="text-[11px] text-zinc-400">Aucune information</span>
+              )}
             </div>
           </summary>
-          <dl className="mt-3 space-y-2 text-[13px]">
+          <dl className="mt-4 space-y-2 text-[13px]">
             <Row label="Nom">{notaire.name ?? '—'}</Row>
             <Row label="Étude">{notaire.etude ?? '—'}</Row>
             <Row label="Téléphone">
@@ -350,9 +355,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       <div>
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-            Structure
-          </h2>
+          <SectionTitle className="mb-0">Structure</SectionTitle>
           <p className="text-[11px] text-zinc-500">
             Bien → Lots → Niveaux → Pièces. Clic sur un lot pour ouvrir sa fiche complète.
           </p>
@@ -479,13 +482,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/biens"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Biens immobiliers
-      </Link>
+      <BackLink fallbackHref="/biens" label="Biens immobiliers" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

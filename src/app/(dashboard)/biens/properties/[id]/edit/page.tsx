@@ -3,7 +3,7 @@ import { properties, companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updatePropertyAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -44,13 +44,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
 
   return (
     <div className="max-w-3xl space-y-8">
-      <Link
-        href={`/biens/properties/${p.id}`}
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {p.name}
-      </Link>
+      <BackLink fallbackHref={`/biens/properties/${p.id}`} label={p.name} />
 
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">

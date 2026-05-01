@@ -3,7 +3,7 @@ import { companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updateSocieteAction } from '../../actions';
 import { SocieteFormFields } from '@/components/societe-form-fields';
 
@@ -16,13 +16,7 @@ export default async function EditSocietePage({ params }: { params: { id: string
 
   return (
     <div className="max-w-2xl space-y-6">
-      <Link
-        href={`/societes/${company.id}`}
-        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        {company.name}
-      </Link>
+      <BackLink fallbackHref={`/societes/${company.id}`} label={company.name} />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Modifier la société</h1>

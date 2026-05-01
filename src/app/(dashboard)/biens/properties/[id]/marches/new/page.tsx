@@ -3,7 +3,7 @@ import { properties, lots, suppliers } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { createMarcheAction } from '@/app/(dashboard)/marches/actions';
 import { MarcheForm } from '@/components/marche-form';
 
@@ -44,13 +44,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
 
   return (
     <div className="max-w-3xl space-y-6">
-      <Link
-        href={`/biens/properties/${property.id}`}
-        className="inline-flex items-center text-sm text-zinc-600 hover:underline"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        {property.name}
-      </Link>
+      <BackLink fallbackHref={`/biens/properties/${property.id}`} label={property.name} />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Nouveau marché de travaux</h1>

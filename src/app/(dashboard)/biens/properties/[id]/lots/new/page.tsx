@@ -3,7 +3,8 @@ import { properties, companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { createLotAction } from '@/app/(dashboard)/biens/actions';
 
 export const dynamic = 'force-dynamic';
@@ -40,13 +41,7 @@ export default async function NewLotPage({ params }: { params: { id: string } })
 
   return (
     <div className="max-w-2xl space-y-8">
-      <Link
-        href={`/biens/properties/${property.id}`}
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {property.name}
-      </Link>
+      <BackLink fallbackHref={`/biens/properties/${property.id}`} label={property.name} />
 
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">

@@ -3,7 +3,7 @@ import { locations, lots, properties, customers } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updateLocationAction } from '../../actions';
 import { createCustomerInlineAction } from '@/app/(dashboard)/clients/actions';
 import { LocationFormFields } from '../../location-form-fields';
@@ -52,13 +52,7 @@ export default async function EditLocationPage({ params }: { params: { id: strin
 
   return (
     <div className="max-w-3xl space-y-8">
-      <Link
-        href={`/locations/${loc.id}`}
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Retour à la fiche
-      </Link>
+      <BackLink fallbackHref={`/locations/${loc.id}`} label="Retour à la fiche" />
 
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">

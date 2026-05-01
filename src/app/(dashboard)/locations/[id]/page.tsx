@@ -10,7 +10,9 @@ import {
 import { eq, and, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { Tabs, type TabItem } from '@/components/tabs';
@@ -153,9 +155,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       </div>
 
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Détails
-        </h2>
+        <SectionTitle>Détails</SectionTitle>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
           <Row label="Type">
             <span className="badge-neutral">
@@ -194,9 +194,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       </div>
 
       <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Charges
-        </h2>
+        <SectionTitle>Charges</SectionTitle>
         <dl className="grid grid-cols-3 gap-4 text-[13px]">
           <Row label="Charges courantes">
             <span className="tnum">{fmtMoney(loc.chargesCourantes)}</span>
@@ -245,13 +243,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/locations"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Locations
-      </Link>
+      <BackLink fallbackHref="/locations" label="Locations" />
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">

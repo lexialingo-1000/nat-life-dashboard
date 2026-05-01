@@ -3,7 +3,8 @@ import { documentTypes } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { updateDocumentTypeAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -31,13 +32,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/admin/types-documents"
-        className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Types de documents
-      </Link>
+      <BackLink fallbackHref="/admin/types-documents" label="Types de documents" />
 
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
