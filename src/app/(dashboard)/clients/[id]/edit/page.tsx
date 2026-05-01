@@ -78,6 +78,18 @@ export default async function EditClientPage({ params }: { params: { id: string 
         </div>
 
         <div>
+          <label className="block text-sm font-medium">Statut locataire</label>
+          <select name="tenantType" defaultValue={c.tenantType ?? ''} className="input mt-1">
+            <option value="">Pas un locataire (client B2B)</option>
+            <option value="LT">Locataire long terme (bail)</option>
+            <option value="CT">Locataire court terme (saisonnier)</option>
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Détermine quels documents obligatoires apparaissent sur la fiche.
+          </p>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium">Notes</label>
           <textarea
             name="notes"

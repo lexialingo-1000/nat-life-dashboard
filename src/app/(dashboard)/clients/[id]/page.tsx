@@ -7,7 +7,7 @@ import {
   lots,
   properties,
 } from '@/db/schema';
-import { eq, and, asc, desc } from 'drizzle-orm';
+import { eq, and, asc, desc, or, isNull, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -23,6 +23,7 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { DeleteButton } from '@/components/delete-button';
+import { RequiredDocumentsWidget } from '@/components/required-documents-widget';
 import { slugify } from '@/lib/storage/minio';
 import { formatDate } from '@/lib/utils';
 
@@ -55,6 +56,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const docs = await db
     .select({
       id: customerDocuments.id,
+      typeId: customerDocuments.typeId,
       name: customerDocuments.name,
       typeLabel: documentTypes.label,
       storageKey: customerDocuments.storageKey,
@@ -66,6 +68,34 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))
     .where(eq(customerDocuments.customerId, customer.id))
     .orderBy(asc(documentTypes.sortOrder));
+
+  const requiredCustomerTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      appliesToTenantType: documentTypes.appliesToTenantType,
+    })
+    .from(documentTypes)
+    .where(
+      and(
+        eq(documentTypes.scope, 'customer'),
+        eq(documentTypes.isActive, true),
+        eq(documentTypes.isRequired, true),
+        or(
+          isNull(documentTypes.appliesToTenantType),
+          eq(documentTypes.appliesToTenantType, 'all'),
+          customer.tenantType
+            ? eq(documentTypes.appliesToTenantType, customer.tenantType)
+            : sql`false`
+        )
+      )
+    )
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const uploadedTypeIds = new Set(docs.map((d) => d.typeId));
+  const missingRequiredTypes = requiredCustomerTypes
+    .filter((t) => !uploadedTypeIds.has(t.id))
+    .map((t) => ({ id: t.id, label: t.label }));
 
   const customerTypes = await db
     .select({
@@ -110,6 +140,13 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     return days < 30;
   }).length;
 
+  const tenantHint =
+    customer.tenantType === 'LT'
+      ? 'Locataire long terme — exigences spécifiques aux baux annuels.'
+      : customer.tenantType === 'CT'
+      ? 'Locataire court terme — exigences spécifiques aux contrats saisonniers.'
+      : 'Client B2B (non-locataire). Seuls les types « Tous » apparaissent ici.';
+
   const overviewTab = (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
@@ -126,9 +163,21 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         />
         <Kpi label="Locations" value={customerLocations.length} />
       </div>
+      <RequiredDocumentsWidget
+        missingTypes={missingRequiredTypes}
+        scopeLabel="client"
+        hint={tenantHint}
+      />
       <NotesCard notes={customer.notes} />
     </div>
   );
+
+  const tenantTypeLabel =
+    customer.tenantType === 'LT'
+      ? { text: 'Bail long terme', cls: 'badge-emerald' }
+      : customer.tenantType === 'CT'
+      ? { text: 'Saisonnier', cls: 'badge-amber' }
+      : null;
 
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -141,6 +190,13 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           <Row label="Prénom">{customer.firstName ?? '—'}</Row>
           <Row label="Nom">{customer.lastName ?? '—'}</Row>
           <Row label="Adresse">{customer.address ?? '—'}</Row>
+          <Row label="Statut locataire">
+            {tenantTypeLabel ? (
+              <span className={tenantTypeLabel.cls}>{tenantTypeLabel.text}</span>
+            ) : (
+              <span className="text-zinc-400">B2B (non-locataire)</span>
+            )}
+          </Row>
         </dl>
       </div>
       <div className="card p-5">
@@ -295,6 +351,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{displayName}</span>
+            {tenantTypeLabel && (
+              <span className={tenantTypeLabel.cls}>{tenantTypeLabel.text}</span>
+            )}
             {!customer.isActive && <span className="badge-neutral">Inactif</span>}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">

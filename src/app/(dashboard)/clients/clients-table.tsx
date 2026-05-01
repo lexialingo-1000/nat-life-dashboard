@@ -11,6 +11,12 @@ export type ClientRow = {
   phone: string | null;
   address: string | null;
   isActive: boolean;
+  tenantType: 'LT' | 'CT' | null;
+};
+
+const TENANT_BADGES: Record<string, { label: string; className: string }> = {
+  LT: { label: 'Bail long terme', className: 'badge-emerald' },
+  CT: { label: 'Saisonnier', className: 'badge-amber' },
 };
 
 const columns: ColumnDef<ClientRow>[] = [
@@ -26,6 +32,25 @@ const columns: ColumnDef<ClientRow>[] = [
         {row.original.displayName}
       </EntityLink>
     ),
+  },
+  {
+    accessorKey: 'tenantType',
+    header: 'Statut',
+    cell: ({ row }) => {
+      const t = row.original.tenantType;
+      if (!t) return <span className="text-[12px] text-zinc-400">B2B</span>;
+      const cfg = TENANT_BADGES[t];
+      return <span className={cfg.className}>{cfg.label}</span>;
+    },
+    filterFn: (row, _id, value) => {
+      const v = String(value).toLowerCase().trim();
+      if (!v) return true;
+      const t = row.original.tenantType;
+      if (v === 'lt' || 'long terme'.startsWith(v) || 'bail'.startsWith(v)) return t === 'LT';
+      if (v === 'ct' || 'court terme'.startsWith(v) || 'saisonnier'.startsWith(v)) return t === 'CT';
+      if ('b2b'.startsWith(v) || v === 'aucun' || v === '—') return t === null;
+      return true;
+    },
   },
   {
     accessorKey: 'isActive',

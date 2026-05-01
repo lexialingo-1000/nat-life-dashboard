@@ -73,3 +73,5 @@ export const locationPeriodiciteEnum = pgEnum('location_periodicite', [
 export const finitionStatusEnum = pgEnum('finition_status', ['a_faire', 'en_cours', 'livre']);
 
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestionnaire']);
+
+export const tenantTypeEnum = pgEnum('tenant_type', ['LT', 'CT']);

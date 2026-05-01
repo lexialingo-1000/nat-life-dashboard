@@ -9,6 +9,11 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+const tenantTypePreprocess = z.preprocess(
+  (v) => (v === '' || v == null ? null : v),
+  z.enum(['LT', 'CT']).nullable()
+);
+
 const customerSchema = z.object({
   companyName: z.string().optional().or(z.literal('')),
   firstName: z.string().optional().or(z.literal('')),
@@ -17,6 +22,7 @@ const customerSchema = z.object({
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
+  tenantType: tenantTypePreprocess.optional(),
 });
 
 const customerUpdateSchema = customerSchema.extend({
@@ -35,6 +41,7 @@ export async function updateCustomerAction(formData: FormData): Promise<void> {
     email: formData.get('email'),
     notes: formData.get('notes'),
     isActive: formData.get('isActive'),
+    tenantType: formData.get('tenantType'),
   });
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -51,6 +58,7 @@ export async function updateCustomerAction(formData: FormData): Promise<void> {
       email: data.email || null,
       notes: data.notes || null,
       isActive: data.isActive,
+      tenantType: data.tenantType ?? null,
       updatedAt: new Date(),
     })
     .where(eq(customers.id, data.id));
@@ -84,6 +92,7 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       notes: data.notes || null,
+      tenantType: data.tenantType ?? null,
       storagePath: buildStoragePrefix('customers', displayName),
     })
     .returning({ id: customers.id });

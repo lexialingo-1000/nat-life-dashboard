@@ -1,6 +1,13 @@
 import { db } from '@/db/client';
-import { suppliers, supplierContacts, supplierDocuments, documentTypes } from '@/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import {
+  suppliers,
+  supplierContacts,
+  supplierDocuments,
+  documentTypes,
+  marchesTravaux,
+  properties,
+} from '@/db/schema';
+import { eq, and, asc, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,6 +25,7 @@ import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
+import { SupplierMarchesTable } from '@/components/supplier-marches-table';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -64,6 +72,22 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .from(documentTypes)
     .where(and(eq(documentTypes.scope, 'supplier'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
+
+  const supplierMarches = await db
+    .select({
+      id: marchesTravaux.id,
+      name: marchesTravaux.name,
+      status: marchesTravaux.status,
+      amountHt: marchesTravaux.amountHt,
+      dateDebutPrevu: marchesTravaux.dateDebutPrevu,
+      dateFinReelle: marchesTravaux.dateFinReelle,
+      propertyId: properties.id,
+      propertyName: properties.name,
+    })
+    .from(marchesTravaux)
+    .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId))
+    .where(eq(marchesTravaux.supplierId, s.id))
+    .orderBy(desc(marchesTravaux.dateDebutPrevu));
 
   const displayName =
     s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
@@ -209,6 +233,23 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
+  const marchesTab = (
+    <div className="card overflow-hidden">
+      <SupplierMarchesTable
+        rows={supplierMarches.map((m) => ({
+          id: m.id,
+          name: m.name,
+          status: m.status,
+          amountHt: m.amountHt,
+          dateDebutPrevu: m.dateDebutPrevu,
+          dateFinReelle: m.dateFinReelle,
+          propertyId: m.propertyId,
+          propertyName: m.propertyName,
+        }))}
+      />
+    </div>
+  );
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -251,6 +292,12 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'contacts', label: 'Contacts', count: contacts.length, content: contactsTab },
+    {
+      id: 'marches',
+      label: 'Marchés',
+      count: supplierMarches.length || undefined,
+      content: marchesTab,
+    },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
     { id: 'factures', label: 'Factures', content: facturesTab },
   ];

@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, timestamp, date, varchar, boolean } from 'drizzle-orm/pg-core';
 import { documentTypes } from './document-types';
+import { tenantTypeEnum } from './enums';
 import { users } from './users';
 
 export const customers = pgTable('customers', {
@@ -14,6 +15,7 @@ export const customers = pgTable('customers', {
   pennylaneCustomerId: varchar('pennylane_customer_id', { length: 64 }),
   notes: text('notes'),
   isActive: boolean('is_active').notNull().default(true),
+  tenantType: tenantTypeEnum('tenant_type'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

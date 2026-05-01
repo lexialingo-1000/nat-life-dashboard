@@ -11,6 +11,8 @@ export const documentTypes = pgTable(
     isActive: boolean('is_active').notNull().default(true),
     sortOrder: integer('sort_order').notNull().default(0),
     hasExpiration: boolean('has_expiration').notNull().default(false),
+    isRequired: boolean('is_required').notNull().default(false),
+    appliesToTenantType: text('applies_to_tenant_type'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

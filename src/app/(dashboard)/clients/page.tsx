@@ -19,6 +19,7 @@ export default async function ClientsPage() {
       phone: c.phone,
       address: c.address,
       isActive: c.isActive,
+      tenantType: c.tenantType,
     }));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';

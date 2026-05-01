@@ -1,12 +1,14 @@
 import { db } from '@/db/client';
 import { documentTypes } from '@/db/schema';
 import { asc } from 'drizzle-orm';
+import Link from 'next/link';
 import { createDocumentTypeAction, toggleActiveAction } from './actions';
-import { Plus, Clock } from 'lucide-react';
+import { Plus, Clock, Pencil } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 const SCOPE_LABELS: Record<string, string> = {
+  company: 'Société',
   supplier: 'Fournisseur',
   customer: 'Client',
   property: 'Immeuble',
@@ -17,6 +19,7 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 const SCOPE_BADGE: Record<string, string> = {
+  company: 'badge-emerald',
   supplier: 'badge-blue',
   customer: 'badge-emerald',
   property: 'badge-amber',
@@ -24,6 +27,12 @@ const SCOPE_BADGE: Record<string, string> = {
   marche: 'badge-neutral',
   marche_lot: 'badge-neutral',
   location: 'badge-neutral',
+};
+
+const TENANT_LABELS: Record<string, string> = {
+  LT: 'LT',
+  CT: 'CT',
+  all: 'Tous',
 };
 
 export default async function TypesDocumentsPage() {
@@ -49,8 +58,10 @@ export default async function TypesDocumentsPage() {
           <span className="ml-2 font-mono text-[13px] tnum text-zinc-400">{rows.length}</span>
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-zinc-500">
-          Catalogue extensible — ajoute, désactive ou crée des types pour les fournisseurs, clients,
-          biens et marchés. Les types avec date d'expiration alimentent le widget de vigilance.
+          Catalogue extensible — ajoute, désactive ou crée des types pour les sociétés, fournisseurs,
+          clients, biens et marchés. Les types marqués obligatoires alimentent le widget « Documents
+          requis manquants » sur la fiche concernée. Les types avec date d'expiration alimentent le
+          widget de vigilance.
         </p>
       </header>
 
@@ -67,10 +78,12 @@ export default async function TypesDocumentsPage() {
               <tr>
                 <th className="w-[140px]">Scope</th>
                 <th>Libellé</th>
-                <th className="w-[200px]">Code</th>
+                <th className="w-[180px]">Code</th>
                 <th className="w-[110px]">Expiration</th>
+                <th className="w-[110px]">Obligatoire</th>
+                <th className="w-[100px]">Locataire</th>
                 <th className="w-[90px]">Statut</th>
-                <th className="w-[110px] text-right pr-5">Action</th>
+                <th className="w-[160px] text-right pr-5">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -94,6 +107,22 @@ export default async function TypesDocumentsPage() {
                     )}
                   </td>
                   <td>
+                    {t.isRequired ? (
+                      <span className="badge-amber">Obligatoire</span>
+                    ) : (
+                      <span className="text-[12px] text-zinc-400">—</span>
+                    )}
+                  </td>
+                  <td>
+                    {t.scope === 'customer' && t.appliesToTenantType ? (
+                      <span className="badge-neutral">
+                        {TENANT_LABELS[t.appliesToTenantType] ?? t.appliesToTenantType}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-zinc-400">—</span>
+                    )}
+                  </td>
+                  <td>
                     {t.isActive ? (
                       <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -107,15 +136,24 @@ export default async function TypesDocumentsPage() {
                     )}
                   </td>
                   <td className="text-right pr-5">
-                    <form action={toggleActiveAction} className="inline-block">
-                      <input type="hidden" name="id" value={t.id} />
-                      <button
-                        type="submit"
-                        className="text-[12px] text-zinc-500 transition hover:text-emerald-700"
+                    <div className="inline-flex items-center gap-3">
+                      <Link
+                        href={`/admin/types-documents/${t.id}/edit`}
+                        className="inline-flex items-center gap-1 text-[12px] text-emerald-700 hover:text-emerald-800"
                       >
-                        {t.isActive ? 'Désactiver' : 'Réactiver'}
-                      </button>
-                    </form>
+                        <Pencil className="h-3 w-3" strokeWidth={2} />
+                        Modifier
+                      </Link>
+                      <form action={toggleActiveAction} className="inline-block">
+                        <input type="hidden" name="id" value={t.id} />
+                        <button
+                          type="submit"
+                          className="text-[12px] text-zinc-500 transition hover:text-emerald-700"
+                        >
+                          {t.isActive ? 'Désactiver' : 'Réactiver'}
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -162,7 +200,7 @@ export default async function TypesDocumentsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[12px] font-medium text-zinc-700">Scope</label>
-              <select name="scope" required className="input mt-1">
+              <select name="scope" required className="input mt-1" defaultValue="supplier">
                 {Object.entries(SCOPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -170,17 +208,41 @@ export default async function TypesDocumentsPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-end">
-              <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-                <input
-                  type="checkbox"
-                  name="hasExpiration"
-                  value="on"
-                  className="h-4 w-4 rounded-sm border-zinc-300 text-zinc-900"
-                />
-                <span>Document avec date d'expiration</span>
+            <div>
+              <label className="block text-[12px] font-medium text-zinc-700">
+                Type de locataire (scope client uniquement)
               </label>
+              <select name="appliesToTenantType" className="input mt-1" defaultValue="">
+                <option value="">— Non applicable / tous —</option>
+                <option value="LT">Locataires LT (long terme)</option>
+                <option value="CT">Locataires CT (court terme)</option>
+                <option value="all">Tous les locataires</option>
+              </select>
+              <p className="mt-1 text-[11px] text-zinc-500">
+                Ignoré si le scope n'est pas « Client ».
+              </p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                name="hasExpiration"
+                value="on"
+                className="h-4 w-4 rounded-sm border-zinc-300 text-zinc-900"
+              />
+              <span>Document avec date d'expiration</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                name="isRequired"
+                value="on"
+                className="h-4 w-4 rounded-sm border-zinc-300 text-zinc-900"
+              />
+              <span>Document obligatoire (alimente le widget « manquants »)</span>
+            </label>
           </div>
 
           <div className="flex justify-end pt-2">
