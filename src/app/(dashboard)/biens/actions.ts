@@ -8,23 +8,65 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+const lotTypeSchema = z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']);
+const lotStatusSchema = z.enum(['vacant', 'loue_annuel', 'loue_saisonnier', 'travaux']);
+
+const surfaceSchema = z
+  .preprocess(
+    (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+    z.number().nonnegative().nullable()
+  )
+  .optional();
+
+const lotCreateSchema = z.object({
+  propertyId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  type: lotTypeSchema,
+  status: lotStatusSchema,
+  surfaceCarrez: surfaceSchema,
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function createLotAction(formData: FormData): Promise<void> {
+  const parsed = lotCreateSchema.safeParse({
+    propertyId: formData.get('propertyId'),
+    name: formData.get('name'),
+    type: formData.get('type'),
+    status: formData.get('status'),
+    surfaceCarrez: formData.get('surfaceCarrez'),
+    notes: formData.get('notes'),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+
+  const { propertyId, name, type, status, surfaceCarrez, notes } = parsed.data;
+
+  const inserted = await db
+    .insert(lots)
+    .values({
+      propertyId,
+      name,
+      type,
+      status,
+      surfaceCarrez: surfaceCarrez != null ? String(surfaceCarrez) : null,
+      notes: notes || null,
+    })
+    .returning({ id: lots.id });
+
+  revalidatePath(`/biens/properties/${propertyId}`);
+  revalidatePath('/biens');
+  redirect(`/biens/lots/${inserted[0].id}`);
+}
+
 const lotUpdateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255),
-  type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
-  status: z.enum(['vacant', 'loue_annuel', 'loue_saisonnier', 'travaux']),
-  surfaceCarrez: z
-    .preprocess(
-      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-      z.number().nonnegative().nullable()
-    )
-    .optional(),
-  surfaceBoutin: z
-    .preprocess(
-      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-      z.number().nonnegative().nullable()
-    )
-    .optional(),
+  type: lotTypeSchema,
+  status: lotStatusSchema,
+  surfaceCarrez: surfaceSchema,
+  surfaceBoutin: surfaceSchema,
   notes: z.string().optional().or(z.literal('')),
 });
 

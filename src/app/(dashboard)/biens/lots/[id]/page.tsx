@@ -23,6 +23,11 @@ import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-roo
 import { DeleteButton } from '@/components/delete-button';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import {
+  LocationsTable,
+  type LocationRow,
+  type LocationStatus,
+} from '@/app/(dashboard)/locations/locations-table';
+import {
   uploadLotDocumentAction,
   deleteLotDocumentAction,
   getLotDocumentUrlAction,
@@ -259,7 +264,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     <div className="card p-6">
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Marchés affectés à ce lot
+          Travaux affectés à ce lot
         </h2>
         <Link
           href={`/biens/properties/${lot.propertyId}/marches/new`}
@@ -299,9 +304,40 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     </div>
   );
 
+  const computeStatus = (dateDebut: string, dateFin: string | null): LocationStatus => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const debut = new Date(dateDebut);
+    if (dateFin && new Date(dateFin) < today) return 'inactif';
+    if (debut > today) return 'a_venir';
+    return 'actif';
+  };
+
+  const lotLocationRows: LocationRow[] = lotLocations.map((l: any) => {
+    const customerLabel =
+      l.customerCompanyName ||
+      `${l.customerFirstName ?? ''} ${l.customerLastName ?? ''}`.trim() ||
+      'client';
+    return {
+      id: l.id,
+      propertyId: lot.propertyId,
+      propertyName: lot.propertyName,
+      lotId: lot.id,
+      lotName: lot.name,
+      customerId: l.customerId,
+      customerLabel,
+      typeLocation: l.typeLocation,
+      dateDebut: l.dateDebut,
+      dateFin: l.dateFin,
+      status: computeStatus(l.dateDebut, l.dateFin),
+      prixLocation: l.prixLocation ?? l.prix ?? null,
+      periodicite: l.periodicite,
+    };
+  });
+
   const locationsTab = (
-    <div className="card p-6">
-      <div className="mb-3 flex items-baseline justify-between">
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
         <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
           Locataires & contrats
         </h2>
@@ -314,61 +350,14 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         </Link>
       </div>
 
-      {lotLocations.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucune location pour ce lot. Une location lie un client (locataire) à ce lot avec un
-          type, des dates et un loyer.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {lotLocations.map((l) => {
-            const customerLabel =
-              l.customerCompanyName ||
-              `${l.customerFirstName ?? ''} ${l.customerLastName ?? ''}`.trim() ||
-              'client';
-            const priceText =
-              l.prixLocation
-                ? `${Number(l.prixLocation).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
-                : l.prix
-                ? `${Number(l.prix).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
-                : null;
-            return (
-              <li
-                key={l.id}
-                className="flex items-center justify-between rounded-md border border-zinc-100 p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-3">
-                    <Link
-                      href={`/locations/${l.id}`}
-                      className="link-cell text-[13px]"
-                      title="Ouvrir la fiche location"
-                    >
-                      {customerLabel}
-                    </Link>
-                    <span className="badge-neutral">
-                      {LOCATION_TYPE_LABELS[l.typeLocation] ?? l.typeLocation}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-[12px] text-zinc-500">
-                    Du {formatDate(l.dateDebut)}
-                    {l.dateFin ? ` au ${formatDate(l.dateFin)}` : ' (en cours)'}
-                    {priceText && <span className="ml-2 tnum">· {priceText}</span>}
-                  </div>
-                </div>
-                <DeleteButton
-                  variant="icon"
-                  action={deleteLocationAction}
-                  id={l.id}
-                  label="Supprimer cette location"
-                  confirmationPhrase={customerLabel}
-                  description={`Supprimer la location de "${customerLabel}" sur ce lot (du ${formatDate(l.dateDebut)}${l.dateFin ? ` au ${formatDate(l.dateFin)}` : ', en cours'}) ? Les documents associés à cette location seront aussi supprimés. Action irréversible.`}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <div className="card overflow-hidden">
+        <LocationsTable
+          rows={lotLocationRows}
+          hideColumns={['lot', 'property']}
+          deleteAction={deleteLocationAction}
+          emptyMessage="Aucune location pour ce lot. Une location lie un client (locataire) à ce lot avec un type, des dates et un loyer."
+        />
+      </div>
     </div>
   );
 
@@ -413,7 +402,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     },
     {
       id: 'marches',
-      label: 'Marchés',
+      label: 'Travaux',
       count: lotMarches.length || undefined,
       content: marchesTab,
     },

@@ -123,7 +123,7 @@ export default async function LocationsListPage() {
 
       {!dbError && (
         <div className="card overflow-hidden">
-          <LocationsTable rows={rows} />
+          <LocationsTable rows={rows} enableSelection />
         </div>
       )}
     </div>

@@ -10,8 +10,10 @@ import {
   levels,
   rooms,
   documentTypes,
+  locations,
+  customers,
 } from '@/db/schema';
-import { eq, asc, and, sql } from 'drizzle-orm';
+import { eq, asc, and, sql, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus } from 'lucide-react';
@@ -22,11 +24,20 @@ import {
   deletePropertyDocumentAction,
   getPropertyDocumentUrlAction,
 } from '../actions';
+import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
+import {
+  LocationsTable,
+  type LocationRow,
+  type LocationStatus,
+} from '@/app/(dashboard)/locations/locations-table';
 import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { DocumentsManager } from '@/components/documents-manager';
-import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
+import {
+  PropertyStructureTree,
+  type PropertyTree,
+} from '@/components/property-structure-tree';
 import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
@@ -39,6 +50,15 @@ const MARCHE_STATUS_LABELS: Record<string, string> = {
 };
 
 export const dynamic = 'force-dynamic';
+
+function computeLocationStatus(dateDebut: string, dateFin: string | null): LocationStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const debut = new Date(dateDebut);
+  if (dateFin && new Date(dateFin) < today) return 'inactif';
+  if (debut > today) return 'a_venir';
+  return 'actif';
+}
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   let property: any = null;
@@ -77,11 +97,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }
 
-  let lotsLevels: { lotId: string; lotName: string; levels: LevelWithRooms[] }[] = [];
+  let levelsByLot: Map<string, { id: string; name: string; sortOrder: number }[]> = new Map();
+  let roomsByLevel: Map<string, { id: string; name: string; surfaceM2: string | null }[]> =
+    new Map();
   let totalLevels = 0;
-  if (property && propertyLots.length > 0) {
-    const lotIds = propertyLots.map((l) => l.id);
 
+  if (property && propertyLots.length > 0) {
     const levelRows = await db
       .select({
         id: levels.id,
@@ -111,23 +132,20 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
     totalLevels = levelRows.length;
 
-    lotsLevels = propertyLots.map((lot) => ({
-      lotId: lot.id,
-      lotName: lot.name,
-      levels: levelRows
-        .filter((lv) => lv.lotId === lot.id)
-        .map((lv) => ({
-          id: lv.id,
-          name: lv.name,
-          sortOrder: lv.sortOrder,
-          rooms: roomRows
-            .filter((r) => r.levelId === lv.id)
-            .map((r) => ({ id: r.id, name: r.name, surfaceM2: r.surfaceM2 })),
-        })),
-    }));
+    for (const lv of levelRows) {
+      const arr = levelsByLot.get(lv.lotId) ?? [];
+      arr.push({ id: lv.id, name: lv.name, sortOrder: lv.sortOrder });
+      levelsByLot.set(lv.lotId, arr);
+    }
+    for (const r of roomRows) {
+      const arr = roomsByLevel.get(r.levelId) ?? [];
+      arr.push({ id: r.id, name: r.name, surfaceM2: r.surfaceM2 });
+      roomsByLevel.set(r.levelId, arr);
+    }
   }
 
   let propertyMarches: any[] = [];
+  let propertyLocations: any[] = [];
   if (property) {
     propertyMarches = await db
       .select({
@@ -148,6 +166,28 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
       .where(eq(marchesTravaux.propertyId, property.id))
       .orderBy(asc(marchesTravaux.createdAt));
+
+    propertyLocations = await db
+      .select({
+        id: locations.id,
+        typeLocation: locations.typeLocation,
+        dateDebut: locations.dateDebut,
+        dateFin: locations.dateFin,
+        prixLocation: locations.prixLocation,
+        prix: locations.prix,
+        periodicite: locations.periodicite,
+        lotId: lots.id,
+        lotName: lots.name,
+        customerId: customers.id,
+        customerCompanyName: customers.companyName,
+        customerFirstName: customers.firstName,
+        customerLastName: customers.lastName,
+      })
+      .from(locations)
+      .innerJoin(lots, eq(lots.id, locations.lotId))
+      .innerJoin(customers, eq(customers.id, locations.customerId))
+      .where(eq(lots.propertyId, property.id))
+      .orderBy(desc(locations.dateDebut));
   }
 
   if (!property) {
@@ -184,12 +224,59 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     .orderBy(asc(documentTypes.sortOrder));
 
   const notaire = (property.notaire as any) ?? {};
+  const hasNotaire = Boolean(notaire.name || notaire.etude || notaire.phone || notaire.email);
+
+  const tree: PropertyTree = {
+    id: property.id,
+    name: property.name,
+    type: property.type,
+    address: property.address,
+    postalCode: property.postalCode,
+    city: property.city,
+    companyId: property.companyId,
+    companyName: property.companyName,
+    lots: propertyLots.map((l) => ({
+      id: l.id,
+      name: l.name,
+      type: l.type,
+      status: l.status,
+      surfaceCarrez: l.surfaceCarrez,
+      levels: (levelsByLot.get(l.id) ?? []).map((lv) => ({
+        id: lv.id,
+        name: lv.name,
+        rooms: roomsByLevel.get(lv.id) ?? [],
+      })),
+    })),
+  };
+
+  const propertyLocationRows: LocationRow[] = propertyLocations.map((l: any) => {
+    const customerLabel =
+      l.customerCompanyName ||
+      `${l.customerFirstName ?? ''} ${l.customerLastName ?? ''}`.trim() ||
+      'client';
+    return {
+      id: l.id,
+      propertyId: property.id,
+      propertyName: property.name,
+      lotId: l.lotId,
+      lotName: l.lotName,
+      customerId: l.customerId,
+      customerLabel,
+      typeLocation: l.typeLocation,
+      dateDebut: l.dateDebut,
+      dateFin: l.dateFin,
+      status: computeLocationStatus(l.dateDebut, l.dateFin),
+      prixLocation: l.prixLocation ?? l.prix ?? null,
+      periodicite: l.periodicite,
+    };
+  });
 
   const overviewTab = (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Kpi label="Lots" value={propertyLots.length} />
-        <Kpi label="Marchés de travaux" value={propertyMarches.length} />
+        <Kpi label="Niveaux" value={totalLevels} />
+        <Kpi label="Travaux" value={propertyMarches.length} />
         <Kpi
           label="Lots loués"
           value={
@@ -203,115 +290,100 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
-  const identityTab = (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Identité
-        </h2>
-        <dl className="space-y-2 text-[13px]">
-          <Row label="Nom">{property.name}</Row>
-          <Row label="Type">{property.type}</Row>
-          <Row label="Adresse">{property.address ?? '—'}</Row>
-          <Row label="Code postal / ville">
-            {property.postalCode || property.city
-              ? `${property.postalCode ?? ''} ${property.city ?? ''}`.trim()
-              : '—'}
-          </Row>
-          <Row label="Société">
-            <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-700">
-              {property.companyName}
-            </Link>
-          </Row>
-        </dl>
-      </div>
-      <div className="card p-5">
-        <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-          Acquisition
-        </h2>
-        <dl className="space-y-2 text-[13px]">
-          <Row label="Date d'achat">{formatDate(property.purchaseDate)}</Row>
-          <Row label="Prix">
-            <span className="tnum">
-              {property.purchasePrice
-                ? `${Number(property.purchasePrice).toLocaleString('fr-FR')} €`
+  const bienTab = (
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="card p-5">
+          <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+            Identité
+          </h2>
+          <dl className="space-y-2 text-[13px]">
+            <Row label="Nom">{property.name}</Row>
+            <Row label="Type">{property.type}</Row>
+            <Row label="Adresse">{property.address ?? '—'}</Row>
+            <Row label="Code postal / ville">
+              {property.postalCode || property.city
+                ? `${property.postalCode ?? ''} ${property.city ?? ''}`.trim()
                 : '—'}
-            </span>
-          </Row>
-          <Row label="Cadastre">
-            <span className="font-mono text-[12px]">{property.cadastre ?? '—'}</span>
-          </Row>
-        </dl>
+            </Row>
+            <Row label="Société">
+              <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-700">
+                {property.companyName}
+              </Link>
+            </Row>
+            <Row label="Date d'achat">{formatDate(property.purchaseDate)}</Row>
+            <Row label="Prix d'achat">
+              <span className="tnum">
+                {property.purchasePrice
+                  ? `${Number(property.purchasePrice).toLocaleString('fr-FR')} €`
+                  : '—'}
+              </span>
+            </Row>
+            <Row label="Cadastre">
+              <span className="font-mono text-[12px]">{property.cadastre ?? '—'}</span>
+            </Row>
+          </dl>
+        </div>
+
+        <details open={hasNotaire} className="card p-5 group">
+          <summary className="cursor-pointer list-none">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+                Notaire
+              </h2>
+              <span className="text-[11px] text-zinc-400 group-open:hidden">
+                {hasNotaire ? 'Déplier' : 'Aucune information'}
+              </span>
+              <span className="hidden text-[11px] text-zinc-400 group-open:inline">Replier</span>
+            </div>
+          </summary>
+          <dl className="mt-3 space-y-2 text-[13px]">
+            <Row label="Nom">{notaire.name ?? '—'}</Row>
+            <Row label="Étude">{notaire.etude ?? '—'}</Row>
+            <Row label="Téléphone">
+              <span className="font-mono">{notaire.phone ?? '—'}</span>
+            </Row>
+            <Row label="Email">{notaire.email ?? '—'}</Row>
+          </dl>
+        </details>
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+            Structure
+          </h2>
+          <p className="text-[11px] text-zinc-500">
+            Bien → Lots → Niveaux → Pièces. Clic sur un lot pour ouvrir sa fiche complète.
+          </p>
+        </div>
+        <PropertyStructureTree tree={tree} />
       </div>
     </div>
   );
 
-  const notaireTab = (
-    <div className="card max-w-2xl p-5">
-      <h2 className="mb-3 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-        Notaire
-      </h2>
-      <dl className="space-y-2 text-[13px]">
-        <Row label="Nom">{notaire.name ?? '—'}</Row>
-        <Row label="Étude">{notaire.etude ?? '—'}</Row>
-        <Row label="Téléphone">{notaire.phone ?? '—'}</Row>
-        <Row label="Email">{notaire.email ?? '—'}</Row>
-      </dl>
-    </div>
-  );
-
-  const lotsTab = (
-    <div className="card overflow-hidden">
-      {propertyLots.length === 0 ? (
-        <p className="p-6 text-center text-sm text-zinc-500">
-          Aucun lot dans ce bien.
+  const locationsTab = (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+          Locations sur ce bien
+        </h2>
+        <p className="text-[11px] text-zinc-500">
+          Toutes les locations actuelles, à venir et passées sur les lots de ce bien.
         </p>
-      ) : (
-        <table className="table-base">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th className="w-[140px]">Type</th>
-              <th className="w-[140px]">Surface Carrez</th>
-              <th className="w-[120px]">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {propertyLots.map((l, i) => (
-              <tr key={l.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                <td>
-                  <Link href={`/biens/lots/${l.id}`} className="link-cell">
-                    {l.name}
-                  </Link>
-                </td>
-                <td>
-                  <span className="badge-neutral">{l.type}</span>
-                </td>
-                <td className="tnum text-[12px] text-zinc-600">
-                  {l.surfaceCarrez ? `${l.surfaceCarrez} m²` : '—'}
-                </td>
-                <td>
-                  <span
-                    className={
-                      l.status === 'vacant'
-                        ? 'badge-neutral'
-                        : l.status === 'travaux'
-                        ? 'badge-amber'
-                        : 'badge-emerald'
-                    }
-                  >
-                    {l.status.replace('_', ' ')}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      </div>
+      <div className="card overflow-hidden">
+        <LocationsTable
+          rows={propertyLocationRows}
+          hideColumns={['property']}
+          deleteAction={deleteLocationAction}
+          emptyMessage="Aucune location pour les lots de ce bien."
+        />
+      </div>
     </div>
   );
 
-  const marchesTab = (
+  const travauxTab = (
     <div className="space-y-4">
       <div className="flex justify-end">
         <Link href={`/biens/properties/${property.id}/marches/new`} className="btn-primary">
@@ -321,7 +393,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       </div>
       {propertyMarches.length === 0 ? (
         <div className="card p-6 text-center text-sm text-zinc-500">
-          Aucun marché pour ce bien. Crée-en un pour commencer le suivi.
+          Aucun marché de travaux pour ce bien. Crée-en un pour commencer le suivi.
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -368,53 +440,6 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
-  const niveauxTab = (() => {
-    if (propertyLots.length === 0) {
-      return (
-        <div className="card p-6">
-          <p className="text-sm text-zinc-500">
-            Ajoute un lot d'abord pour pouvoir y déclarer des niveaux et pièces. Un niveau est
-            rattaché à un lot précis (un immeuble peut héberger plusieurs lots avec leur propre
-            découpage).
-          </p>
-          <p className="mt-3 text-[12px] text-zinc-400">
-            Un lot se crée depuis la fiche de ce bien (à venir) ou via la page Biens.
-          </p>
-        </div>
-      );
-    }
-
-    if (propertyLots.length === 1) {
-      const only = lotsLevels[0];
-      return (
-        <div className="card p-6">
-          <LevelsRoomsManager lotId={only.lotId} levels={only.levels} />
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        {lotsLevels.map((bucket) => (
-          <div key={bucket.lotId} className="card p-6">
-            <div className="mb-4 flex items-baseline justify-between">
-              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                {bucket.lotName}
-              </h3>
-              <Link
-                href={`/biens/lots/${bucket.lotId}`}
-                className="text-[12px] text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] hover:decoration-emerald-700"
-              >
-                Ouvrir la fiche du lot →
-              </Link>
-            </div>
-            <LevelsRoomsManager lotId={bucket.lotId} levels={bucket.levels} />
-          </div>
-        ))}
-      </div>
-    );
-  })();
-
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -441,16 +466,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
-    { id: 'identity', label: 'Identité', content: identityTab },
-    { id: 'notaire', label: 'Notaire', content: notaireTab },
-    { id: 'lots', label: 'Lots', count: propertyLots.length, content: lotsTab },
+    { id: 'bien', label: 'Bien', count: propertyLots.length, content: bienTab },
     {
-      id: 'niveaux',
-      label: 'Niveaux & pièces',
-      count: totalLevels || undefined,
-      content: niveauxTab,
+      id: 'locations',
+      label: 'Locations',
+      count: propertyLocations.length || undefined,
+      content: locationsTab,
     },
-    { id: 'marches', label: 'Marchés', count: propertyMarches.length, content: marchesTab },
+    { id: 'travaux', label: 'Travaux', count: propertyMarches.length, content: travauxTab },
     { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
 

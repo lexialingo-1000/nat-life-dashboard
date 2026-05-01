@@ -19,6 +19,11 @@ import {
   deleteCustomerAction,
 } from '../actions';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
+import {
+  LocationsTable,
+  type LocationRow,
+  type LocationStatus,
+} from '@/app/(dashboard)/locations/locations-table';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
@@ -26,6 +31,15 @@ import { DeleteButton } from '@/components/delete-button';
 import { RequiredDocumentsWidget } from '@/components/required-documents-widget';
 import { slugify } from '@/lib/storage/minio';
 import { formatDate } from '@/lib/utils';
+
+function computeLocationStatus(dateDebut: string, dateFin: string | null): LocationStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const debut = new Date(dateDebut);
+  if (dateFin && new Date(dateFin) < today) return 'inactif';
+  if (debut > today) return 'a_venir';
+  return 'actif';
+}
 
 const LOCATION_TYPE_LABELS: Record<string, string> = {
   bail_meuble_annuel: 'Bail meublé annuel',
@@ -242,9 +256,25 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  const customerLocationRows: LocationRow[] = customerLocations.map((l) => ({
+    id: l.id,
+    propertyId: l.propertyId,
+    propertyName: l.propertyName,
+    lotId: l.lotId,
+    lotName: l.lotName,
+    customerId: customer.id,
+    customerLabel: displayName,
+    typeLocation: l.typeLocation,
+    dateDebut: l.dateDebut,
+    dateFin: l.dateFin,
+    status: computeLocationStatus(l.dateDebut, l.dateFin),
+    prixLocation: l.prixLocation ?? l.prix ?? null,
+    periodicite: l.periodicite,
+  }));
+
   const locationsTab = (
-    <div className="card p-6">
-      <div className="mb-3 flex items-baseline justify-between">
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
         <h2 className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
           Lots & contrats
         </h2>
@@ -257,53 +287,14 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         </Link>
       </div>
 
-      {customerLocations.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucune location pour ce client. Une location lie ce client à un lot d'un bien
-          (locataire annuel ou saisonnier).
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {customerLocations.map((l) => {
-            const priceText =
-              l.prixLocation
-                ? `${Number(l.prixLocation).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
-                : l.prix
-                ? `${Number(l.prix).toLocaleString('fr-FR')} € ${PERIODICITE_LABELS[l.periodicite] ?? ''}`
-                : null;
-            return (
-              <li
-                key={l.id}
-                className="flex items-center justify-between rounded-md border border-zinc-100 p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-3">
-                    <Link href={`/biens/lots/${l.lotId}`} className="link-cell text-[13px]">
-                      {l.propertyName} · {l.lotName}
-                    </Link>
-                    <span className="badge-neutral">
-                      {LOCATION_TYPE_LABELS[l.typeLocation] ?? l.typeLocation}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-[12px] text-zinc-500">
-                    Du {formatDate(l.dateDebut)}
-                    {l.dateFin ? ` au ${formatDate(l.dateFin)}` : ' (en cours)'}
-                    {priceText && <span className="ml-2 tnum">· {priceText}</span>}
-                  </div>
-                </div>
-                <DeleteButton
-                  variant="icon"
-                  action={deleteLocationAction}
-                  id={l.id}
-                  label="Supprimer cette location"
-                  confirmationPhrase={l.lotName}
-                  description={`Supprimer la location de ${l.propertyName} · ${l.lotName} (du ${formatDate(l.dateDebut)}${l.dateFin ? ` au ${formatDate(l.dateFin)}` : ', en cours'}) ? Les documents associés à cette location seront aussi supprimés. Action irréversible.`}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <div className="card overflow-hidden">
+        <LocationsTable
+          rows={customerLocationRows}
+          hideColumns={['customer']}
+          deleteAction={deleteLocationAction}
+          emptyMessage="Aucune location pour ce client. Une location lie ce client à un lot d'un bien (locataire annuel ou saisonnier)."
+        />
+      </div>
     </div>
   );
 
