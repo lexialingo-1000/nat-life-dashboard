@@ -51,20 +51,29 @@ const updateSchema = z.object({
   isActive: checkboxToBool,
 });
 
-function humanizeDbError(e: unknown, code: string, scope: string): Error {
+function humanizeDbError(e: unknown, code: string, scope: string): string {
   const msg = e instanceof Error ? e.message : String(e);
   if ((e as { code?: string })?.code === '23505' || /unique/i.test(msg)) {
-    return new Error(
-      `Un type avec le code "${code}" existe déjà pour le scope "${scope}". Choisis un code différent ou réactive le type existant.`
-    );
+    return `Un type avec le code "${code}" existe déjà pour le scope "${scope}". Choisis un code différent ou réactive le type existant.`;
   }
-  return e instanceof Error ? e : new Error(msg);
+  return msg || 'Erreur inconnue lors de la création du type.';
 }
 
-export async function createDocumentTypeAction(formData: FormData): Promise<void> {
+export type CreateDocumentTypeState =
+  | { status: 'idle' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; createdAt: number };
+
+export async function createDocumentTypeAction(
+  _prev: CreateDocumentTypeState,
+  formData: FormData
+): Promise<CreateDocumentTypeState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+    return {
+      status: 'error',
+      message: parsed.error.errors.map((e) => e.message).join(', '),
+    };
   }
 
   const { code, label, scope, hasExpiration, isRequired, appliesToTenantType } = parsed.data;
@@ -83,10 +92,11 @@ export async function createDocumentTypeAction(formData: FormData): Promise<void
       sortOrder: 100,
     });
   } catch (e) {
-    throw humanizeDbError(e, code, scope);
+    return { status: 'error', message: humanizeDbError(e, code, scope) };
   }
 
   revalidatePath('/admin/types-documents');
+  return { status: 'success', createdAt: Date.now() };
 }
 
 export async function updateDocumentTypeAction(formData: FormData): Promise<void> {
