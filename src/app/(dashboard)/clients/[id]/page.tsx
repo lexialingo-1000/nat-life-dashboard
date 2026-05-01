@@ -176,6 +176,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
         }))}
         availableTypes={customerTypes}
         uploadAction={uploadCustomerDocumentAction}
@@ -234,16 +235,14 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                     {priceText && <span className="ml-2 tnum">· {priceText}</span>}
                   </div>
                 </div>
-                <form action={deleteLocationAction}>
-                  <input type="hidden" name="id" value={l.id} />
-                  <button
-                    type="submit"
-                    title="Supprimer cette location"
-                    className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4" strokeWidth={1.75} />
-                  </button>
-                </form>
+                <DeleteButton
+                  variant="icon"
+                  action={deleteLocationAction}
+                  id={l.id}
+                  label="Supprimer cette location"
+                  confirmationPhrase={l.lotName}
+                  description={`Supprimer la location de ${l.propertyName} · ${l.lotName} (du ${formatDate(l.dateDebut)}${l.dateFin ? ` au ${formatDate(l.dateFin)}` : ', en cours'}) ? Les documents associés à cette location seront aussi supprimés. Action irréversible.`}
+                />
               </li>
             );
           })}

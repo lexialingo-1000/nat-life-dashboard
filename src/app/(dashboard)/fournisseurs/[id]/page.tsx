@@ -223,6 +223,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
         }))}
         availableTypes={supplierTypes}
         uploadAction={uploadSupplierDocumentAction}

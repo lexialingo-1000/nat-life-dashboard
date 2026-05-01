@@ -166,6 +166,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       storageKey: propertyDocuments.storageKey,
       expiresAt: propertyDocuments.expiresAt,
       documentDate: propertyDocuments.documentDate,
+      uploadedAt: propertyDocuments.uploadedAt,
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
@@ -428,6 +429,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
         }))}
         availableTypes={propertyDocTypes}
         uploadAction={uploadPropertyDocumentAction}

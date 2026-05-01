@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from './data-table';
+import { formatDate } from '@/lib/utils';
 
 type DocumentRow = {
   id: string;
@@ -10,6 +13,7 @@ type DocumentRow = {
   storageKey: string;
   documentDate: string | null;
   expiresAt: string | null;
+  uploadedAt: string;
 };
 
 type DocumentType = {
@@ -37,6 +41,16 @@ interface Props {
   uploadAction: ServerAction;
   deleteAction: ServerAction;
   getUrlAction: ServerAction<{ url: string } | { error: string }>;
+}
+
+function expirationLabel(expiresAt: string | null) {
+  if (!expiresAt) return null;
+  const expiry = new Date(expiresAt);
+  const now = new Date();
+  const days = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { text: 'Expiré', color: 'red' as const };
+  if (days < 30) return { text: `Expire dans ${days}j`, color: 'orange' as const };
+  return { text: `Valide`, color: 'green' as const };
 }
 
 export function DocumentsManager({
@@ -189,15 +203,107 @@ export function DocumentsManager({
     });
   };
 
-  const expirationLabel = (expiresAt: string | null) => {
-    if (!expiresAt) return null;
-    const expiry = new Date(expiresAt);
-    const now = new Date();
-    const days = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return { text: 'Expiré', color: 'red' };
-    if (days < 30) return { text: `Expire dans ${days}j`, color: 'orange' };
-    return { text: `Valide jusqu'au ${new Date(expiresAt).toLocaleDateString('fr-FR')}`, color: 'green' };
-  };
+  const columns = useMemo<ColumnDef<DocumentRow>[]>(
+    () => [
+      {
+        id: 'typeLabel',
+        accessorKey: 'typeLabel',
+        header: 'Type',
+        cell: ({ row }) => (
+          <span className="badge-neutral">{row.original.typeLabel}</span>
+        ),
+      },
+      {
+        id: 'documentDate',
+        accessorKey: 'documentDate',
+        header: 'Date du document',
+        sortingFn: 'datetime',
+        cell: ({ row }) => (
+          <span className="tnum text-zinc-700">{formatDate(row.original.documentDate)}</span>
+        ),
+      },
+      {
+        id: 'uploadedAt',
+        accessorKey: 'uploadedAt',
+        header: "Date d'intégration",
+        sortingFn: 'datetime',
+        cell: ({ row }) => (
+          <span className="tnum text-zinc-500">{formatDate(row.original.uploadedAt)}</span>
+        ),
+      },
+      {
+        id: 'name',
+        accessorKey: 'name',
+        header: 'Titre du document',
+        cell: ({ row }) => {
+          const exp = expirationLabel(row.original.expiresAt);
+          return (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleDownload(row.original.storageKey)}
+                disabled={pendingTransition}
+                className="link-cell text-left disabled:opacity-50"
+              >
+                {row.original.name}
+              </button>
+              {exp && (
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    exp.color === 'red'
+                      ? 'bg-red-100 text-red-800'
+                      : exp.color === 'orange'
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {exp.text}
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 80,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              type="button"
+              onClick={() => handleDownload(row.original.storageKey)}
+              disabled={pendingTransition}
+              title="Télécharger"
+              className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDelete(row.original)}
+              disabled={pendingTransition}
+              title="Supprimer"
+              className="rounded p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [pendingTransition]
+  );
+
+  const sortedDocuments = useMemo(
+    () =>
+      [...documents].sort(
+        (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      ),
+    [documents]
+  );
 
   return (
     <div
@@ -220,64 +326,15 @@ export function DocumentsManager({
         </div>
       )}
 
-      <ul className="space-y-2">
-        {documents.length === 0 && (
-          <li className="rounded-md border border-dashed border-zinc-200 p-4 text-center text-sm text-zinc-500">
-            Aucun document pour l'instant. Glissez-déposez un fichier ici ou cliquez ci-dessous.
-          </li>
-        )}
-        {documents.map((d) => {
-          const exp = expirationLabel(d.expiresAt);
-          return (
-            <li
-              key={d.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-zinc-100 p-3"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{d.name}</div>
-                <div className="text-xs text-zinc-500">
-                  {d.typeLabel}
-                  {d.documentDate &&
-                    ` · daté du ${new Date(d.documentDate).toLocaleDateString('fr-FR')}`}
-                </div>
-              </div>
-              {exp && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    exp.color === 'red'
-                      ? 'bg-red-100 text-red-800'
-                      : exp.color === 'orange'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-emerald-100 text-emerald-800'
-                  }`}
-                >
-                  {exp.text}
-                </span>
-              )}
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleDownload(d.storageKey)}
-                  disabled={pendingTransition}
-                  title="Télécharger"
-                  className="rounded p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-50"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(d)}
-                  disabled={pendingTransition}
-                  title="Supprimer"
-                  className="rounded p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="rounded-md border border-zinc-100">
+        <DataTable
+          columns={columns}
+          data={sortedDocuments}
+          enableFilters={false}
+          striped={false}
+          emptyMessage="Aucun document pour l'instant. Glisse-dépose un fichier ici ou utilise le bouton ci-dessous."
+        />
+      </div>
 
       {!showForm && availableTypes.length > 0 && (
         <button
@@ -303,7 +360,7 @@ export function DocumentsManager({
       {showForm && (
         <form
           onSubmit={handleUpload}
-          className="space-y-3 rounded-md border border-zinc-200 bg-zinc-50 p-4"
+          className="space-y-3 rounded-md border border-zinc-200 bg-[#fbf8f0] p-4"
         >
           <div>
             <label className="block text-xs font-medium text-zinc-700">Type *</label>

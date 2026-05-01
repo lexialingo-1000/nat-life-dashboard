@@ -114,6 +114,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       storageKey: locationDocuments.storageKey,
       expiresAt: locationDocuments.expiresAt,
       documentDate: locationDocuments.documentDate,
+      uploadedAt: locationDocuments.uploadedAt,
     })
     .from(locationDocuments)
     .innerJoin(documentTypes, eq(locationDocuments.typeId, documentTypes.id))
@@ -227,6 +228,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
         }))}
         availableTypes={locationDocTypes}
         uploadAction={uploadLocationDocumentAction}

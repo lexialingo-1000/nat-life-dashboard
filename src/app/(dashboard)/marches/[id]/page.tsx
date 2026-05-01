@@ -95,6 +95,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       storageKey: marcheDocuments.storageKey,
       expiresAt: marcheDocuments.expiresAt,
       documentDate: marcheDocuments.documentDate,
+      uploadedAt: marcheDocuments.uploadedAt,
     })
     .from(marcheDocuments)
     .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))
@@ -233,6 +234,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
         }))}
         availableTypes={marcheDocTypes}
         uploadAction={uploadMarcheDocumentAction}

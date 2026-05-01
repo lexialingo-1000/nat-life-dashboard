@@ -8,7 +8,7 @@ interface DeleteButtonProps {
   action: (formData: FormData) => Promise<void>;
   /** Hidden id passed to the action. */
   id: string;
-  /** Label shown on the button. */
+  /** Label shown on the button (button variant) or as tooltip (icon variant). */
   label?: string;
   /** Confirmation phrase the user must type. */
   confirmationPhrase: string;
@@ -16,6 +16,8 @@ interface DeleteButtonProps {
   description: string;
   /** Extra hidden fields passed to the action (e.g. returnTo, lotId). */
   extraFields?: Record<string, string>;
+  /** 'button' (default) renders the full bordered red button. 'icon' renders a compact red trash icon button. */
+  variant?: 'button' | 'icon';
 }
 
 export function DeleteButton({
@@ -25,6 +27,7 @@ export function DeleteButton({
   confirmationPhrase,
   description,
   extraFields,
+  variant = 'button',
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
@@ -46,14 +49,26 @@ export function DeleteButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-[#fbf8f0] px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-      >
-        <Trash2 className="h-4 w-4" />
-        {label}
-      </button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title={label}
+          aria-label={label}
+          className="rounded p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-700"
+        >
+          <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-[#fbf8f0] px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+        >
+          <Trash2 className="h-4 w-4" />
+          {label}
+        </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

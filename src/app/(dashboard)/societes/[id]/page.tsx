@@ -67,6 +67,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       storageKey: companyDocuments.storageKey,
       expiresAt: companyDocuments.expiresAt,
       documentDate: companyDocuments.documentDate,
+      uploadedAt: companyDocuments.uploadedAt,
     })
     .from(companyDocuments)
     .innerJoin(documentTypes, eq(companyDocuments.typeId, documentTypes.id))
@@ -186,6 +187,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
+          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
         }))}
         availableTypes={companyDocTypes}
         uploadAction={uploadCompanyDocumentAction}
