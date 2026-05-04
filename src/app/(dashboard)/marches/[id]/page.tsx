@@ -3,6 +3,7 @@ import {
   marchesTravaux,
   marcheLotAffectations,
   marcheDocuments,
+  marcheSousLots,
   lots,
   properties,
   companies,
@@ -25,6 +26,7 @@ import {
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
+import { MarcheSousLotsSection, type MarcheSousLot } from '@/components/marche-sous-lots-section';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -114,6 +116,18 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .where(and(eq(documentTypes.scope, 'marche'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
 
+  const sousLots = await db
+    .select({
+      id: marcheSousLots.id,
+      name: marcheSousLots.name,
+      amountHt: marcheSousLots.amountHt,
+      dateDebutPrevu: marcheSousLots.dateDebutPrevu,
+      dateFinPrevu: marcheSousLots.dateFinPrevu,
+    })
+    .from(marcheSousLots)
+    .where(eq(marcheSousLots.marcheId, marche.id))
+    .orderBy(asc(marcheSousLots.sortOrder));
+
   const supplierLabel =
     marche.supplierName ??
     `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
@@ -194,30 +208,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const lotsTab = (
-    <div className="card p-6">
-      {affectedLots.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucun lot affecté — marché de parties communes / structurel (toiture, façade,
-          ascenseur, etc.).
-        </p>
-      ) : (
-        <ul className="flex flex-wrap gap-2">
-          {affectedLots.map((l) => (
-            <li key={l.id}>
-              <Link
-                href={`/biens/lots/${l.id}`}
-                className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1.5 text-sm hover:bg-zinc-50 hover:text-emerald-700"
-              >
-                {l.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -242,15 +232,16 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  const sousLotsTab = (
+    <div className="card p-6">
+      <MarcheSousLotsSection marcheId={marche.id} sousLots={sousLots as MarcheSousLot[]} />
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
-    {
-      id: 'lots',
-      label: 'Lots concernés',
-      count: affectedLots.length || undefined,
-      content: lotsTab,
-    },
+    { id: 'sous-lots', label: 'Sous-lots', count: sousLots.length || undefined, content: sousLotsTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 
@@ -284,6 +275,21 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
               {supplierLabel}
             </Link>
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {affectedLots.length === 0 ? (
+              <span className="text-[12px] text-zinc-400">Parties communes</span>
+            ) : (
+              affectedLots.map((l) => (
+                <Link
+                  key={l.id}
+                  href={`/biens/lots/${l.id}`}
+                  className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 text-[12px] hover:bg-zinc-50 hover:text-emerald-700"
+                >
+                  {l.name}
+                </Link>
+              ))
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/marches/${marche.id}/edit`} className="btn-secondary">

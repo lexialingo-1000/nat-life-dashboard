@@ -1,10 +1,10 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import {
-  createLevelAction,
   deleteLevelAction,
-  createRoomAction,
   deleteRoomAction,
 } from '@/app/(dashboard)/biens/actions';
+import { AddLevelForm } from './add-level-form';
+import { AddRoomForm } from './add-room-form';
 
 export type LevelWithRooms = {
   id: string;
@@ -78,65 +78,11 @@ export function LevelsRoomsManager({ lotId, levels }: Props) {
             )}
           </ul>
 
-          <form
-            action={createRoomAction}
-            className="flex items-end gap-2 border-t border-zinc-200 px-4 py-3"
-          >
-            <input type="hidden" name="levelId" value={lv.id} />
-            <input type="hidden" name="lotId" value={lotId} />
-            <div className="flex-1">
-              <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-                Nom de la pièce
-              </label>
-              <input
-                name="name"
-                required
-                placeholder="Salon, cuisine, chambre 1…"
-                className="input mt-1"
-              />
-            </div>
-            <div className="w-28">
-              <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-                Surface m²
-              </label>
-              <input
-                name="surfaceM2"
-                type="number"
-                step="0.1"
-                min="0"
-                placeholder="—"
-                className="input mt-1 tnum"
-              />
-            </div>
-            <button type="submit" className="btn-secondary">
-              <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-              Pièce
-            </button>
-          </form>
+          <AddRoomForm lotId={lotId} levelId={lv.id} />
         </div>
       ))}
 
-      <form
-        action={createLevelAction}
-        className="flex items-end gap-2 rounded-md border border-zinc-200 bg-[#fbf8f0] p-4"
-      >
-        <input type="hidden" name="lotId" value={lotId} />
-        <div className="flex-1">
-          <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-            Nouveau niveau
-          </label>
-          <input
-            name="name"
-            required
-            placeholder="RDC, R+1, sous-sol…"
-            className="input mt-1"
-          />
-        </div>
-        <button type="submit" className="btn-primary">
-          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-          Ajouter le niveau
-        </button>
-      </form>
+      <AddLevelForm lotId={lotId} />
     </div>
   );
 }

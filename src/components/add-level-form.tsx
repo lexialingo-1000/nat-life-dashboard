@@ -8,7 +8,7 @@ interface Props {
   lotId: string;
 }
 
-export function InlineLevelForm({ lotId }: Props) {
+export function AddLevelForm({ lotId }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
@@ -18,7 +18,7 @@ export function InlineLevelForm({ lotId }: Props) {
         await createLevelAction(formData);
         formRef.current?.reset();
       }}
-      className="flex items-end gap-2 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] px-3 py-2"
+      className="flex items-end gap-2 rounded-md border border-zinc-200 bg-[#fbf8f0] p-4"
     >
       <input type="hidden" name="lotId" value={lotId} />
       <div className="flex-1">
@@ -32,9 +32,9 @@ export function InlineLevelForm({ lotId }: Props) {
           className="input mt-1"
         />
       </div>
-      <button type="submit" className="btn-secondary">
+      <button type="submit" className="btn-primary">
         <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-        Niveau
+        Ajouter le niveau
       </button>
     </form>
   );

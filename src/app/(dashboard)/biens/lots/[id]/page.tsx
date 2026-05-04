@@ -23,6 +23,7 @@ import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { DeleteButton } from '@/components/delete-button';
+import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import {
   LocationsTable,
@@ -36,15 +37,6 @@ import {
 } from '../../actions';
 import { formatDate } from '@/lib/utils';
 import { slugify } from '@/lib/storage/minio';
-
-const MARCHE_STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
-  signe: 'Signé',
-  en_cours: 'En cours',
-  livre: 'Livré',
-  conteste: 'Contesté',
-  annule: 'Annulé',
-};
 
 const LOT_STATUS_LABELS: Record<string, string> = {
   vacant: 'Vacant',
@@ -142,6 +134,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         status: marchesTravaux.status,
         amountHt: marchesTravaux.amountHt,
         supplierName: suppliers.companyName,
+        dateFinPrevu: marchesTravaux.dateFinPrevu,
       })
       .from(marcheLotAffectations)
       .innerJoin(marchesTravaux, eq(marchesTravaux.id, marcheLotAffectations.marcheId))
@@ -273,34 +266,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           + Nouveau marché (sur le bien)
         </Link>
       </div>
-      {lotMarches.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucun marché affecté à ce lot. La création se fait depuis la fiche du bien parent.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {lotMarches.map((m) => (
-            <li
-              key={m.id}
-              className="flex items-center justify-between rounded-md border border-zinc-100 p-3"
-            >
-              <div className="min-w-0 flex-1">
-                <Link href={`/marches/${m.id}`} className="link-cell text-[13px]">
-                  {m.name}
-                </Link>
-                <div className="mt-0.5 text-[12px] text-zinc-500">
-                  {m.supplierName ?? '—'}
-                  {m.amountHt &&
-                    ` · ${Number(m.amountHt).toLocaleString('fr-FR')} € HT`}
-                </div>
-              </div>
-              <span className="badge-neutral">
-                {MARCHE_STATUS_LABELS[m.status] ?? m.status}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <LotMarchesTable rows={lotMarches as LotMarcheRow[]} />
     </div>
   );
 

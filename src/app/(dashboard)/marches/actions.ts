@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations, marcheDocuments } from '@/db/schema';
+import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
@@ -259,5 +259,49 @@ export async function getMarcheDocumentUrlAction(
     return { url };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Erreur MinIO' };
+  }
+}
+
+const marcheSousLotSchema = z.object({
+  marcheId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  amountHt: z
+    .preprocess(
+      (v) => (v === '' || v == null ? null : Number(v)),
+      z.number().nonnegative().nullable()
+    )
+    .optional(),
+  dateFinPrevu: z.string().optional().or(z.literal('')),
+});
+
+export async function createMarcheSousLotAction(formData: FormData): Promise<void> {
+  const parsed = marcheSousLotSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const { marcheId, name, amountHt, dateFinPrevu } = parsed.data;
+  await db.insert(marcheSousLots).values({
+    marcheId,
+    name,
+    amountHt: amountHt ? String(amountHt) : (null as any),
+    dateFinPrevu: dateFinPrevu || (null as any),
+  });
+  revalidatePath(`/marches/${marcheId}`);
+}
+
+export async function deleteMarcheSousLotAction(formData: FormData): Promise<void> {
+  const sousLotId = String(formData.get('sousLotId') ?? '');
+  if (!sousLotId) throw new Error('ID manquant');
+
+  const rows = await db
+    .select({ marcheId: marcheSousLots.marcheId })
+    .from(marcheSousLots)
+    .where(eq(marcheSousLots.id, sousLotId))
+    .limit(1);
+
+  await db.delete(marcheSousLots).where(eq(marcheSousLots.id, sousLotId));
+
+  if (rows[0]?.marcheId) {
+    revalidatePath(`/marches/${rows[0].marcheId}`);
   }
 }

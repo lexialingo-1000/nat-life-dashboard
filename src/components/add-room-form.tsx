@@ -9,7 +9,7 @@ interface Props {
   levelId: string;
 }
 
-export function InlineRoomForm({ lotId, levelId }: Props) {
+export function AddRoomForm({ lotId, levelId }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
@@ -19,13 +19,13 @@ export function InlineRoomForm({ lotId, levelId }: Props) {
         await createRoomAction(formData);
         formRef.current?.reset();
       }}
-      className="flex items-end gap-2 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] px-3 py-2"
+      className="flex items-end gap-2 border-t border-zinc-200 px-4 py-3"
     >
-      <input type="hidden" name="lotId" value={lotId} />
       <input type="hidden" name="levelId" value={levelId} />
+      <input type="hidden" name="lotId" value={lotId} />
       <div className="flex-1">
         <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-          Nouvelle pièce
+          Nom de la pièce
         </label>
         <input
           name="name"
@@ -34,9 +34,9 @@ export function InlineRoomForm({ lotId, levelId }: Props) {
           className="input mt-1"
         />
       </div>
-      <div className="w-24">
+      <div className="w-28">
         <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-          m²
+          Surface m²
         </label>
         <input
           name="surfaceM2"

@@ -12,18 +12,33 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MarchesPage() {
+export default async function MarchesPage({
+  searchParams,
+}: {
+  searchParams: { supplierId?: string };
+}) {
+  const activeSupplierId = searchParams.supplierId ?? undefined;
+
   let rows: any[] = [];
+  let supplierList: { id: string; label: string }[] = [];
   let dbError: string | null = null;
   try {
-    rows = await db
+    const rawSuppliers = await db
+      .select({ id: suppliers.id, companyName: suppliers.companyName, firstName: suppliers.firstName, lastName: suppliers.lastName })
+      .from(suppliers)
+      .orderBy(asc(suppliers.companyName));
+    supplierList = rawSuppliers.map((s) => ({
+      id: s.id,
+      label: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim(),
+    }));
+
+    const base = db
       .select({
         id: marchesTravaux.id,
         name: marchesTravaux.name,
         amountHt: marchesTravaux.amountHt,
         status: marchesTravaux.status,
-        dateDebutPrevu: marchesTravaux.dateDebutPrevu,
-        dateFinPrevu: marchesTravaux.dateFinPrevu,
+        supplierId: suppliers.id,
         propertyId: properties.id,
         propertyName: properties.name,
         companyName: companies.name,
@@ -38,8 +53,12 @@ export default async function MarchesPage() {
       .from(marchesTravaux)
       .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
       .innerJoin(companies, eq(properties.companyId, companies.id))
-      .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
-      .orderBy(asc(marchesTravaux.createdAt));
+      .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id));
+
+    const filtered = activeSupplierId
+      ? base.where(eq(marchesTravaux.supplierId, activeSupplierId))
+      : base;
+    rows = await filtered.orderBy(asc(marchesTravaux.createdAt));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }
@@ -58,6 +77,34 @@ export default async function MarchesPage() {
           Vue transversale des contrats fournisseur ↔ bien (et lots concernés).
         </p>
       </header>
+
+      {!dbError && supplierList.length > 0 && (
+        <form method="get" className="flex items-center gap-3">
+          <label className="text-[12px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+            Fournisseur
+          </label>
+          <select
+            name="supplierId"
+            defaultValue={activeSupplierId ?? ''}
+            className="input w-56 text-[13px]"
+          >
+            <option value="">Tous les fournisseurs</option>
+            {supplierList.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn-secondary text-[12px]">
+            Filtrer
+          </button>
+          {activeSupplierId && (
+            <Link href="/marches" className="text-[12px] text-zinc-400 hover:text-zinc-700">
+              Réinitialiser
+            </Link>
+          )}
+        </form>
+      )}
 
       {dbError && (
         <div className="card p-6 text-sm text-emerald-700">
