@@ -14,3 +14,9 @@ FROM (
   FROM rooms
 ) sub
 WHERE r.id = sub.id;
+--> statement-breakpoint
+
+-- Seed : type de document "Photo" pour scope property (F10 onglet Photos)
+INSERT INTO "document_types" ("code", "label", "scope", "sort_order", "has_expiration", "is_active")
+VALUES ('photo', 'Photo', 'property', 90, false, true)
+ON CONFLICT (code, scope) DO NOTHING;

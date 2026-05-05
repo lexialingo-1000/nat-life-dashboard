@@ -36,6 +36,7 @@ import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { DocumentsManager } from '@/components/documents-manager';
+import { PropertyPhotosManager } from '@/components/property-photos-manager';
 import {
   PropertyStructureTree,
   type PropertyTree,
@@ -72,6 +73,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         id: properties.id,
         name: properties.name,
         type: properties.type,
+        statut: properties.statut,
         address: properties.address,
         city: properties.city,
         postalCode: properties.postalCode,
@@ -220,10 +222,31 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       id: documentTypes.id,
       label: documentTypes.label,
       hasExpiration: documentTypes.hasExpiration,
+      code: documentTypes.code,
     })
     .from(documentTypes)
     .where(and(eq(documentTypes.scope, 'property'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
+
+  const photoTypeId = propertyDocTypes.find((t) => t.code === 'photo')?.id ?? null;
+
+  const propertyPhotos = await db
+    .select({
+      id: propertyDocuments.id,
+      name: propertyDocuments.name,
+      storageKey: propertyDocuments.storageKey,
+      uploadedAt: propertyDocuments.uploadedAt,
+    })
+    .from(propertyDocuments)
+    .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
+    .where(
+      and(
+        eq(propertyDocuments.propertyId, property.id),
+        eq(documentTypes.code, 'photo'),
+        eq(documentTypes.scope, 'property'),
+      )
+    )
+    .orderBy(desc(propertyDocuments.uploadedAt));
 
   const notaire = (property.notaire as any) ?? {};
   const hasNotaire = Boolean(notaire.name || notaire.etude || notaire.phone || notaire.email);
@@ -467,6 +490,25 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
+  const photosTab = (
+    <div className="card p-6">
+      <PropertyPhotosManager
+        propertyId={property.id}
+        propertySlug={slugify(property.name)}
+        photos={propertyPhotos.map((p) => ({
+          id: p.id,
+          name: p.name,
+          storageKey: p.storageKey,
+          uploadedAt: p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
+        }))}
+        photoTypeId={photoTypeId}
+        uploadAction={uploadPropertyDocumentAction}
+        deleteAction={deletePropertyDocumentAction}
+        getUrlAction={getPropertyDocumentUrlAction}
+      />
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'bien', label: 'Bien', count: propertyLots.length, content: bienTab },
@@ -477,6 +519,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       content: locationsTab,
     },
     { id: 'travaux', label: 'Travaux', count: propertyMarches.length, content: travauxTab },
+    { id: 'photos', label: 'Photos', count: propertyPhotos.length || undefined, content: photosTab },
     { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
 
@@ -491,8 +534,18 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               {property.companyName}
             </Link>
           </div>
-          <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+          <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{property.name}</span>
+            {property.statut && (
+              <span className={
+                property.statut === 'vendu' ? 'badge-neutral' :
+                property.statut === 'en_cours_acquisition' ? 'badge-blue' :
+                'badge-emerald'
+              }>
+                {property.statut === 'en_cours_acquisition' ? 'Acquisition' :
+                 property.statut === 'vendu' ? 'Vendu' : 'Loué / Vacant'}
+              </span>
+            )}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
             {property.type} · {property.address ?? 'adresse à compléter'}
