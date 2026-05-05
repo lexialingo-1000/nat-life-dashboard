@@ -11,10 +11,10 @@
   --muted-fg: oklch(0.50 0.012 80);
   --border: oklch(0.83 0.025 80);      /* #d9d2bf */
 
-  /* Sidebar — charcoal warm */
-  --sidebar: oklch(0.20 0.005 80);
-  --sidebar-fg: oklch(0.78 0.012 80);
-  --sidebar-active: oklch(0.95 0.018 80);  /* sand pour le contraste sur charcoal */
+  /* Sidebar — Marine #0D2144 */
+  --sidebar: #0D2144;
+  --sidebar-fg: #B8CDE4;
+  --sidebar-active: #ffffff;
 
   /* Accents — émeraude profond (action/CTA) + bleu canard (secondaire) */
   --accent: oklch(0.58 0.13 165);      /* #059669 emerald-600 */
@@ -70,11 +70,11 @@ h3 {
   /* Buttons — square edges, weight 500, no soft corners */
   .btn {
     @apply inline-flex h-9 select-none items-center justify-center rounded-sm px-4 text-[13px] font-medium transition-all duration-150;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-1;
     @apply disabled:pointer-events-none disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn bg-zinc-900 text-zinc-50 hover:bg-zinc-800;
+    @apply btn bg-[#2563EB] text-white hover:bg-[#1D4ED8];
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   .btn-secondary {
@@ -88,7 +88,7 @@ h3 {
   .input {
     @apply flex h-9 w-full rounded-sm border border-zinc-200 bg-[#fbf8f0] px-3 text-[13px];
     @apply placeholder:text-zinc-400;
-    @apply focus-visible:outline-none focus-visible:border-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-900;
+    @apply focus-visible:outline-none focus-visible:border-[#2563EB] focus-visible:ring-1 focus-visible:ring-[#2563EB];
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     transition: border-color 150ms;
   }
@@ -122,7 +122,7 @@ h3 {
     @apply border-b border-zinc-200;
   }
   .table-base thead th {
-    @apply px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500;
+    @apply px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500;
   }
   .table-base tbody {
     @apply divide-y divide-zinc-100;
@@ -131,7 +131,7 @@ h3 {
     @apply transition-colors hover:bg-zinc-50;
   }
   .table-base tbody td {
-    @apply px-5 py-3.5 text-zinc-700;
+    @apply px-4 py-2 text-zinc-700;
   }
 
   /* Badges — outlined pills, more architectural */

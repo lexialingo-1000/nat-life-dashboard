@@ -121,7 +121,7 @@ export function DataTable<T>({
                 return (
                   <th
                     key={header.id}
-                    className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500"
+                    className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     <div className="space-y-1.5">
@@ -182,7 +182,7 @@ export function DataTable<T>({
                 }`}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-5 py-3.5 text-zinc-700">
+                  <td key={cell.id} className="px-4 py-2 text-zinc-700">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -192,7 +192,7 @@ export function DataTable<T>({
         </tbody>
       </table>
       {data.length > 0 && (
-        <div className="flex items-center justify-between gap-4 border-t border-zinc-100 px-5 py-2.5 text-[11px] text-zinc-500">
+        <div className="flex items-center justify-between gap-4 border-t border-zinc-100 px-4 py-2 text-[11px] text-zinc-500">
           <span>
             {table.getFilteredRowModel().rows.length} ligne
             {table.getFilteredRowModel().rows.length > 1 ? 's' : ''}

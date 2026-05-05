@@ -58,24 +58,24 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
         <span className="font-serif text-[22px] leading-none tracking-tight text-sidebar-active">
           Nat Life
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#3D5A8A]">
           v1
         </span>
       </div>
 
       {/* Subtitle */}
-      <div className="px-6 pb-6 text-[12px] leading-relaxed text-zinc-500">
+      <div className="px-6 pb-6 text-[12px] leading-relaxed text-[#4A6A9E]">
         Gestion patrimoniale<br />multi-société
       </div>
 
       {/* Divider */}
-      <div className="mx-6 border-t border-zinc-900" />
+      <div className="mx-6 border-t border-[#1A3366]" />
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         {sections.map((section) => (
           <div key={section.title} className="mb-5">
-            <h3 className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+            <h3 className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[#2D4A7A]">
               {section.title}
             </h3>
             <ul className="space-y-px">
@@ -90,16 +90,16 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                       href={item.href}
                       className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart ${
                         isActive
-                          ? 'bg-zinc-900 text-sidebar-active'
-                          : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
+                          ? 'bg-[#163060] text-sidebar-active'
+                          : 'text-[#7FA3D4] hover:bg-white/10 hover:text-[#D0E2F4]'
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-emerald-500" />
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[#5BA3E0]" />
                       )}
                       <Icon
                         className={`h-[15px] w-[15px] ${
-                          isActive ? 'text-sidebar-active' : 'text-zinc-500 group-hover:text-zinc-300'
+                          isActive ? 'text-sidebar-active' : 'text-[#5A85B8] group-hover:text-[#8BBCE8]'
                         }`}
                         strokeWidth={1.75}
                       />
@@ -114,13 +114,13 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
       </nav>
 
       {/* Footer / user */}
-      <div className="mx-6 border-t border-zinc-900" />
+      <div className="mx-6 border-t border-[#1A3366]" />
       <div className="px-3 py-4">
-        <div className="mb-1 px-3 text-[12px] text-zinc-500">{userEmail ?? 'Non authentifié'}</div>
+        <div className="mb-1 px-3 text-[12px] text-[#4A6A9E]">{userEmail ?? 'Non authentifié'}</div>
         <form action="/auth/logout" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-sm px-3 py-1.5 text-[13px] text-zinc-400 transition-colors duration-150 ease-out-quart hover:bg-zinc-900/50 hover:text-zinc-200"
+            className="flex w-full items-center gap-3 rounded-sm px-3 py-1.5 text-[13px] text-[#7FA3D4] transition-colors duration-150 ease-out-quart hover:bg-white/10 hover:text-[#D0E2F4]"
           >
             <LogOut className="h-[15px] w-[15px]" strokeWidth={1.75} />
             Déconnexion
