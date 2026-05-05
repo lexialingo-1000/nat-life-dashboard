@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots } from '@/db/schema';
+import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots, suppliers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
@@ -21,7 +21,6 @@ const marcheStatusValues = [
 const marcheBaseSchema = z.object({
   propertyId: z.string().uuid(),
   supplierId: z.string().uuid(),
-  name: z.string().min(1).max(255),
   description: z.string().optional().or(z.literal('')),
   amountHt: z
     .preprocess(
@@ -59,11 +58,21 @@ function parseLotIds(formData: FormData): string[] {
     .filter((v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v));
 }
 
+async function resolveSupplierName(supplierId: string): Promise<string> {
+  const rows = await db
+    .select({ companyName: suppliers.companyName, firstName: suppliers.firstName, lastName: suppliers.lastName })
+    .from(suppliers)
+    .where(eq(suppliers.id, supplierId))
+    .limit(1);
+  const s = rows[0];
+  if (!s) return 'Fournisseur';
+  return s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || 'Fournisseur';
+}
+
 export async function createMarcheAction(formData: FormData): Promise<void> {
   const parsed = marcheBaseSchema.safeParse({
     propertyId: formData.get('propertyId'),
     supplierId: formData.get('supplierId'),
-    name: formData.get('name'),
     description: formData.get('description'),
     amountHt: formData.get('amountHt'),
     amountTtc: formData.get('amountTtc'),
@@ -81,13 +90,14 @@ export async function createMarcheAction(formData: FormData): Promise<void> {
 
   const data = parsed.data;
   const lotIds = parseLotIds(formData);
+  const supplierName = await resolveSupplierName(data.supplierId);
 
   const inserted = await db
     .insert(marchesTravaux)
     .values({
       propertyId: data.propertyId,
       supplierId: data.supplierId,
-      name: data.name,
+      name: supplierName,
       description: data.description || null,
       amountHt: data.amountHt != null ? String(data.amountHt) : null,
       amountTtc: data.amountTtc != null ? String(data.amountTtc) : null,
@@ -97,7 +107,7 @@ export async function createMarcheAction(formData: FormData): Promise<void> {
       dateFinPrevu: data.dateFinPrevu || null,
       status: data.status,
       notes: data.notes || null,
-      storagePath: buildStoragePrefix('marches', data.name),
+      storagePath: buildStoragePrefix('marches', supplierName),
     })
     .returning({ id: marchesTravaux.id });
 
@@ -128,7 +138,6 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
     id: formData.get('id'),
     propertyId: formData.get('propertyId'),
     supplierId: formData.get('supplierId'),
-    name: formData.get('name'),
     description: formData.get('description'),
     amountHt: formData.get('amountHt'),
     amountTtc: formData.get('amountTtc'),
@@ -146,13 +155,14 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
 
   const { id, ...data } = parsed.data;
   const lotIds = parseLotIds(formData);
+  const supplierName = await resolveSupplierName(data.supplierId);
 
   await db
     .update(marchesTravaux)
     .set({
       propertyId: data.propertyId,
       supplierId: data.supplierId,
-      name: data.name,
+      name: supplierName,
       description: data.description || null,
       amountHt: data.amountHt != null ? String(data.amountHt) : null,
       amountTtc: data.amountTtc != null ? String(data.amountTtc) : null,
@@ -262,46 +272,24 @@ export async function getMarcheDocumentUrlAction(
   }
 }
 
-const marcheSousLotSchema = z.object({
-  marcheId: z.string().uuid(),
-  name: z.string().min(1).max(255),
-  amountHt: z
-    .preprocess(
-      (v) => (v === '' || v == null ? null : Number(v)),
-      z.number().nonnegative().nullable()
-    )
-    .optional(),
-  dateFinPrevu: z.string().optional().or(z.literal('')),
-});
+export async function createSousLotAction(formData: FormData): Promise<void> {
+  const marcheId = String(formData.get('marcheId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!marcheId || !name) throw new Error('Champs obligatoires manquants');
 
-export async function createMarcheSousLotAction(formData: FormData): Promise<void> {
-  const parsed = marcheSousLotSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
-  }
-  const { marcheId, name, amountHt, dateFinPrevu } = parsed.data;
-  await db.insert(marcheSousLots).values({
-    marcheId,
-    name,
-    amountHt: amountHt ? String(amountHt) : (null as any),
-    dateFinPrevu: dateFinPrevu || (null as any),
-  });
+  const amountHtRaw = formData.get('amountHt');
+  const amountHt =
+    amountHtRaw !== '' && amountHtRaw != null ? String(Number(amountHtRaw)) : null;
+
+  await db.insert(marcheSousLots).values({ marcheId, name, amountHt });
   revalidatePath(`/marches/${marcheId}`);
 }
 
-export async function deleteMarcheSousLotAction(formData: FormData): Promise<void> {
-  const sousLotId = String(formData.get('sousLotId') ?? '');
-  if (!sousLotId) throw new Error('ID manquant');
+export async function deleteSousLotAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const marcheId = String(formData.get('marcheId') ?? '');
+  if (!id) throw new Error('ID manquant');
 
-  const rows = await db
-    .select({ marcheId: marcheSousLots.marcheId })
-    .from(marcheSousLots)
-    .where(eq(marcheSousLots.id, sousLotId))
-    .limit(1);
-
-  await db.delete(marcheSousLots).where(eq(marcheSousLots.id, sousLotId));
-
-  if (rows[0]?.marcheId) {
-    revalidatePath(`/marches/${rows[0].marcheId}`);
-  }
+  await db.delete(marcheSousLots).where(eq(marcheSousLots.id, id));
+  revalidatePath(`/marches/${marcheId}`);
 }

@@ -3,7 +3,6 @@ import {
   marchesTravaux,
   marcheLotAffectations,
   marcheDocuments,
-  marcheSousLots,
   lots,
   properties,
   companies,
@@ -26,7 +25,6 @@ import {
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
-import { MarcheSousLotsSection, type MarcheSousLot } from '@/components/marche-sous-lots-section';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -116,18 +114,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .where(and(eq(documentTypes.scope, 'marche'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
 
-  const sousLots = await db
-    .select({
-      id: marcheSousLots.id,
-      name: marcheSousLots.name,
-      amountHt: marcheSousLots.amountHt,
-      dateDebutPrevu: marcheSousLots.dateDebutPrevu,
-      dateFinPrevu: marcheSousLots.dateFinPrevu,
-    })
-    .from(marcheSousLots)
-    .where(eq(marcheSousLots.marcheId, marche.id))
-    .orderBy(asc(marcheSousLots.sortOrder));
-
   const supplierLabel =
     marche.supplierName ??
     `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
@@ -160,7 +146,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       <div className="card p-5">
         <SectionTitle>Identité</SectionTitle>
         <dl className="space-y-2 text-[13px]">
-          <Row label="Nom">{marche.name}</Row>
           <Row label="Bien">
             <Link
               href={`/biens/properties/${marche.propertyId}`}
@@ -232,16 +217,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const sousLotsTab = (
-    <div className="card p-6">
-      <MarcheSousLotsSection marcheId={marche.id} sousLots={sousLots as MarcheSousLot[]} />
-    </div>
-  );
-
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
-    { id: 'sous-lots', label: 'Sous-lots', count: sousLots.length || undefined, content: sousLotsTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 
@@ -264,16 +242,16 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             </Link>
           </div>
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-            <span className="display-serif">{marche.name}</span>
+            <span className="display-serif">{supplierLabel}</span>
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
-            Fournisseur :{' '}
             <Link
               href={`/fournisseurs/${marche.supplierId}`}
               className="font-medium hover:underline"
             >
               {supplierLabel}
-            </Link>
+            </Link>{' '}
+            · {marche.propertyName}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {affectedLots.length === 0 ? (
@@ -300,8 +278,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             action={deleteMarcheAction}
             id={marche.id}
             label="Supprimer"
-            confirmationPhrase={marche.name}
-            description={`Cette action est irréversible. Le marché "${marche.name}" sera supprimé. Les sous-lots techniques et documents associés seront aussi supprimés.`}
+            confirmationPhrase={supplierLabel}
+            description={`Cette action est irréversible. Le marché "${supplierLabel}" sera supprimé. Les sous-lots techniques et documents associés seront aussi supprimés.`}
           />
         </div>
       </header>

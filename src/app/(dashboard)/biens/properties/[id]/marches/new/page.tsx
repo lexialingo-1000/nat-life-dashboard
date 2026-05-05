@@ -57,6 +57,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
         propertyName={property.name}
         lots={propertyLots}
         suppliers={supplierOptions}
+        defaultValues={{ lotIds: propertyLots.map((l) => l.id) }}
         cancelHref={`/biens/properties/${property.id}`}
         submitLabel="Créer le marché"
         returnTo={`/biens/properties/${property.id}`}

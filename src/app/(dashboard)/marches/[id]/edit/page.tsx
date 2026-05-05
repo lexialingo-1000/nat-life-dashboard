@@ -21,7 +21,6 @@ export default async function EditMarchePage({ params }: { params: { id: string 
       id: marchesTravaux.id,
       propertyId: marchesTravaux.propertyId,
       supplierId: marchesTravaux.supplierId,
-      name: marchesTravaux.name,
       description: marchesTravaux.description,
       amountHt: marchesTravaux.amountHt,
       amountTtc: marchesTravaux.amountTtc,
@@ -70,7 +69,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
 
   return (
     <div className="max-w-3xl space-y-6">
-      <BackLink fallbackHref={`/marches/${marche.id}`} label={marche.name} />
+      <BackLink fallbackHref={`/marches/${marche.id}`} label="Marché de travaux" />
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Modifier le marché</h1>
@@ -85,7 +84,6 @@ export default async function EditMarchePage({ params }: { params: { id: string 
         defaultValues={{
           id: marche.id,
           supplierId: marche.supplierId,
-          name: marche.name,
           description: marche.description,
           amountHt: marche.amountHt,
           amountTtc: marche.amountTtc,

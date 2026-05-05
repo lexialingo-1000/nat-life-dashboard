@@ -25,7 +25,6 @@ interface SupplierOption {
 export interface MarcheFormValues {
   id?: string;
   supplierId?: string;
-  name?: string;
   description?: string | null;
   amountHt?: string | null;
   amountTtc?: string | null;
@@ -85,17 +84,6 @@ export function MarcheForm({
       ))}
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <label className="block text-sm font-medium">Nom du marché *</label>
-          <input
-            name="name"
-            defaultValue={defaultValues.name ?? ''}
-            required
-            className="input mt-1"
-            placeholder="Ex: Réfection plomberie SDB"
-          />
-        </div>
-
         <div className="col-span-2">
           <label className="block text-sm font-medium">Description</label>
           <textarea
