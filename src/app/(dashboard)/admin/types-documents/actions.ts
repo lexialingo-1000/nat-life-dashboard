@@ -132,6 +132,17 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
   redirect('/admin/types-documents');
 }
 
+export async function reorderDocumentTypesAction(orderedIds: string[]): Promise<void> {
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db
+      .update(documentTypes)
+      .set({ sortOrder: (i + 1) * 10 })
+      .where(eq(documentTypes.id, orderedIds[i]));
+  }
+  revalidatePath('/admin/types-documents');
+}
+
 export async function toggleActiveAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');

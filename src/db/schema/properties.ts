@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, integer, jsonb, numeric } from 'drizzle-orm/pg-core';
-import { propertyTypeEnum, lotStatusEnum } from './enums';
+import { propertyTypeEnum, lotStatusEnum, propertyStatutEnum } from './enums';
 import { companies } from './companies';
 import { documentTypes } from './document-types';
 import { users } from './users';
@@ -11,6 +11,7 @@ export const properties = pgTable('properties', {
     .references(() => companies.id, { onDelete: 'restrict' }),
   name: text('name').notNull(),
   type: propertyTypeEnum('type').notNull(),
+  statut: propertyStatutEnum('statut').notNull().default('loue_ou_vacant'),
   address: text('address'),
   city: text('city'),
   postalCode: text('postal_code'),
@@ -97,6 +98,7 @@ export const rooms = pgTable('rooms', {
     .references(() => levels.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   surfaceM2: numeric('surface_m2', { precision: 10, scale: 2 }),
+  sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

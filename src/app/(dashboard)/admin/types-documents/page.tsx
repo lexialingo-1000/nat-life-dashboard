@@ -2,9 +2,8 @@ import { db } from '@/db/client';
 import { documentTypes } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import Link from 'next/link';
-import { toggleActiveAction } from './actions';
 import { DocumentTypeCreateForm } from './document-type-create-form';
-import { Clock, Pencil } from 'lucide-react';
+import { DocumentTypesSortableList } from './document-types-sortable-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,23 +16,6 @@ const SCOPE_LABELS: Record<string, string> = {
   marche: 'Marché',
   marche_lot: 'Sous-lot',
   location: 'Location',
-};
-
-const SCOPE_BADGE: Record<string, string> = {
-  company: 'badge-emerald',
-  supplier: 'badge-blue',
-  customer: 'badge-emerald',
-  property: 'badge-amber',
-  lot: 'badge-amber',
-  marche: 'badge-neutral',
-  marche_lot: 'badge-neutral',
-  location: 'badge-neutral',
-};
-
-const TENANT_LABELS: Record<string, string> = {
-  LT: 'LT',
-  CT: 'CT',
-  all: 'Tous',
 };
 
 const SCOPE_KEYS = Object.keys({
@@ -121,6 +103,7 @@ export default async function TypesDocumentsPage({
           <table className="table-base">
             <thead>
               <tr>
+                <th className="w-8" />
                 <th className="w-[140px]">Scope</th>
                 <th>Libellé</th>
                 <th className="w-[180px]">Code</th>
@@ -128,81 +111,10 @@ export default async function TypesDocumentsPage({
                 <th className="w-[110px]">Obligatoire</th>
                 <th className="w-[100px]">Locataire</th>
                 <th className="w-[90px]">Statut</th>
-                <th className="w-[160px] text-right pr-5">Actions</th>
+                <th className="w-[160px] pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {rows.map((t: any) => (
-                <tr key={t.id}>
-                  <td>
-                    <span className={SCOPE_BADGE[t.scope] ?? 'badge-neutral'}>
-                      {SCOPE_LABELS[t.scope] ?? t.scope}
-                    </span>
-                  </td>
-                  <td className="font-medium text-zinc-900">{t.label}</td>
-                  <td className="font-mono text-[12px] text-zinc-500">{t.code}</td>
-                  <td>
-                    {t.hasExpiration ? (
-                      <span className="inline-flex items-center gap-1 text-[12px] text-emerald-700">
-                        <Clock className="h-3 w-3" strokeWidth={2} />
-                        Avec date
-                      </span>
-                    ) : (
-                      <span className="text-[12px] text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td>
-                    {t.isRequired ? (
-                      <span className="badge-amber">Obligatoire</span>
-                    ) : (
-                      <span className="text-[12px] text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td>
-                    {t.scope === 'customer' && t.appliesToTenantType ? (
-                      <span className="badge-neutral">
-                        {TENANT_LABELS[t.appliesToTenantType] ?? t.appliesToTenantType}
-                      </span>
-                    ) : (
-                      <span className="text-[12px] text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td>
-                    {t.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Actif
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-300" />
-                        Désactivé
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-right pr-5">
-                    <div className="inline-flex items-center gap-3">
-                      <Link
-                        href={`/admin/types-documents/${t.id}/edit`}
-                        className="inline-flex items-center gap-1 text-[12px] text-emerald-700 hover:text-emerald-800"
-                      >
-                        <Pencil className="h-3 w-3" strokeWidth={2} />
-                        Modifier
-                      </Link>
-                      <form action={toggleActiveAction} className="inline-block">
-                        <input type="hidden" name="id" value={t.id} />
-                        <button
-                          type="submit"
-                          className="text-[12px] text-zinc-500 transition hover:text-emerald-700"
-                        >
-                          {t.isActive ? 'Désactiver' : 'Réactiver'}
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            <DocumentTypesSortableList rows={rows} />
           </table>
         </div>
       )}

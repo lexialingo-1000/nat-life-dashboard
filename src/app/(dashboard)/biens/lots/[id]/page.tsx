@@ -104,12 +104,13 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           id: rooms.id,
           name: rooms.name,
           surfaceM2: rooms.surfaceM2,
+          sortOrder: rooms.sortOrder,
           levelId: rooms.levelId,
         })
         .from(rooms)
         .innerJoin(levels, eq(rooms.levelId, levels.id))
         .where(eq(levels.lotId, lot.id))
-        .orderBy(asc(rooms.name));
+        .orderBy(asc(rooms.sortOrder), asc(rooms.name));
 
       lotLevels = levelRows.map((lv) => ({
         id: lv.id,
@@ -117,7 +118,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         sortOrder: lv.sortOrder,
         rooms: roomRows
           .filter((r) => r.levelId === lv.id)
-          .map((r) => ({ id: r.id, name: r.name, surfaceM2: r.surfaceM2 })),
+          .map((r) => ({ id: r.id, name: r.name, surfaceM2: r.surfaceM2, sortOrder: r.sortOrder })),
       }));
     }
   } catch (e) {

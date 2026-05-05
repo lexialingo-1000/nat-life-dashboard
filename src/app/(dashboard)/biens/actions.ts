@@ -186,6 +186,17 @@ export async function deleteRoomAction(formData: FormData): Promise<void> {
   revalidatePath(`/biens/lots/${lotId}`);
 }
 
+export async function reorderRoomsAction(orderedIds: string[], lotId: string): Promise<void> {
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db
+      .update(rooms)
+      .set({ sortOrder: i * 10 })
+      .where(eq(rooms.id, orderedIds[i]));
+  }
+  revalidatePath(`/biens/lots/${lotId}`);
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Documents lot — diagnostiques DPE/amiante, photos, etc. (V1.4.2)
 // ──────────────────────────────────────────────────────────────────────────
