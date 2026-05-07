@@ -78,6 +78,13 @@
       "when": 1746527400000,
       "tag": "0010_rooms_sort_order",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1746613800000,
+      "tag": "0011_security_rls_fix",
+      "breakpoints": true
     }
   ]
 }

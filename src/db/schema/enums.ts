@@ -39,6 +39,12 @@ export const propertyTypeEnum = pgEnum('property_type', [
   'terrain',
 ]);
 
+export const propertyStatutEnum = pgEnum('property_statut', [
+  'en_cours_acquisition',
+  'loue_ou_vacant',
+  'vendu',
+]);
+
 export const lotStatusEnum = pgEnum('lot_status', [
   'vacant',
   'loue_annuel',
