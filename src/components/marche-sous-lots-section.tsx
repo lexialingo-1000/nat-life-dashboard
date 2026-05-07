@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import {
-  createMarcheSousLotAction,
-  deleteMarcheSousLotAction,
+  createSousLotAction,
+  deleteSousLotAction,
 } from '@/app/(dashboard)/marches/actions';
 
 export type MarcheSousLot = {
@@ -54,7 +54,7 @@ export function MarcheSousLotsSection({ marcheId, sousLots }: Props) {
                   </p>
                 )}
               </div>
-              <form action={deleteMarcheSousLotAction}>
+              <form action={deleteSousLotAction}>
                 <input type="hidden" name="sousLotId" value={sl.id} />
                 <button
                   type="submit"
@@ -68,7 +68,7 @@ export function MarcheSousLotsSection({ marcheId, sousLots }: Props) {
         </ul>
       )}
 
-      <form action={createMarcheSousLotAction} className="space-y-3 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] p-4">
+      <form action={createSousLotAction} className="space-y-3 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] p-4">
         <input type="hidden" name="marcheId" value={marcheId} />
 
         <div>
