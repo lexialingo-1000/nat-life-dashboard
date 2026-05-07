@@ -66,7 +66,7 @@ async function resolveSupplierName(supplierId: string): Promise<string> {
     .limit(1);
   const s = rows[0];
   if (!s) return 'Fournisseur';
-  return s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || 'Fournisseur';
+  return (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur';
 }
 
 export async function createMarcheAction(formData: FormData): Promise<void> {

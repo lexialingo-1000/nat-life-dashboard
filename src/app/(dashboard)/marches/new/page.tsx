@@ -51,7 +51,7 @@ export default async function NewMarchePage({
 
     const supplierOptions = supplierRows.map((s) => ({
       id: s.id,
-      label: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || 'Fournisseur',
+      label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
     }));
 
     return (
