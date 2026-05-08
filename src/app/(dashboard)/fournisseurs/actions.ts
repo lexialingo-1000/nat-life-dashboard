@@ -89,8 +89,30 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
     })
     .returning({ id: suppliers.id });
 
+  const supplierId = inserted[0].id;
+
+  // Créer les contacts inline si fournis
+  const contactCount = Number(formData.get('contactCount') ?? 0);
+  for (let i = 0; i < contactCount; i++) {
+    const firstName = String(formData.get(`contact_${i}_firstName`) ?? '').trim();
+    const lastName = String(formData.get(`contact_${i}_lastName`) ?? '').trim();
+    const phone = String(formData.get(`contact_${i}_phone`) ?? '').trim();
+    const email = String(formData.get(`contact_${i}_email`) ?? '').trim();
+    const fonction = String(formData.get(`contact_${i}_fonction`) ?? '').trim();
+    if (firstName || lastName || phone || email) {
+      await db.insert(supplierContacts).values({
+        supplierId,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phone: phone || null,
+        email: email || null,
+        function: fonction || null,
+      });
+    }
+  }
+
   revalidatePath('/fournisseurs');
-  redirect(`/fournisseurs/${inserted[0].id}`);
+  redirect(`/fournisseurs/${supplierId}`);
 }
 
 /**

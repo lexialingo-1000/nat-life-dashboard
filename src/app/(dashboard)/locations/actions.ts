@@ -165,6 +165,19 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
     .where(eq(locations.id, id))
     .limit(1);
 
+  // Supprimer les objets MinIO des documents avant de supprimer la location
+  const docs = await db
+    .select({ storageKey: locationDocuments.storageKey })
+    .from(locationDocuments)
+    .where(eq(locationDocuments.locationId, id));
+
+  for (const doc of docs) {
+    try { await deleteObject(doc.storageKey); } catch {}
+  }
+
+  // Supprimer explicitement les documents (défense contre FK sans CASCADE en prod)
+  await db.delete(locationDocuments).where(eq(locationDocuments.locationId, id));
+
   await db.delete(locations).where(eq(locations.id, id));
 
   revalidatePath('/locations');
@@ -174,9 +187,7 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
   }
 
   const returnTo = formData.get('returnTo');
-  if (typeof returnTo === 'string' && returnTo) {
-    redirect(safeReturnTo(returnTo, '/locations'));
-  }
+  redirect(safeReturnTo(typeof returnTo === 'string' && returnTo ? returnTo : '/locations', '/locations'));
 }
 
 const locationDocumentSchema = z.object({

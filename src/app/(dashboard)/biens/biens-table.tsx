@@ -12,8 +12,21 @@ export type BienLotRow = {
   surfaceCarrez: string | null;
   propertyId: string;
   propertyName: string;
+  propertyStatut: string | null;
   companyName: string;
   companyId: string;
+};
+
+const PROPERTY_STATUT_LABELS: Record<string, string> = {
+  en_cours_acquisition: 'En cours acquisition',
+  loue_ou_vacant: 'Loué / Vacant',
+  vendu: 'Vendu',
+};
+
+const PROPERTY_STATUT_BADGES: Record<string, string> = {
+  en_cours_acquisition: 'badge-blue',
+  loue_ou_vacant: 'badge-emerald',
+  vendu: 'badge-neutral',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,14 +47,24 @@ const columns: ColumnDef<BienLotRow>[] = [
   {
     accessorKey: 'propertyName',
     header: 'Bien',
-    cell: ({ row }) => (
-      <Link
-        href={`/biens/properties/${row.original.propertyId}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-      >
-        {row.original.propertyName}
-      </Link>
-    ),
+    cell: ({ row }) => {
+      const statut = row.original.propertyStatut;
+      return (
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Link
+            href={`/biens/properties/${row.original.propertyId}`}
+            className="link-cell font-medium uppercase tracking-[0.04em]"
+          >
+            {row.original.propertyName}
+          </Link>
+          {statut && (
+            <span className={PROPERTY_STATUT_BADGES[statut] ?? 'badge-neutral'}>
+              {PROPERTY_STATUT_LABELS[statut] ?? statut}
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'lotName',

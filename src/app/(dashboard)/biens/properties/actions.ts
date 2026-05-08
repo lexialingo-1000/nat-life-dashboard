@@ -8,10 +8,63 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+const propertyCreateSchema = z.object({
+  companyId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
+  statut: z.enum(['en_cours_acquisition', 'loue_ou_vacant', 'vendu']).default('loue_ou_vacant'),
+  address: z.string().optional().or(z.literal('')),
+  city: z.string().optional().or(z.literal('')),
+  postalCode: z.string().optional().or(z.literal('')),
+  purchaseDate: z.string().optional().or(z.literal('')),
+  purchasePrice: z.string().optional().or(z.literal('')),
+  cadastre: z.string().optional().or(z.literal('')),
+  notaireName: z.string().optional().or(z.literal('')),
+  notaireEtude: z.string().optional().or(z.literal('')),
+  notairePhone: z.string().optional().or(z.literal('')),
+  notaireEmail: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function createPropertyAction(formData: FormData): Promise<void> {
+  const parsed = propertyCreateSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const { companyId, name, type, statut, address, city, postalCode, purchaseDate, purchasePrice, cadastre, notaireName, notaireEtude, notairePhone, notaireEmail, notes } = parsed.data;
+
+  const notaire =
+    notaireName || notaireEtude || notairePhone || notaireEmail
+      ? { name: notaireName || undefined, etude: notaireEtude || undefined, phone: notairePhone || undefined, email: notaireEmail || undefined }
+      : null;
+
+  const inserted = await db
+    .insert(properties)
+    .values({
+      companyId,
+      name,
+      type,
+      statut,
+      address: address || null,
+      city: city || null,
+      postalCode: postalCode || null,
+      purchaseDate: purchaseDate || null,
+      purchasePrice: purchasePrice || null,
+      cadastre: cadastre || null,
+      notaire,
+      notes: notes || null,
+    })
+    .returning({ id: properties.id });
+
+  revalidatePath('/biens');
+  redirect(`/biens/properties/${inserted[0].id}`);
+}
+
 const propertySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255),
   type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
+  statut: z.enum(['en_cours_acquisition', 'loue_ou_vacant', 'vendu']).default('loue_ou_vacant'),
   address: z.string().optional().or(z.literal('')),
   city: z.string().optional().or(z.literal('')),
   postalCode: z.string().optional().or(z.literal('')),
@@ -30,7 +83,7 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
-  const { id, notaireName, notaireEtude, notairePhone, notaireEmail, purchasePrice, purchaseDate, ...rest } = parsed.data;
+  const { id, statut, notaireName, notaireEtude, notairePhone, notaireEmail, purchasePrice, purchaseDate, ...rest } = parsed.data;
 
   const notaire =
     notaireName || notaireEtude || notairePhone || notaireEmail
@@ -46,6 +99,7 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
     .update(properties)
     .set({
       ...rest,
+      statut,
       address: rest.address || null,
       city: rest.city || null,
       postalCode: rest.postalCode || null,

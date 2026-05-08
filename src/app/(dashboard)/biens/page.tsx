@@ -20,6 +20,7 @@ export default async function BiensPage() {
         surfaceCarrez: lots.surfaceCarrez,
         propertyId: properties.id,
         propertyName: properties.name,
+        propertyStatut: properties.statut,
         companyId: companies.id,
         companyName: companies.name,
       })
@@ -36,6 +37,7 @@ export default async function BiensPage() {
       surfaceCarrez: r.surfaceCarrez,
       propertyId: r.propertyId,
       propertyName: r.propertyName,
+      propertyStatut: r.propertyStatut,
       companyId: r.companyId,
       companyName: r.companyName,
     }));
@@ -60,7 +62,7 @@ export default async function BiensPage() {
         </div>
         <Link href="/biens/properties/new" className="btn-primary">
           <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-          Ajouter un immeuble
+          Ajouter un Bien
         </Link>
       </header>
 

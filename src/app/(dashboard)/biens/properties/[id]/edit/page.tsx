@@ -8,6 +8,12 @@ import { updatePropertyAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
+const STATUT_OPTIONS = [
+  { value: 'loue_ou_vacant', label: 'Loué ou Vacant' },
+  { value: 'en_cours_acquisition', label: 'En cours Acquisition' },
+  { value: 'vendu', label: 'Vendu' },
+];
+
 const TYPE_OPTIONS = [
   { value: 'appartement', label: 'Appartement' },
   { value: 'maison', label: 'Maison' },
@@ -27,6 +33,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
       postalCode: properties.postalCode,
       purchaseDate: properties.purchaseDate,
       purchasePrice: properties.purchasePrice,
+      statut: properties.statut,
       notaire: properties.notaire,
       cadastre: properties.cadastre,
       notes: properties.notes,
@@ -68,6 +75,15 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
             <Field label="Type" required>
               <select name="type" defaultValue={p.type} required className="input">
                 {TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Statut" required>
+              <select name="statut" defaultValue={p.statut ?? 'loue_ou_vacant'} required className="input">
+                {STATUT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
