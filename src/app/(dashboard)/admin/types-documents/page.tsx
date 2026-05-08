@@ -49,7 +49,7 @@ export default async function TypesDocumentsPage({
   return (
     <div className="space-y-8">
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Administration
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -65,7 +65,7 @@ export default async function TypesDocumentsPage({
       </header>
 
       {dbError && (
-        <div className="card p-6 text-[13px] text-emerald-700">
+        <div className="card p-6 text-[13px] text-blue-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}
@@ -121,7 +121,7 @@ export default async function TypesDocumentsPage({
 
       <section>
         <div className="page-header mb-5">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Catalogue
           </div>
           <h2 className="mt-1.5 text-[20px] font-medium tracking-tight text-zinc-900">

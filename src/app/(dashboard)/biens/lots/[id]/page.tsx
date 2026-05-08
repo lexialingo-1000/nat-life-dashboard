@@ -194,7 +194,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
   if (!lot) {
     return (
-      <div className="card p-6 text-sm text-emerald-700">
+      <div className="card p-6 text-sm text-blue-700">
         Connexion DB indisponible : {dbError}
       </div>
     );
@@ -262,7 +262,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         <SectionTitle className="mb-0">Travaux affectés à ce lot</SectionTitle>
         <Link
           href={`/biens/properties/${lot.propertyId}/marches/new`}
-          className="text-[12px] text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] hover:decoration-emerald-700"
+          className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
         >
           + Nouveau marché (sur le bien)
         </Link>
@@ -380,8 +380,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
-            <Link href={`/biens/properties/${lot.propertyId}`} className="hover:text-emerald-800">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
+            <Link href={`/biens/properties/${lot.propertyId}`} className="hover:text-blue-800">
               {lot.propertyName}
             </Link>
           </div>

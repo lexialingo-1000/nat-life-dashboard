@@ -43,7 +43,7 @@ export default async function FournisseurSheetPage({ params }: { params: { id: s
   return (
     <SheetWrapper key={s.id} fullPageHref={`/fournisseurs/${s.id}`}>
       <div className={s.isActive ? '' : 'opacity-75'}>
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Fournisseur
         </div>
         <h1 className="mt-1.5 flex items-baseline gap-3 text-[24px] font-normal leading-tight text-zinc-900">

@@ -106,7 +106,7 @@ export function PropertyPhotosManager({
       <div className="rounded-md border border-dashed border-zinc-200 p-8 text-center text-[13px] text-zinc-500">
         <ImageIcon className="mx-auto mb-3 h-8 w-8 text-zinc-300" strokeWidth={1.5} />
         Type de document "Photo" non configuré.{' '}
-        <a href="/admin/types-documents" className="text-emerald-700 hover:underline">
+        <a href="/admin/types-documents" className="text-blue-700 hover:underline">
           Ajouter le type via l'administration.
         </a>
       </div>
@@ -119,7 +119,7 @@ export function PropertyPhotosManager({
       <div
         className={`relative rounded-md border-2 border-dashed p-6 text-center transition-colors ${
           isDragging
-            ? 'border-emerald-400 bg-emerald-50'
+            ? 'border-blue-400 bg-blue-50'
             : 'border-zinc-200 bg-[#fbf8f0] hover:border-zinc-300'
         }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -147,7 +147,7 @@ export function PropertyPhotosManager({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-emerald-700 hover:underline"
+                className="text-blue-700 hover:underline"
               >
                 sélectionne des fichiers
               </button>
@@ -156,8 +156,8 @@ export function PropertyPhotosManager({
           </>
         )}
         {isDragging && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-md bg-emerald-50/80">
-            <span className="rounded-full bg-emerald-600 px-4 py-1.5 text-[12px] font-medium text-white shadow">
+          <div className="absolute inset-0 flex items-center justify-center rounded-md bg-blue-50/80">
+            <span className="rounded-full bg-blue-600 px-4 py-1.5 text-[12px] font-medium text-white shadow">
               Déposer pour ajouter
             </span>
           </div>

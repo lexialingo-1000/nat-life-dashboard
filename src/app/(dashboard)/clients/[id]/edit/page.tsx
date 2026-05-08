@@ -20,7 +20,7 @@ export default async function EditClientPage({ params }: { params: { id: string 
       <BackLink fallbackHref={`/clients/${c.id}`} label={displayName} />
 
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Référentiel
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">

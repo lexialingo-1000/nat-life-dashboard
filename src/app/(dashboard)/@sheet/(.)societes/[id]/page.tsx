@@ -39,7 +39,7 @@ export default async function SocieteSheetPage({ params }: { params: { id: strin
   return (
     <SheetWrapper key={c.id} fullPageHref={`/societes/${c.id}`}>
       <div className={c.isActive ? '' : 'opacity-75'}>
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Société
         </div>
         <h1 className="mt-1.5 flex items-baseline gap-3 text-[24px] font-normal leading-tight text-zinc-900">

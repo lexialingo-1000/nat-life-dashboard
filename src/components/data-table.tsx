@@ -50,7 +50,7 @@ function IndeterminateCheckbox({
       onChange={onChange}
       onClick={(e) => e.stopPropagation()}
       aria-label={ariaLabel}
-      className="h-3.5 w-3.5 cursor-pointer rounded-sm border border-zinc-300 text-emerald-600 accent-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:ring-offset-1"
+      className="h-3.5 w-3.5 cursor-pointer rounded-sm border border-zinc-300 text-blue-600 accent-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:ring-offset-1"
     />
   );
 }
@@ -201,7 +201,7 @@ export function DataTable<T>({
             )}
           </span>
           {enableSelection && selectedCount > 0 && (
-            <span className="text-emerald-700">
+            <span className="text-blue-700">
               {selectedCount} sélectionnée{selectedCount > 1 ? 's' : ''}
             </span>
           )}

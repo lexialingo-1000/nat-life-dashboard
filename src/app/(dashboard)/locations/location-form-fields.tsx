@@ -150,7 +150,7 @@ export function LocationFormFields({
                 onClick={() => setPeriodicite(p.value)}
                 className={`rounded-full border px-3 py-1 text-[12px] transition-colors ${
                   active
-                    ? 'border-emerald-600 bg-emerald-600 text-white'
+                    ? 'border-blue-600 bg-blue-600 text-white'
                     : 'border-zinc-200 bg-[#fbf8f0] text-zinc-600 hover:border-zinc-300 hover:text-zinc-900'
                 }`}
               >

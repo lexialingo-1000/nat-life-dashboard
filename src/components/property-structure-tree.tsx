@@ -72,7 +72,7 @@ export function PropertyStructureTree({ tree }: { tree: PropertyTree }) {
               className="h-4 w-4 text-zinc-500 transition-transform duration-150 group-open:rotate-90"
               strokeWidth={2}
             />
-            <Building2 className="h-5 w-5 text-emerald-700" strokeWidth={1.75} />
+            <Building2 className="h-5 w-5 text-blue-700" strokeWidth={1.75} />
             <div>
               <div className="text-[15px] font-medium text-zinc-900 display-serif">
                 {tree.name}
@@ -111,7 +111,7 @@ export function PropertyStructureTree({ tree }: { tree: PropertyTree }) {
 
               <Link
                 href={`/biens/properties/${tree.id}/lots/new`}
-                className="ml-6 inline-flex items-center gap-1 text-[12px] text-emerald-700 hover:text-emerald-800"
+                className="ml-6 inline-flex items-center gap-1 text-[12px] text-blue-700 hover:text-blue-800"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
                 Ajouter un lot
@@ -127,14 +127,14 @@ export function PropertyStructureTree({ tree }: { tree: PropertyTree }) {
 function LotBranch({ lot }: { lot: LotNode }) {
   const totalRooms = lot.levels.reduce((acc, lv) => acc + lv.rooms.length, 0);
   return (
-    <details open className="group/lot ml-6 rounded-md border-l-2 border-emerald-200 bg-[#fbf8f0]/40 pl-3">
+    <details open className="group/lot ml-6 rounded-md border-l-2 border-blue-200 bg-[#fbf8f0]/40 pl-3">
       <summary className="flex cursor-pointer list-none items-center justify-between py-2 pr-2">
         <div className="flex items-center gap-2">
           <ChevronRight
             className="h-3.5 w-3.5 text-zinc-500 transition-transform duration-150 group-open/lot:rotate-90"
             strokeWidth={2}
           />
-          <Layers className="h-4 w-4 text-emerald-700" strokeWidth={1.75} />
+          <Layers className="h-4 w-4 text-blue-700" strokeWidth={1.75} />
           <Link
             href={`/biens/lots/${lot.id}`}
             className="link-cell text-[14px] font-medium uppercase tracking-[0.04em]"

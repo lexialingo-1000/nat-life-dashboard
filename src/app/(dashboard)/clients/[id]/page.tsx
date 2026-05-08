@@ -327,7 +327,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Client
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
@@ -393,7 +393,7 @@ function Kpi({
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
           variant === 'good'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : variant === 'warn' && value !== 0 && value !== 'Actif'
             ? 'text-zinc-500'
             : 'text-zinc-900'

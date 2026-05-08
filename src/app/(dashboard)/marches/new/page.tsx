@@ -59,7 +59,7 @@ export default async function NewMarchePage({
         <BackLink fallbackHref="/marches" label="Marchés de travaux" />
 
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Patrimoine · Marchés
           </div>
           <h1 className="mt-1.5 text-[28px] font-normal leading-tight text-zinc-900">
@@ -94,7 +94,7 @@ export default async function NewMarchePage({
       <BackLink fallbackHref="/marches" label="Marchés de travaux" />
 
       <div>
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Patrimoine · Marchés
         </div>
         <h1 className="mt-1.5 text-[28px] font-normal leading-tight text-zinc-900">

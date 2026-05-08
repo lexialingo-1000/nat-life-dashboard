@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Direction A "Patrimoine moderne" — warm sand background + emerald accent + bleu canard secondary */
+  /* V1.7 Marine — warm sand background + saphir accent + marine sidebar */
   /* Surfaces — neutres warm sand (hue 80, chroma 0.02 perceptible) */
   --bg: oklch(0.95 0.018 80);          /* #f5f1e8 sable chaud */
   --fg: oklch(0.21 0.005 80);          /* #1a1a1a charcoal tinté warm */
@@ -16,9 +16,9 @@
   --sidebar-fg: #B8CDE4;
   --sidebar-active: #ffffff;
 
-  /* Accents — émeraude profond (action/CTA) + bleu canard (secondaire) */
-  --accent: oklch(0.58 0.13 165);      /* #059669 emerald-600 */
-  --accent-soft: oklch(0.92 0.05 165); /* emerald-100 wash */
+  /* Accents — saphir (action/CTA, aligné #2563EB sidebar Marine) + bleu canard (secondaire) */
+  --accent: oklch(0.546 0.218 261);    /* #2563EB blue-600 saphir */
+  --accent-soft: oklch(0.945 0.03 261); /* blue-50 wash saphir */
   --accent-2: oklch(0.50 0.10 215);    /* #0e7490 cyan-700 bleu canard */
 
   /* Motion */
@@ -113,10 +113,10 @@ h3 {
      `.link-cell` pour la colonne primaire (nom), `.link-cell-soft` pour les
      colonnes secondaires (rattachements société/bien dans une table biens). */
   .link-cell {
-    @apply font-medium text-emerald-700 underline decoration-emerald-700/35 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:decoration-emerald-700;
+    @apply font-medium text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:decoration-blue-700;
   }
   .link-cell-soft {
-    @apply text-emerald-700/85 underline decoration-emerald-700/20 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:text-emerald-700 hover:decoration-emerald-700/60;
+    @apply text-blue-700/85 underline decoration-blue-700/20 underline-offset-[3px] transition-colors duration-150 ease-out-quart hover:text-blue-700 hover:decoration-blue-700/60;
   }
   .table-base thead {
     @apply border-b border-zinc-200;
@@ -145,7 +145,7 @@ h3 {
     @apply badge border-blue-200 bg-blue-50 text-blue-700;
   }
   .badge-emerald {
-    @apply badge border-emerald-200 bg-emerald-50 text-emerald-700;
+    @apply badge border-blue-200 bg-blue-50 text-blue-700;
   }
   .badge-amber {
     @apply badge border-amber-200 bg-amber-50 text-amber-700;
@@ -197,5 +197,5 @@ h3 {
 
 /* Selection */
 ::selection {
-  background: oklch(0.58 0.13 165 / 0.3);
+  background: oklch(0.546 0.218 261 / 0.3);
 }

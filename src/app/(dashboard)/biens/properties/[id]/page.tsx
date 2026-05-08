@@ -196,7 +196,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   if (!property) {
     return (
-      <div className="card p-6 text-[13px] text-emerald-700">
+      <div className="card p-6 text-[13px] text-blue-700">
         Connexion DB indisponible : {dbError}
       </div>
     );
@@ -330,7 +330,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 : '—'}
             </Row>
             <Row label="Société">
-              <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-700">
+              <Link href={`/societes/${property.companyId}`} className="hover:text-blue-700">
                 {property.companyName}
               </Link>
             </Row>
@@ -529,8 +529,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
-            <Link href={`/societes/${property.companyId}`} className="hover:text-emerald-800">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
+            <Link href={`/societes/${property.companyId}`} className="hover:text-blue-800">
               {property.companyName}
             </Link>
           </div>

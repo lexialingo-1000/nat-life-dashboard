@@ -254,7 +254,7 @@ export function DocumentsManager({
                       ? 'bg-red-100 text-red-800'
                       : exp.color === 'orange'
                       ? 'bg-amber-100 text-amber-800'
-                      : 'bg-emerald-100 text-emerald-800'
+                      : 'bg-blue-100 text-blue-800'
                   }`}
                 >
                   {exp.text}
@@ -313,13 +313,13 @@ export function DocumentsManager({
       onDragLeave={handleDragLeave}
       className={`relative space-y-4 rounded-md transition-colors ${
         isDragging
-          ? 'bg-emerald-50/40 outline outline-2 outline-dashed outline-emerald-500/70'
+          ? 'bg-blue-50/40 outline outline-2 outline-dashed outline-blue-500/70'
           : ''
       }`}
     >
       {isDragging && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md">
-          <div className="flex items-center gap-2 rounded-full bg-emerald-700/90 px-4 py-1.5 text-[12px] font-medium text-white shadow-sm">
+          <div className="flex items-center gap-2 rounded-full bg-blue-700/90 px-4 py-1.5 text-[12px] font-medium text-white shadow-sm">
             <UploadCloud className="h-4 w-4" />
             Déposer pour ajouter un document
           </div>
@@ -351,7 +351,7 @@ export function DocumentsManager({
       )}
 
       {availableTypes.length === 0 && (
-        <p className="rounded-md bg-emerald-50 p-3 text-xs text-emerald-800">
+        <p className="rounded-md bg-blue-50 p-3 text-xs text-blue-800">
           Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de
           documents ».
         </p>

@@ -149,7 +149,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           <Row label="Bien">
             <Link
               href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-emerald-700"
+              className="hover:text-blue-700"
             >
               {marche.propertyName}
             </Link>
@@ -157,7 +157,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           <Row label="Fournisseur">
             <Link
               href={`/fournisseurs/${marche.supplierId}`}
-              className="hover:text-emerald-700"
+              className="hover:text-blue-700"
             >
               {supplierLabel}
             </Link>
@@ -229,14 +229,14 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
-            <Link href={`/societes/${marche.companyId}`} className="hover:text-emerald-800">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
+            <Link href={`/societes/${marche.companyId}`} className="hover:text-blue-800">
               {marche.companyName}
             </Link>{' '}
             ·{' '}
             <Link
               href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-emerald-800"
+              className="hover:text-blue-800"
             >
               {marche.propertyName}
             </Link>
@@ -261,7 +261,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
                 <Link
                   key={l.id}
                   href={`/biens/lots/${l.id}`}
-                  className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 text-[12px] hover:bg-zinc-50 hover:text-emerald-700"
+                  className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 text-[12px] hover:bg-zinc-50 hover:text-blue-700"
                 >
                   {l.name}
                 </Link>
@@ -315,9 +315,9 @@ function Kpi({
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
           variant === 'good'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : variant === 'warn'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : 'text-zinc-900'
         }`}
       >

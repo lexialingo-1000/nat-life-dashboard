@@ -151,8 +151,8 @@ export function EntityCombobox({
                     setOpen(false);
                     setSearch('');
                   }}
-                  className={`flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors hover:bg-emerald-50 ${
-                    o.id === selectedId ? 'bg-emerald-50/60 text-emerald-900' : 'text-zinc-700'
+                  className={`flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors hover:bg-blue-50 ${
+                    o.id === selectedId ? 'bg-blue-50/60 text-blue-900' : 'text-zinc-700'
                   }`}
                 >
                   <span>{o.label}</span>
@@ -171,7 +171,7 @@ export function EntityCombobox({
                   setShowCreate(true);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+                className="flex w-full items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-blue-700 transition-colors hover:bg-blue-50"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {createLabel}

@@ -17,7 +17,7 @@ export function RequiredDocumentsWidget({
   if (missingTypes.length === 0) {
     return (
       <div className="card flex items-start gap-3 p-4">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" strokeWidth={1.75} />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" strokeWidth={1.75} />
         <div className="text-[13px]">
           <div className="text-zinc-700">
             Tous les documents requis sont fournis pour ce {scopeLabel}.

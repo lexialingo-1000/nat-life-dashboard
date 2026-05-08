@@ -247,7 +247,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Location
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
@@ -257,12 +257,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <p className="mt-1.5 text-[13px] text-zinc-500">
             <Link
               href={`/biens/properties/${loc.propertyId}`}
-              className="uppercase tracking-[0.04em] hover:text-emerald-700"
+              className="uppercase tracking-[0.04em] hover:text-blue-700"
             >
               {loc.propertyName}
             </Link>
             {' · '}
-            <Link href={`/biens/lots/${loc.lotId}`} className="hover:text-emerald-700">
+            <Link href={`/biens/lots/${loc.lotId}`} className="hover:text-blue-700">
               {loc.lotName}
             </Link>
             {' · '}
@@ -320,7 +320,7 @@ function Kpi({
       <div
         className={`mt-2 text-2xl font-medium tabular-nums ${
           variant === 'good'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : variant === 'warn'
             ? 'text-zinc-500'
             : 'text-zinc-900'

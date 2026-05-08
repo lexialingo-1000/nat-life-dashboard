@@ -83,7 +83,7 @@ export default async function LocationsListPage() {
     <div className="space-y-8">
       <header className="flex items-end justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Patrimoine
           </div>
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -116,7 +116,7 @@ export default async function LocationsListPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-sm text-emerald-700">
+        <div className="card p-6 text-sm text-blue-700">
           Connexion DB indisponible : {dbError}
         </div>
       )}

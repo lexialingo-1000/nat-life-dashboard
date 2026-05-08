@@ -55,7 +55,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   if (!company) {
     return (
-      <div className="card p-6 text-sm text-emerald-700">
+      <div className="card p-6 text-sm text-blue-700">
         Connexion DB indisponible : {dbError}
       </div>
     );
@@ -208,7 +208,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
       <header className="flex items-start justify-between gap-6">
         <div className="page-header">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Société {!isActive && <span className="ml-2 badge-neutral">Inactive</span>}
           </div>
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -265,9 +265,9 @@ function Kpi({
       <div
         className={`mt-2 text-3xl font-medium tabular-nums ${
           variant === 'good'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : variant === 'warn'
-            ? 'text-emerald-700'
+            ? 'text-blue-700'
             : 'text-zinc-900'
         }`}
       >

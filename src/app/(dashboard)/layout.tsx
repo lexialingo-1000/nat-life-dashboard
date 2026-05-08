@@ -36,8 +36,8 @@ export default async function DashboardLayout({
       <Sidebar userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto">
         {DEV_BYPASS && (
-          <div className="flex items-center gap-2 border-b border-emerald-200 bg-emerald-50/70 px-8 py-2 text-[11px] text-emerald-900">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <div className="flex items-center gap-2 border-b border-blue-200 bg-blue-50/70 px-8 py-2 text-[11px] text-blue-900">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
             Mode développement : authentification bypassée. Retire{' '}
             <span className="kbd">NEXT_PUBLIC_DEV_BYPASS_AUTH</span> dans{' '}
             <span className="kbd">.env.local</span> pour réactiver Supabase Auth.

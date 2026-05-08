@@ -55,7 +55,7 @@ export default async function EditLocationPage({ params }: { params: { id: strin
       <BackLink fallbackHref={`/locations/${loc.id}`} label="Retour à la fiche" />
 
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Modifier la location
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">

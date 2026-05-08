@@ -75,7 +75,7 @@ export function RoomsSortableList({ rooms: initialRooms, levelId, lotId }: Props
           onDrop={() => handleDrop(i)}
           onDragEnd={handleDragEnd}
           className={`flex items-center justify-between px-4 py-2 text-[13px] transition-colors ${
-            dragOverIndex === i ? 'bg-emerald-50' : ''
+            dragOverIndex === i ? 'bg-blue-50' : ''
           } ${isPending ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2">

@@ -59,9 +59,9 @@ export function DocumentTypeCreateForm() {
         </div>
       )}
       {state.status === 'success' && (
-        <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" strokeWidth={2} />
-          <div className="text-[13px] text-emerald-800">
+        <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" strokeWidth={2} />
+          <div className="text-[13px] text-blue-800">
             Type créé avec succès. Visible dans la liste ci-dessus.
           </div>
         </div>

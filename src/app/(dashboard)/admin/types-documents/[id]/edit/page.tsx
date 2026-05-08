@@ -35,7 +35,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
       <BackLink fallbackHref="/admin/types-documents" label="Types de documents" />
 
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Administration
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">

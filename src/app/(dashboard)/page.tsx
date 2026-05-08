@@ -159,7 +159,7 @@ function SectionHeader({
 }) {
   return (
     <div className="page-header">
-      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
         {eyebrow}
       </div>
       <h2 className="mt-1.5 text-[20px] font-medium tracking-tight text-zinc-900">{title}</h2>
@@ -172,7 +172,7 @@ function SectionHeader({
 
 function HoverStripe() {
   return (
-    <span className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-emerald-500 opacity-0 transition-opacity duration-200 ease-out-quart group-hover:opacity-100" />
+    <span className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-blue-500 opacity-0 transition-opacity duration-200 ease-out-quart group-hover:opacity-100" />
   );
 }
 
@@ -269,7 +269,7 @@ function RoadmapBlock({
           <li key={i} className="flex items-baseline gap-2.5">
             <span
               className={`inline-block h-1 w-1 shrink-0 translate-y-[-3px] rounded-full ${
-                isActive ? 'bg-emerald-500' : 'bg-zinc-300'
+                isActive ? 'bg-blue-500' : 'bg-zinc-300'
               }`}
             />
             <span className={isActive ? 'text-zinc-700' : 'text-zinc-500'}>{item}</span>

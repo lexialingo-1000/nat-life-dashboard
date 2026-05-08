@@ -47,7 +47,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
       <BackLink fallbackHref={`/biens/properties/${p.id}`} label={p.name} />
 
       <header className="page-header">
-        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Édition
         </div>
         <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
@@ -199,7 +199,7 @@ function Field({
   return (
     <div className={className}>
       <label className="block text-[12px] font-medium text-zinc-700">
-        {label} {required && <span className="text-emerald-700">*</span>}
+        {label} {required && <span className="text-blue-700">*</span>}
       </label>
       <div className="mt-1">{children}</div>
     </div>

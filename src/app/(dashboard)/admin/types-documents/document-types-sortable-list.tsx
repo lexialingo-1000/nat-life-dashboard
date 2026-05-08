@@ -100,7 +100,7 @@ export function DocumentTypesSortableList({ rows }: Props) {
           onDragLeave={handleDragLeave}
           onDrop={() => handleDrop(i)}
           onDragEnd={handleDragEnd}
-          className={`transition-colors ${dragOverIndex === i ? 'bg-emerald-50' : ''}`}
+          className={`transition-colors ${dragOverIndex === i ? 'bg-blue-50' : ''}`}
         >
           <td className="w-8 px-2">
             <GripVertical
@@ -117,7 +117,7 @@ export function DocumentTypesSortableList({ rows }: Props) {
           <td className="font-mono text-[12px] text-zinc-500">{t.code}</td>
           <td>
             {t.hasExpiration ? (
-              <span className="inline-flex items-center gap-1 text-[12px] text-emerald-700">
+              <span className="inline-flex items-center gap-1 text-[12px] text-blue-700">
                 <Clock className="h-3 w-3" strokeWidth={2} />
                 Avec date
               </span>
@@ -143,8 +143,8 @@ export function DocumentTypesSortableList({ rows }: Props) {
           </td>
           <td>
             {t.isActive ? (
-              <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-blue-700">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
                 Actif
               </span>
             ) : (
@@ -158,7 +158,7 @@ export function DocumentTypesSortableList({ rows }: Props) {
             <div className="inline-flex items-center gap-3">
               <Link
                 href={`/admin/types-documents/${t.id}/edit`}
-                className="inline-flex items-center gap-1 text-[12px] text-emerald-700 hover:text-emerald-800"
+                className="inline-flex items-center gap-1 text-[12px] text-blue-700 hover:text-blue-800"
               >
                 <Pencil className="h-3 w-3" strokeWidth={2} />
                 Modifier
@@ -167,7 +167,7 @@ export function DocumentTypesSortableList({ rows }: Props) {
                 <input type="hidden" name="id" value={t.id} />
                 <button
                   type="submit"
-                  className="text-[12px] text-zinc-500 transition hover:text-emerald-700"
+                  className="text-[12px] text-zinc-500 transition hover:text-blue-700"
                 >
                   {t.isActive ? 'Désactiver' : 'Réactiver'}
                 </button>

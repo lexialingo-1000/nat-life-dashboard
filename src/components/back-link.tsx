@@ -38,7 +38,7 @@ export function BackLink({ fallbackHref, label, className }: Props) {
       onClick={handleClick}
       className={
         className ??
-        'inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-emerald-700'
+        'inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-blue-700'
       }
     >
       <ArrowLeft className="h-3.5 w-3.5" />
