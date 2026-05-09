@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { updateMarcheAction } from '../../actions';
+import { createSupplierInlineAction } from '../../../fournisseurs/actions';
 import { MarcheForm } from '@/components/marche-form';
 
 export const dynamic = 'force-dynamic';
@@ -97,6 +98,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
         }}
         cancelHref={`/marches/${marche.id}`}
         submitLabel="Enregistrer"
+        createSupplierAction={createSupplierInlineAction}
       />
     </div>
   );

@@ -76,18 +76,35 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium">Mode de facturation</label>
-          <select
-            name="invoicingType"
-            defaultValue={s.invoicingType}
-            className="input mt-1"
-          >
-            <option value="manual_upload">Upload manuel</option>
-            <option value="email_forward">Email forwardé</option>
-            <option value="pennylane">Pennylane (PA)</option>
-            <option value="scraping_required">Scraping requis (V1.5)</option>
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium">Type de fournisseur</label>
+            <select name="type" defaultValue={s.type} className="input mt-1">
+              <option value="notaire">Notaire</option>
+              <option value="banque">Banque</option>
+              <option value="juridique">Juridique</option>
+              <option value="comptabilite">Comptabilité</option>
+              <option value="architecte">Architecte</option>
+              <option value="entrepreneur">Entrepreneur</option>
+              <option value="syndic">Syndic</option>
+              <option value="diagnostic">Diagnostic</option>
+              <option value="assurance">Assurance</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Mode de facturation</label>
+            <select
+              name="invoicingType"
+              defaultValue={s.invoicingType}
+              className="input mt-1"
+            >
+              <option value="manual_upload">Upload manuel</option>
+              <option value="email_forward">Email forwardé</option>
+              <option value="pennylane">Pennylane (PA)</option>
+              <option value="scraping_required">Scraping requis (V1.5)</option>
+            </select>
+          </div>
         </div>
 
         <div>

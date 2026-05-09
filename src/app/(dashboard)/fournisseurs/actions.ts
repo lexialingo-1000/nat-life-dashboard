@@ -19,6 +19,20 @@ const supplierSchema = z.object({
   invoicingType: z
     .enum(['pennylane', 'email_forward', 'scraping_required', 'manual_upload'])
     .default('manual_upload'),
+  type: z
+    .enum([
+      'notaire',
+      'banque',
+      'juridique',
+      'comptabilite',
+      'architecte',
+      'entrepreneur',
+      'syndic',
+      'diagnostic',
+      'assurance',
+      'autre',
+    ])
+    .default('autre'),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -37,6 +51,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     phone: formData.get('phone'),
     email: formData.get('email'),
     invoicingType: formData.get('invoicingType') ?? 'manual_upload',
+    type: formData.get('type') ?? 'autre',
     notes: formData.get('notes'),
     isActive: formData.get('isActive'),
   });
@@ -54,6 +69,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       invoicingType: data.invoicingType,
+      type: data.type,
       notes: data.notes || null,
       isActive: data.isActive,
       updatedAt: new Date(),
@@ -130,6 +146,7 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
     phone: formData.get('phone'),
     email: formData.get('email'),
     invoicingType: formData.get('invoicingType') ?? 'manual_upload',
+    type: formData.get('type') ?? 'autre',
     notes: formData.get('notes'),
   });
   if (!parsed.success) {

@@ -4,6 +4,7 @@ import { eq, asc } from 'drizzle-orm';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { createMarcheAction } from '../actions';
+import { createSupplierInlineAction } from '../../fournisseurs/actions';
 import { MarcheForm } from '@/components/marche-form';
 import { EntityCombobox } from '@/components/entity-combobox';
 
@@ -88,6 +89,7 @@ export default async function NewMarchePage({
           }}
           cancelHref="/marches"
           submitLabel="Créer le marché"
+          createSupplierAction={createSupplierInlineAction}
         />
       </div>
     );

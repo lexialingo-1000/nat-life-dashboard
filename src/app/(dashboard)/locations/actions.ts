@@ -159,32 +159,41 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
-  const rows = await db
-    .select({ lotId: locations.lotId, customerId: locations.customerId })
-    .from(locations)
-    .where(eq(locations.id, id))
-    .limit(1);
+  let lotId: string | null = null;
+  let customerId: string | null = null;
 
-  // Supprimer les objets MinIO des documents avant de supprimer la location
-  const docs = await db
-    .select({ storageKey: locationDocuments.storageKey })
-    .from(locationDocuments)
-    .where(eq(locationDocuments.locationId, id));
+  try {
+    const rows = await db
+      .select({ lotId: locations.lotId, customerId: locations.customerId })
+      .from(locations)
+      .where(eq(locations.id, id))
+      .limit(1);
 
-  for (const doc of docs) {
-    try { await deleteObject(doc.storageKey); } catch {}
+    if (rows.length === 0) {
+      throw new Error('Location introuvable (peut-être déjà supprimée).');
+    }
+    lotId = rows[0].lotId;
+    customerId = rows[0].customerId;
+
+    const docs = await db
+      .select({ storageKey: locationDocuments.storageKey })
+      .from(locationDocuments)
+      .where(eq(locationDocuments.locationId, id));
+
+    for (const doc of docs) {
+      try { await deleteObject(doc.storageKey); } catch {}
+    }
+
+    await db.delete(locationDocuments).where(eq(locationDocuments.locationId, id));
+    await db.delete(locations).where(eq(locations.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    throw new Error(`Suppression impossible : ${msg}`);
   }
-
-  // Supprimer explicitement les documents (défense contre FK sans CASCADE en prod)
-  await db.delete(locationDocuments).where(eq(locationDocuments.locationId, id));
-
-  await db.delete(locations).where(eq(locations.id, id));
 
   revalidatePath('/locations');
-  if (rows[0]) {
-    revalidatePath(`/biens/lots/${rows[0].lotId}`);
-    revalidatePath(`/clients/${rows[0].customerId}`);
-  }
+  if (lotId) revalidatePath(`/biens/lots/${lotId}`);
+  if (customerId) revalidatePath(`/clients/${customerId}`);
 
   const returnTo = formData.get('returnTo');
   redirect(safeReturnTo(typeof returnTo === 'string' && returnTo ? returnTo : '/locations', '/locations'));

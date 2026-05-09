@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { EntityCombobox } from '@/components/entity-combobox';
 
 const STATUS_OPTIONS = [
   { value: 'devis_recu', label: 'Devis reçu' },
@@ -50,6 +51,11 @@ interface Props {
    * au lieu d'aller sur la fiche marché. Permet de rester sur la fiche bien
    * lorsqu'on crée un marché depuis le contexte d'un bien. */
   returnTo?: string;
+  /** Server action pour créer un fournisseur à la volée depuis le combobox.
+   * Si fourni, expose un bouton "+ Créer un fournisseur" dans la liste déroulante. */
+  createSupplierAction?: (
+    formData: FormData
+  ) => Promise<{ id: string; label: string } | { error: string }>;
 }
 
 export function MarcheForm({
@@ -62,6 +68,7 @@ export function MarcheForm({
   cancelHref,
   submitLabel = 'Enregistrer',
   returnTo,
+  createSupplierAction,
 }: Props) {
   const [selectedLotIds, setSelectedLotIds] = useState<Set<string>>(
     new Set(defaultValues.lotIds ?? [])
@@ -96,19 +103,18 @@ export function MarcheForm({
 
         <div>
           <label className="block text-sm font-medium">Fournisseur *</label>
-          <select
-            name="supplierId"
-            defaultValue={defaultValues.supplierId ?? ''}
-            required
-            className="input mt-1"
-          >
-            <option value="">— Choisir —</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <EntityCombobox
+              name="supplierId"
+              options={suppliers}
+              defaultValue={defaultValues.supplierId}
+              placeholder="Rechercher un fournisseur…"
+              createLabel="+ Créer un fournisseur"
+              createAction={createSupplierAction}
+              createFields={['companyName', 'firstName', 'lastName', 'email', 'phone']}
+              required
+            />
+          </div>
         </div>
 
         <div>

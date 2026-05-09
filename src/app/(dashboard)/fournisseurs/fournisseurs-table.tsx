@@ -10,6 +10,7 @@ export type FournisseurRow = {
   email: string | null;
   phone: string | null;
   invoicingType: string;
+  type: string;
   contactsCount: number;
   isActive: boolean;
 };
@@ -21,10 +22,31 @@ const INVOICING_LABELS: Record<string, string> = {
   manual_upload: 'Manuel',
 };
 
+export const SUPPLIER_TYPE_LABELS: Record<string, string> = {
+  notaire: 'Notaire',
+  banque: 'Banque',
+  juridique: 'Juridique',
+  comptabilite: 'Comptabilité',
+  architecte: 'Architecte',
+  entrepreneur: 'Entrepreneur',
+  syndic: 'Syndic',
+  diagnostic: 'Diagnostic',
+  assurance: 'Assurance',
+  autre: 'Autre',
+};
+
 const columns: ColumnDef<FournisseurRow>[] = [
   {
+    accessorKey: 'type',
+    header: 'Type',
+    cell: ({ getValue }) => {
+      const v = (getValue() as string) ?? 'autre';
+      return <span className="badge-neutral whitespace-nowrap">{SUPPLIER_TYPE_LABELS[v] ?? v}</span>;
+    },
+  },
+  {
     accessorKey: 'displayName',
-    header: 'Fournisseur',
+    header: 'Nom',
     cell: ({ row }) => (
       <EntityLink
         href={`/fournisseurs/${row.original.id}`}

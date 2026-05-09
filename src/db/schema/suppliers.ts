@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, varchar, boolean } from 'drizzle-orm/pg-core';
-import { supplierInvoicingTypeEnum } from './enums';
+import { supplierInvoicingTypeEnum, supplierTypeEnum } from './enums';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -13,6 +13,7 @@ export const suppliers = pgTable('suppliers', {
   email: text('email'),
   storagePath: text('storage_path'),
   invoicingType: supplierInvoicingTypeEnum('invoicing_type').notNull().default('manual_upload'),
+  type: supplierTypeEnum('type').notNull().default('autre'),
   pennylaneSupplierId: varchar('pennylane_supplier_id', { length: 64 }),
   notes: text('notes'),
   isActive: boolean('is_active').notNull().default(true),

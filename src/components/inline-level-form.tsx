@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { createLevelAction } from '@/app/(dashboard)/biens/actions';
 
@@ -10,15 +10,22 @@ interface Props {
 
 export function InlineLevelForm({ lotId }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form
       ref={formRef}
       action={async (formData: FormData) => {
-        await createLevelAction(formData);
-        formRef.current?.reset();
+        try {
+          setError(null);
+          await createLevelAction(formData);
+          formRef.current?.reset();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Erreur lors de la création');
+        }
       }}
-      className="flex items-end gap-2 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] px-3 py-2"
+      className="flex flex-wrap items-end gap-2 rounded-md border border-dashed border-zinc-200 bg-[#fbf8f0] px-3 py-2"
+      autoComplete="off"
     >
       <input type="hidden" name="lotId" value={lotId} />
       <div className="flex-1">
@@ -30,12 +37,19 @@ export function InlineLevelForm({ lotId }: Props) {
           required
           placeholder="RDC, R+1, sous-sol…"
           className="input mt-1"
+          autoComplete="off"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore="true"
         />
       </div>
       <button type="submit" className="btn-secondary">
         <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
         Niveau
       </button>
+      {error && (
+        <p className="w-full text-[12px] text-red-600">{error}</p>
+      )}
     </form>
   );
 }

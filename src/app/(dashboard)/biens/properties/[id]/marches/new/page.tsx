@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { createMarcheAction } from '@/app/(dashboard)/marches/actions';
+import { createSupplierInlineAction } from '@/app/(dashboard)/fournisseurs/actions';
 import { MarcheForm } from '@/components/marche-form';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
         cancelHref={`/biens/properties/${property.id}`}
         submitLabel="Créer le marché"
         returnTo={`/biens/properties/${property.id}`}
+        createSupplierAction={createSupplierInlineAction}
       />
     </div>
   );

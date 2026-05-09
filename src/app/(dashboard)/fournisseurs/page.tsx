@@ -19,6 +19,7 @@ export default async function FournisseursPage() {
         email: suppliers.email,
         phone: suppliers.phone,
         invoicingType: suppliers.invoicingType,
+        type: suppliers.type,
         isActive: suppliers.isActive,
         contactsCount: sql<number>`count(${supplierContacts.id})::int`,
       })
@@ -34,6 +35,7 @@ export default async function FournisseursPage() {
       email: s.email,
       phone: s.phone,
       invoicingType: s.invoicingType,
+      type: s.type,
       contactsCount: s.contactsCount,
       isActive: s.isActive,
     }));
