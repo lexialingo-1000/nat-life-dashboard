@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots, suppliers } from '@/db/schema';
+import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots, marcheTaches, suppliers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
@@ -292,4 +292,122 @@ export async function deleteSousLotAction(formData: FormData): Promise<void> {
 
   await db.delete(marcheSousLots).where(eq(marcheSousLots.id, id));
   revalidatePath(`/marches/${marcheId}`);
+}
+
+// === V1.8 P2-3+4 : Tâches dans sous-lots de marché ===========================
+
+const tacheStatusValues = ['a_faire', 'en_cours', 'termine', 'valide'] as const;
+
+const tacheCreateSchema = z.object({
+  marcheSousLotId: z.string().uuid(),
+  lotId: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  description: z.string().optional().or(z.literal('')),
+  locationDescription: z.string().optional().or(z.literal('')),
+  supplierContactId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
+  status: z.enum(tacheStatusValues).default('a_faire'),
+});
+
+const tacheUpdateSchema = tacheCreateSchema.extend({
+  id: z.string().uuid(),
+});
+
+export async function createTacheAction(formData: FormData): Promise<void> {
+  const parsed = tacheCreateSchema.safeParse({
+    marcheSousLotId: formData.get('marcheSousLotId'),
+    lotId: formData.get('lotId'),
+    title: formData.get('title'),
+    description: formData.get('description'),
+    locationDescription: formData.get('locationDescription'),
+    supplierContactId: formData.get('supplierContactId'),
+    status: formData.get('status') ?? 'a_faire',
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+
+  await db.insert(marcheTaches).values({
+    marcheSousLotId: data.marcheSousLotId,
+    lotId: data.lotId,
+    title: data.title,
+    description: data.description || null,
+    locationDescription: data.locationDescription || null,
+    supplierContactId: data.supplierContactId || null,
+    status: data.status,
+  });
+
+  const returnTo = formData.get('returnTo');
+  revalidatePath('/biens');
+  redirect(safeReturnTo(returnTo, '/biens'));
+}
+
+export async function updateTacheAction(formData: FormData): Promise<void> {
+  const parsed = tacheUpdateSchema.safeParse({
+    id: formData.get('id'),
+    marcheSousLotId: formData.get('marcheSousLotId'),
+    lotId: formData.get('lotId'),
+    title: formData.get('title'),
+    description: formData.get('description'),
+    locationDescription: formData.get('locationDescription'),
+    supplierContactId: formData.get('supplierContactId'),
+    status: formData.get('status') ?? 'a_faire',
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+
+  await db
+    .update(marcheTaches)
+    .set({
+      title: data.title,
+      description: data.description || null,
+      locationDescription: data.locationDescription || null,
+      supplierContactId: data.supplierContactId || null,
+      status: data.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(marcheTaches.id, data.id));
+
+  const returnTo = formData.get('returnTo');
+  revalidatePath('/biens');
+  redirect(safeReturnTo(returnTo, '/biens'));
+}
+
+export async function deleteTacheAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+
+  await db.delete(marcheTaches).where(eq(marcheTaches.id, id));
+
+  const returnTo = formData.get('returnTo');
+  revalidatePath('/biens');
+  if (returnTo && typeof returnTo === 'string') redirect(safeReturnTo(returnTo, '/biens'));
+}
+
+/**
+ * Inline status update — appelé depuis le `<select>` dropdown du composant
+ * `<TacheStatusSelect>`. Submit via useTransition, pas de redirect.
+ */
+export async function updateTacheStatusAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const status = String(formData.get('status') ?? '');
+  if (!id) throw new Error('ID manquant');
+  if (!tacheStatusValues.includes(status as any)) {
+    throw new Error(`Statut invalide : ${status}`);
+  }
+
+  await db
+    .update(marcheTaches)
+    .set({
+      status: status as (typeof tacheStatusValues)[number],
+      completedAt: status === 'termine' || status === 'valide' ? new Date().toISOString().slice(0, 10) : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(marcheTaches.id, id));
+
+  revalidatePath('/biens');
 }

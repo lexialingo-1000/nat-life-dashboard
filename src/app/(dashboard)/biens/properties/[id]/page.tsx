@@ -6,14 +6,18 @@ import {
   companies,
   marchesTravaux,
   marcheLotAffectations,
+  marcheSousLots,
+  marcheTaches,
+  marcheTypes,
   suppliers,
+  supplierContacts,
   levels,
   rooms,
   documentTypes,
   locations,
   customers,
 } from '@/db/schema';
-import { eq, asc, and, sql, desc } from 'drizzle-orm';
+import { eq, asc, and, sql, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, Pencil, Plus } from 'lucide-react';
@@ -37,6 +41,7 @@ import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { DocumentsManager } from '@/components/documents-manager';
 import { PropertyPhotosManager } from '@/components/property-photos-manager';
+import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import {
   PropertyStructureTree,
   type PropertyTree,
@@ -159,6 +164,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         amountHt: marchesTravaux.amountHt,
         dateDebutPrevu: marchesTravaux.dateDebutPrevu,
         supplierName: suppliers.companyName,
+        supplierFirstName: suppliers.firstName,
+        supplierLastName: suppliers.lastName,
         lotsConcernes: sql<string | null>`(
           SELECT string_agg(${lots.name}, ', ' ORDER BY ${lots.name})
           FROM ${marcheLotAffectations}
@@ -192,6 +199,88 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       .innerJoin(customers, eq(customers.id, locations.customerId))
       .where(eq(lots.propertyId, property.id))
       .orderBy(desc(locations.dateDebut));
+  }
+
+  // V1.8 P2-3 : cascade Marché > Sous-lot > Tâche pour la fiche bien
+  let marcheTreeNodes: MarcheNode[] = [];
+  if (property && propertyMarches.length > 0) {
+    const marcheIds = propertyMarches.map((m) => m.id);
+
+    const sousLotsRows = await db
+      .select({
+        id: marcheSousLots.id,
+        name: marcheSousLots.name,
+        status: marcheSousLots.status,
+        marcheId: marcheSousLots.marcheId,
+        marcheTypeLabel: marcheTypes.label,
+        sortOrder: marcheSousLots.sortOrder,
+      })
+      .from(marcheSousLots)
+      .leftJoin(marcheTypes, eq(marcheTypes.id, marcheSousLots.marcheTypeId))
+      .where(inArray(marcheSousLots.marcheId, marcheIds))
+      .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
+
+    const sousLotIds = sousLotsRows.map((s) => s.id);
+    const tachesRows = sousLotIds.length > 0
+      ? await db
+          .select({
+            id: marcheTaches.id,
+            title: marcheTaches.title,
+            status: marcheTaches.status,
+            locationDescription: marcheTaches.locationDescription,
+            photos: marcheTaches.photos,
+            marcheSousLotId: marcheTaches.marcheSousLotId,
+            lotId: marcheTaches.lotId,
+            contactFirstName: supplierContacts.firstName,
+            contactLastName: supplierContacts.lastName,
+          })
+          .from(marcheTaches)
+          .leftJoin(supplierContacts, eq(supplierContacts.id, marcheTaches.supplierContactId))
+          .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
+          .orderBy(asc(marcheTaches.createdAt))
+      : [];
+
+    // Build tree
+    const tachesBySousLot = new Map<string, typeof tachesRows>();
+    for (const t of tachesRows) {
+      if (!t.marcheSousLotId) continue;
+      const arr = tachesBySousLot.get(t.marcheSousLotId) ?? [];
+      arr.push(t);
+      tachesBySousLot.set(t.marcheSousLotId, arr);
+    }
+
+    const sousLotsByMarche = new Map<string, typeof sousLotsRows>();
+    for (const sl of sousLotsRows) {
+      const arr = sousLotsByMarche.get(sl.marcheId) ?? [];
+      arr.push(sl);
+      sousLotsByMarche.set(sl.marcheId, arr);
+    }
+
+    marcheTreeNodes = propertyMarches.map((m) => ({
+      id: m.id,
+      supplierName:
+        m.supplierName ?? `${m.supplierFirstName ?? ''} ${m.supplierLastName ?? ''}`.trim() ?? '—',
+      status: m.status,
+      amountHt: m.amountHt,
+      sousLots: (sousLotsByMarche.get(m.id) ?? []).map((sl) => ({
+        id: sl.id,
+        name: sl.name,
+        status: sl.status,
+        marcheTypeLabel: sl.marcheTypeLabel,
+        taches: (tachesBySousLot.get(sl.id) ?? []).map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          locationDescription: t.locationDescription,
+          supplierContactName:
+            t.contactFirstName || t.contactLastName
+              ? `${t.contactFirstName ?? ''} ${t.contactLastName ?? ''}`.trim()
+              : null,
+          photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
+          lotId: t.lotId,
+        })),
+      })),
+    }));
   }
 
   if (!property) {
@@ -417,52 +506,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           Nouveau marché
         </Link>
       </div>
-      {propertyMarches.length === 0 ? (
-        <div className="card p-6 text-center text-sm text-zinc-500">
-          Aucun marché de travaux pour ce bien. Crée-en un pour commencer le suivi.
-        </div>
-      ) : (
-        <div className="card overflow-hidden">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Lots concernés</th>
-                <th>Fournisseur</th>
-                <th className="w-[120px]">Montant HT</th>
-                <th className="w-[120px]">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {propertyMarches.map((m, i) => (
-                <tr key={m.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                  <td>
-                    <Link href={`/marches/${m.id}`} className="link-cell">
-                      {m.name}
-                    </Link>
-                  </td>
-                  <td className="text-[12px] text-zinc-500">
-                    {m.lotsConcernes ?? (
-                      <span className="text-zinc-400">parties communes</span>
-                    )}
-                  </td>
-                  <td className="text-[12px] text-zinc-600">{m.supplierName ?? '—'}</td>
-                  <td className="tnum text-[12px] text-zinc-700">
-                    {m.amountHt
-                      ? `${Number(m.amountHt).toLocaleString('fr-FR')} €`
-                      : '—'}
-                  </td>
-                  <td>
-                    <span className="badge-neutral">
-                      {MARCHE_STATUS_LABELS[m.status] ?? m.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <MarchesTree marches={marcheTreeNodes} returnTo={`/biens/properties/${property.id}`} />
     </div>
   );
 
