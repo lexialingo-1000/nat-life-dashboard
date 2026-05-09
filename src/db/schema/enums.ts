@@ -76,7 +76,21 @@ export const locationPeriodiciteEnum = pgEnum('location_periodicite', [
   'annee',
 ]);
 
-export const finitionStatusEnum = pgEnum('finition_status', ['a_faire', 'en_cours', 'livre']);
+/**
+ * Statut d'une tâche de marché (anciennement `finition_status` en V1, renommé V1.8 P2-5).
+ *
+ * Source : Remarques client dashboard-8 §10 (à faire / en cours / terminé / validé).
+ *
+ * Migration V1.8 :
+ * - `livre` (V1) → renamed to `termine`
+ * - `valide` (NEW V1.8) ajouté
+ */
+export const marcheTacheStatusEnum = pgEnum('marche_tache_status', [
+  'a_faire',
+  'en_cours',
+  'termine',
+  'valide',
+]);
 
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestionnaire']);
 

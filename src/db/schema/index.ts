@@ -8,4 +8,4 @@ export * from './properties';
 export * from './marche-types';
 export * from './marches';
 export * from './locations';
-export * from './finitions';
+export * from './marche-taches';
