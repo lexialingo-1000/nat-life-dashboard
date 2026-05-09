@@ -22,6 +22,7 @@ async function main() {
 
   await seedCompanies(db);
   await seedDocumentTypes(db);
+  await seedMarcheTypes(db);
   await seedValroseProperties(db);
 
   await sql.end();
@@ -159,6 +160,36 @@ async function seedDocumentTypes(db: ReturnType<typeof drizzle<typeof schema>>) 
     if (!matching) {
       await db.insert(schema.documentTypes).values(t);
       console.log(`[seed] inserted document_type ${t.scope}/${t.code}`);
+    }
+  }
+}
+
+async function seedMarcheTypes(db: ReturnType<typeof drizzle<typeof schema>>) {
+  // Source : Remarques client dashboard-7.docx §2 — types corps d'état standard
+  const types: schema.NewMarcheType[] = [
+    { code: 'demolition', label: 'Démolition', sortOrder: 10 },
+    { code: 'placo_enduits', label: 'Placo et enduits', sortOrder: 20 },
+    { code: 'peinture', label: 'Peinture', sortOrder: 30 },
+    { code: 'sol', label: 'Sol', sortOrder: 40 },
+    { code: 'maconnerie', label: 'Maçonnerie', sortOrder: 50 },
+    { code: 'electricite', label: 'Électricité', sortOrder: 60 },
+    { code: 'plomberie', label: 'Plomberie', sortOrder: 70 },
+    { code: 'exterieurs', label: 'Extérieurs', sortOrder: 80 },
+    { code: 'facade', label: 'Façade', sortOrder: 90 },
+    { code: 'cuisine', label: 'Cuisine', sortOrder: 100 },
+    { code: 'portes_fenetres', label: 'Portes et fenêtres', sortOrder: 110 },
+    { code: 'amenagements', label: 'Aménagements', sortOrder: 120 },
+  ];
+
+  for (const t of types) {
+    const existing = await db
+      .select()
+      .from(schema.marcheTypes)
+      .where(eq(schema.marcheTypes.code, t.code))
+      .limit(1);
+    if (existing.length === 0) {
+      await db.insert(schema.marcheTypes).values(t);
+      console.log(`[seed] inserted marche_type ${t.code}`);
     }
   }
 }

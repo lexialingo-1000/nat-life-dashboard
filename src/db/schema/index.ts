@@ -5,6 +5,7 @@ export * from './document-types';
 export * from './suppliers';
 export * from './customers';
 export * from './properties';
+export * from './marche-types';
 export * from './marches';
 export * from './locations';
 export * from './finitions';

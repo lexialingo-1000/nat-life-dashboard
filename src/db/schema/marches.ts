@@ -3,6 +3,7 @@ import { marcheStatusEnum } from './enums';
 import { properties, lots } from './properties';
 import { suppliers } from './suppliers';
 import { documentTypes } from './document-types';
+import { marcheTypes } from './marche-types';
 import { users } from './users';
 
 export const marchesTravaux = pgTable('marches_travaux', {
@@ -65,6 +66,7 @@ export const marcheSousLots = pgTable('marche_sous_lots', {
   amountHt: numeric('amount_ht', { precision: 14, scale: 2 }),
   amountTtc: numeric('amount_ttc', { precision: 14, scale: 2 }),
   supplierId: uuid('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  marcheTypeId: uuid('marche_type_id').references(() => marcheTypes.id, { onDelete: 'set null' }),
   dateDebutPrevu: date('date_debut_prevu'),
   dateFinPrevu: date('date_fin_prevu'),
   dateDebutReel: date('date_debut_reel'),

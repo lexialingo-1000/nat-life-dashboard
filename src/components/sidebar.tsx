@@ -42,6 +42,7 @@ const sections = [
     title: 'Administration',
     items: [
       { href: '/admin/types-documents', label: 'Types de documents', icon: FileBox },
+      { href: '/admin/marche-types', label: 'Types de marchés', icon: HardHat },
       { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
       { href: '/admin/parametres', label: 'Paramètres', icon: Settings },
     ],
