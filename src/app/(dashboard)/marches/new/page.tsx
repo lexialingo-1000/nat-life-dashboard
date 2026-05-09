@@ -5,15 +5,17 @@ import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { createMarcheAction } from '../actions';
 import { MarcheForm } from '@/components/marche-form';
+import { EntityCombobox } from '@/components/entity-combobox';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewMarchePage({
   searchParams,
 }: {
-  searchParams: { propertyId?: string };
+  searchParams: { propertyId?: string; supplierId?: string };
 }) {
   const selectedPropertyId = searchParams.propertyId;
+  const prefillSupplierId = searchParams.supplierId;
 
   const propertyList = await db
     .select({ id: properties.id, name: properties.name })
@@ -80,7 +82,10 @@ export default async function NewMarchePage({
           propertyName={property.name}
           lots={propertyLots}
           suppliers={supplierOptions}
-          defaultValues={{ lotIds: propertyLots.map((l) => l.id) }}
+          defaultValues={{
+            lotIds: propertyLots.map((l) => l.id),
+            supplierId: prefillSupplierId,
+          }}
           cancelHref="/marches"
           submitLabel="Créer le marché"
         />
@@ -89,6 +94,8 @@ export default async function NewMarchePage({
   }
 
   // Step 1 — pick a property
+  const propertyOptions = propertyList.map((p) => ({ id: p.id, label: p.name }));
+
   return (
     <div className="max-w-lg space-y-6">
       <BackLink fallbackHref="/marches" label="Marchés de travaux" />
@@ -106,18 +113,21 @@ export default async function NewMarchePage({
       </div>
 
       <form method="get" className="card space-y-5 p-6">
+        {prefillSupplierId && (
+          <input type="hidden" name="supplierId" value={prefillSupplierId} />
+        )}
         <div>
           <label className="block text-sm font-medium text-zinc-700">
             Bien immobilier <span className="text-red-500">*</span>
           </label>
-          <select name="propertyId" required className="input mt-1">
-            <option value="">— Choisir un bien —</option>
-            {propertyList.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <EntityCombobox
+              name="propertyId"
+              options={propertyOptions}
+              placeholder="Rechercher un bien…"
+              required
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-3">

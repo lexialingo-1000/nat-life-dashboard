@@ -105,6 +105,12 @@ async function seedDocumentTypes(db: ReturnType<typeof drizzle<typeof schema>>) 
     { code: 'garantie_decennale', label: 'Garantie décennale', scope: 'supplier', sortOrder: 30, hasExpiration: true },
     { code: 'rib', label: 'RIB', scope: 'supplier', sortOrder: 40, hasExpiration: false },
     { code: 'contrat_cadre', label: 'Contrat cadre', scope: 'supplier', sortOrder: 50, hasExpiration: false },
+    { code: 'notaire', label: 'Notaire', scope: 'supplier', sortOrder: 60, hasExpiration: false },
+    { code: 'banque', label: 'Banque', scope: 'supplier', sortOrder: 70, hasExpiration: false },
+    { code: 'juridique', label: 'Juridique', scope: 'supplier', sortOrder: 80, hasExpiration: false },
+    { code: 'comptabilite', label: 'Comptabilité', scope: 'supplier', sortOrder: 90, hasExpiration: false },
+    { code: 'courant', label: 'Courant', scope: 'supplier', sortOrder: 95, hasExpiration: false },
+    { code: 'contrat_location', label: 'Contrat location', scope: 'supplier', sortOrder: 96, hasExpiration: false },
     { code: 'autre', label: 'Autre', scope: 'supplier', sortOrder: 99, hasExpiration: false },
 
     // CUSTOMER

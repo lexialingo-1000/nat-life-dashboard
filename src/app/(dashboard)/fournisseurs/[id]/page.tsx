@@ -232,19 +232,27 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   );
 
   const marchesTab = (
-    <div className="card overflow-hidden">
-      <SupplierMarchesTable
-        rows={supplierMarches.map((m) => ({
-          id: m.id,
-          name: m.name,
-          status: m.status,
-          amountHt: m.amountHt,
-          dateDebutPrevu: m.dateDebutPrevu,
-          dateFinReelle: m.dateFinReelle,
-          propertyId: m.propertyId,
-          propertyName: m.propertyName,
-        }))}
-      />
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Link href={`/marches/new?supplierId=${s.id}`} className="btn-primary">
+          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+          Nouveau marché
+        </Link>
+      </div>
+      <div className="card overflow-hidden">
+        <SupplierMarchesTable
+          rows={supplierMarches.map((m) => ({
+            id: m.id,
+            name: m.name,
+            status: m.status,
+            amountHt: m.amountHt,
+            dateDebutPrevu: m.dateDebutPrevu,
+            dateFinReelle: m.dateFinReelle,
+            propertyId: m.propertyId,
+            propertyName: m.propertyName,
+          }))}
+        />
+      </div>
     </div>
   );
 

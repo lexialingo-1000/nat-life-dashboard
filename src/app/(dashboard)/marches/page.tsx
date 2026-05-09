@@ -131,11 +131,10 @@ export default async function MarchesPage({
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-zinc-500">
               <tr>
-                <th className="px-4 py-3">Marché</th>
+                <th className="px-4 py-3">Fournisseur</th>
                 <th className="px-4 py-3">Société</th>
                 <th className="px-4 py-3">Bien</th>
                 <th className="px-4 py-3">Lots concernés</th>
-                <th className="px-4 py-3">Fournisseur</th>
                 <th className="px-4 py-3">Montant HT</th>
                 <th className="px-4 py-3">Statut</th>
               </tr>
@@ -148,7 +147,7 @@ export default async function MarchesPage({
                       href={`/marches/${m.id}`}
                       className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
                     >
-                      {m.name}
+                      {m.supplierName ?? '—'}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-xs">{m.companyName}</td>
@@ -163,7 +162,6 @@ export default async function MarchesPage({
                   <td className="px-4 py-3 text-xs text-zinc-500">
                     {m.lotsConcernes ?? <span className="text-zinc-400">parties communes</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs">{m.supplierName ?? '—'}</td>
                   <td className="px-4 py-3 tabular-nums">
                     {m.amountHt ? `${Number(m.amountHt).toLocaleString('fr-FR')} €` : '—'}
                   </td>
