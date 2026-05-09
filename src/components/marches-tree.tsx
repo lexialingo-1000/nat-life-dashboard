@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { ChevronRight, Plus, Camera, MapPin, User } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
