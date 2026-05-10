@@ -39,9 +39,12 @@ export const propertyTypeEnum = pgEnum('property_type', [
   'terrain',
 ]);
 
+// V1.9 : split 'loue_ou_vacant' en 'loue' + 'vacant' (Natacha — statuts distincts).
+// Migration SQL : drizzle/migrations/0015_property_statut_split.sql.
 export const propertyStatutEnum = pgEnum('property_statut', [
   'en_cours_acquisition',
-  'loue_ou_vacant',
+  'loue',
+  'vacant',
   'vendu',
 ]);
 
@@ -90,6 +93,17 @@ export const marcheTacheStatusEnum = pgEnum('marche_tache_status', [
   'en_cours',
   'termine',
   'valide',
+]);
+
+// V1.9 Lot E — catégorie sur types ET sur documents (override).
+// Migration : drizzle/migrations/0017_doc_categories.sql.
+export const documentCategoryEnum = pgEnum('document_category', [
+  'notaire',
+  'banque',
+  'juridique',
+  'comptabilite',
+  'courant',
+  'location',
 ]);
 
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestionnaire']);

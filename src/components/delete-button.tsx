@@ -31,19 +31,30 @@ export function DeleteButton({
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const canConfirm = typed === confirmationPhrase;
 
   const handleConfirm = () => {
     if (!canConfirm) return;
+    setError(null);
     startTransition(async () => {
-      const fd = new FormData();
-      fd.set('id', id);
-      if (extraFields) {
-        for (const [k, v] of Object.entries(extraFields)) fd.set(k, v);
+      try {
+        const fd = new FormData();
+        fd.set('id', id);
+        if (extraFields) {
+          for (const [k, v] of Object.entries(extraFields)) fd.set(k, v);
+        }
+        await action(fd);
+      } catch (err) {
+        // Next.js redirect() throws NEXT_REDIRECT — let it propagate so navigation happens.
+        if (err && typeof err === 'object' && 'digest' in err && typeof (err as { digest?: unknown }).digest === 'string' && (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
+          throw err;
+        }
+        const msg = err instanceof Error ? err.message : 'Erreur inconnue lors de la suppression';
+        setError(msg);
       }
-      await action(fd);
     });
   };
 
@@ -89,12 +100,22 @@ export function DeleteButton({
               />
             </div>
 
+            {error && (
+              <div
+                role="alert"
+                className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+              >
+                {error}
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setOpen(false);
                   setTyped('');
+                  setError(null);
                 }}
                 disabled={pending}
                 className="btn-secondary"

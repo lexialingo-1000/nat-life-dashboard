@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { companies, companyDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { lookupBySiren, searchByName, normalizeSirenOrSiret } from '@/lib/recherche-entreprises';
+import { lookupBySiren, normalizeSirenOrSiret } from '@/lib/recherche-entreprises';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -45,20 +45,6 @@ export async function lookupSirenAction(formData: FormData) {
     const result = await lookupBySiren(normalized);
     if (!result) return { error: 'Numéro non trouvé dans la base SIRENE' };
     return { data: result };
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Erreur API' };
-  }
-}
-
-export async function searchByNameAction(formData: FormData) {
-  const query = String(formData.get('query') ?? '').trim();
-  if (query.length < 2) {
-    return { error: 'Saisis au moins 2 caractères' };
-  }
-  try {
-    const results = await searchByName(query);
-    if (results.length === 0) return { error: 'Aucune société trouvée' };
-    return { data: results };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Erreur API' };
   }

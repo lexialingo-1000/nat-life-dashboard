@@ -22,31 +22,14 @@ const INVOICING_LABELS: Record<string, string> = {
   manual_upload: 'Manuel',
 };
 
-export const SUPPLIER_TYPE_LABELS: Record<string, string> = {
-  notaire: 'Notaire',
-  banque: 'Banque',
-  juridique: 'Juridique',
-  comptabilite: 'Comptabilité',
-  architecte: 'Architecte',
-  entrepreneur: 'Entrepreneur',
-  syndic: 'Syndic',
-  diagnostic: 'Diagnostic',
-  assurance: 'Assurance',
-  autre: 'Autre',
-};
-
+// V1.10 I — colonnes Type, Email, Téléphone retirées (cliente Natacha :
+// "enleve la premiere colonne on a plus besoin du type de fournisseur.
+// La premiere colonne doit etre NOM. Remplacer NOM par FOURNISSEUR.
+// Supprime les mails et numero telephone de la liste").
 const columns: ColumnDef<FournisseurRow>[] = [
   {
-    accessorKey: 'type',
-    header: 'Type',
-    cell: ({ getValue }) => {
-      const v = (getValue() as string) ?? 'autre';
-      return <span className="badge-neutral whitespace-nowrap">{SUPPLIER_TYPE_LABELS[v] ?? v}</span>;
-    },
-  },
-  {
     accessorKey: 'displayName',
-    header: 'Nom',
+    header: 'Fournisseur',
     cell: ({ row }) => (
       <EntityLink
         href={`/fournisseurs/${row.original.id}`}
@@ -75,22 +58,6 @@ const columns: ColumnDef<FournisseurRow>[] = [
       if ('inactif'.startsWith(v)) return !active;
       return true;
     },
-  },
-  {
-    accessorKey: 'email',
-    header: 'Email',
-    cell: ({ getValue }) => (
-      <span className="text-zinc-600">{(getValue() as string | null) ?? '—'}</span>
-    ),
-  },
-  {
-    accessorKey: 'phone',
-    header: 'Téléphone',
-    cell: ({ getValue }) => (
-      <span className="font-mono text-[12px] text-zinc-600">
-        {(getValue() as string | null) ?? '—'}
-      </span>
-    ),
   },
   {
     accessorKey: 'contactsCount',

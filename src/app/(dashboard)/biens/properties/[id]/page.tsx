@@ -17,7 +17,7 @@ import {
   locations,
   customers,
 } from '@/db/schema';
-import { eq, asc, and, sql, desc, inArray } from 'drizzle-orm';
+import { eq, asc, and, sql, desc, inArray, ne, notInArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, Pencil, Plus } from 'lucide-react';
@@ -291,6 +291,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     );
   }
 
+  // V1.10 G2 — onglet Documents exclut les types 'photo' et 'plan' qui ont
+  // leurs propres onglets dédiés (V1.9 B1 + D3). Cliente Natacha :
+  // "les photos ne doivent pas apparaitres dans Documents".
   const propertyDocs = await db
     .select({
       id: propertyDocuments.id,
@@ -303,7 +306,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
-    .where(eq(propertyDocuments.propertyId, property.id))
+    .where(
+      and(
+        eq(propertyDocuments.propertyId, property.id),
+        notInArray(documentTypes.code, ['photo', 'plan']),
+      )
+    )
     .orderBy(asc(documentTypes.sortOrder));
 
   const propertyDocTypes = await db
@@ -317,7 +325,13 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     .where(and(eq(documentTypes.scope, 'property'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
 
+  // Dropdown upload de l'onglet Documents : exclut photo/plan (uploadés via leurs onglets).
+  const propertyDocTypesNoMedia = propertyDocTypes.filter(
+    (t) => t.code !== 'photo' && t.code !== 'plan'
+  );
+
   const photoTypeId = propertyDocTypes.find((t) => t.code === 'photo')?.id ?? null;
+  const planType = propertyDocTypes.find((t) => t.code === 'plan') ?? null;
 
   const propertyPhotos = await db
     .select({
@@ -332,6 +346,29 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       and(
         eq(propertyDocuments.propertyId, property.id),
         eq(documentTypes.code, 'photo'),
+        eq(documentTypes.scope, 'property'),
+      )
+    )
+    .orderBy(desc(propertyDocuments.uploadedAt));
+
+  // V1.9 D3 — Plans : utilise propertyDocuments + filtre type=plan.
+  // Onglet dédié pour upload/list. Accès prestataire = phase 2.
+  const propertyPlans = await db
+    .select({
+      id: propertyDocuments.id,
+      name: propertyDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: propertyDocuments.storageKey,
+      expiresAt: propertyDocuments.expiresAt,
+      documentDate: propertyDocuments.documentDate,
+      uploadedAt: propertyDocuments.uploadedAt,
+    })
+    .from(propertyDocuments)
+    .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
+    .where(
+      and(
+        eq(propertyDocuments.propertyId, property.id),
+        eq(documentTypes.code, 'plan'),
         eq(documentTypes.scope, 'property'),
       )
     )
@@ -526,7 +563,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           expiresAt: d.expiresAt,
           uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
         }))}
-        availableTypes={propertyDocTypes}
+        availableTypes={propertyDocTypesNoMedia}
         uploadAction={uploadPropertyDocumentAction}
         deleteAction={deletePropertyDocumentAction}
         getUrlAction={getPropertyDocumentUrlAction}
@@ -553,6 +590,42 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
+  const plansTab = (
+    <div className="card p-6">
+      {planType ? (
+        <DocumentsManager
+          scope="properties"
+          parentId={property.id}
+          parentSlug={slugify(property.name)}
+          parentIdFieldName="propertyId"
+          documents={propertyPlans.map((d) => ({
+            id: d.id,
+            name: d.name,
+            typeLabel: d.typeLabel,
+            storageKey: d.storageKey,
+            documentDate: d.documentDate,
+            expiresAt: d.expiresAt,
+            uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          }))}
+          // Lock à un seul type — DocumentsManager auto-select quand availableTypes.length === 1.
+          availableTypes={[
+            { id: planType.id, label: planType.label, hasExpiration: planType.hasExpiration },
+          ]}
+          uploadAction={uploadPropertyDocumentAction}
+          deleteAction={deletePropertyDocumentAction}
+          getUrlAction={getPropertyDocumentUrlAction}
+        />
+      ) : (
+        <p className="text-[13px] text-zinc-500">
+          Type de document « Plan » non configuré.{' '}
+          <Link href="/admin/types-documents" className="text-blue-700 hover:underline">
+            Ajouter via l'administration.
+          </Link>
+        </p>
+      )}
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'bien', label: 'Bien', count: propertyLots.length, content: bienTab },
@@ -564,6 +637,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     },
     { id: 'travaux', label: 'Travaux', count: propertyMarches.length, content: travauxTab },
     { id: 'photos', label: 'Photos', count: propertyPhotos.length || undefined, content: photosTab },
+    { id: 'plans', label: 'Plans', count: propertyPlans.length || undefined, content: plansTab },
     { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
 
@@ -584,10 +658,13 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               <span className={
                 property.statut === 'vendu' ? 'badge-neutral' :
                 property.statut === 'en_cours_acquisition' ? 'badge-blue' :
+                property.statut === 'vacant' ? 'badge-amber' :
                 'badge-emerald'
               }>
                 {property.statut === 'en_cours_acquisition' ? 'Acquisition' :
-                 property.statut === 'vendu' ? 'Vendu' : 'Loué / Vacant'}
+                 property.statut === 'vendu' ? 'Vendu' :
+                 property.statut === 'vacant' ? 'Vacant' :
+                 'Loué'}
               </span>
             )}
           </h1>

@@ -59,7 +59,8 @@ export default async function MarchesPage({
     const filtered = activeSupplierId
       ? base.where(eq(marchesTravaux.supplierId, activeSupplierId))
       : base;
-    rows = await filtered.orderBy(asc(marchesTravaux.createdAt));
+    // V1.9 — tri alphabétique par défaut (Natacha : "ordre alphabétique du nom, idem de partout").
+    rows = await filtered.orderBy(asc(marchesTravaux.name));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }

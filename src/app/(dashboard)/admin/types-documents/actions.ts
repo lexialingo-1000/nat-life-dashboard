@@ -18,6 +18,20 @@ const SCOPE_VALUES = [
   'location',
 ] as const;
 
+const CATEGORY_VALUES = [
+  'notaire',
+  'banque',
+  'juridique',
+  'comptabilite',
+  'courant',
+  'location',
+] as const;
+
+const categoryPreprocess = z.preprocess(
+  (v) => (v === '' || v == null || v === undefined ? null : v),
+  z.enum(CATEGORY_VALUES).nullable()
+);
+
 const checkboxToBool = z.preprocess(
   (v) => v === 'on' || v === true,
   z.boolean()
@@ -36,6 +50,7 @@ const createSchema = z.object({
     .regex(/^[a-z0-9_]+$/, 'Code en minuscule, chiffres et underscores uniquement'),
   label: z.string().min(1).max(255),
   scope: z.enum(SCOPE_VALUES),
+  category: categoryPreprocess.optional(),
   hasExpiration: checkboxToBool.optional(),
   isRequired: checkboxToBool.optional(),
   appliesToTenantType: tenantPreprocess.optional(),
@@ -44,6 +59,7 @@ const createSchema = z.object({
 const updateSchema = z.object({
   id: z.string().uuid(),
   label: z.string().min(1).max(255),
+  category: categoryPreprocess,
   hasExpiration: checkboxToBool,
   isRequired: checkboxToBool,
   appliesToTenantType: tenantPreprocess,
@@ -76,7 +92,7 @@ export async function createDocumentTypeAction(
     };
   }
 
-  const { code, label, scope, hasExpiration, isRequired, appliesToTenantType } = parsed.data;
+  const { code, label, scope, category, hasExpiration, isRequired, appliesToTenantType } = parsed.data;
 
   const finalAppliesTo = scope === 'customer' ? appliesToTenantType ?? null : null;
 
@@ -85,6 +101,7 @@ export async function createDocumentTypeAction(
       code,
       label,
       scope,
+      category: category ?? null,
       hasExpiration: hasExpiration ?? false,
       isRequired: isRequired ?? false,
       appliesToTenantType: finalAppliesTo,
@@ -119,6 +136,7 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
     .update(documentTypes)
     .set({
       label: parsed.data.label,
+      category: parsed.data.category,
       hasExpiration: parsed.data.hasExpiration,
       isRequired: parsed.data.isRequired,
       appliesToTenantType: finalAppliesTo,

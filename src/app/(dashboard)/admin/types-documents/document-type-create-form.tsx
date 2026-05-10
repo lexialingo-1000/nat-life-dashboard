@@ -19,6 +19,15 @@ const SCOPE_LABELS: Record<string, string> = {
   location: 'Location',
 };
 
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'notaire', label: 'Notaire' },
+  { value: 'banque', label: 'Banque' },
+  { value: 'juridique', label: 'Juridique' },
+  { value: 'comptabilite', label: 'Comptabilité' },
+  { value: 'courant', label: 'Courant' },
+  { value: 'location', label: 'Location' },
+];
+
 const initialState: CreateDocumentTypeState = { status: 'idle' };
 
 function SubmitButton() {
@@ -104,18 +113,35 @@ export function DocumentTypeCreateForm() {
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">
-            Type de locataire (scope client uniquement)
+            Catégorie (regroupement transversal)
           </label>
-          <select name="appliesToTenantType" className="input mt-1" defaultValue="">
-            <option value="">— Non applicable / tous —</option>
-            <option value="LT">Locataires LT (long terme)</option>
-            <option value="CT">Locataires CT (court terme)</option>
-            <option value="all">Tous les locataires</option>
+          <select name="category" className="input mt-1" defaultValue="">
+            <option value="">— Aucune —</option>
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
           </select>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Ignoré si le scope n'est pas « Client ».
+            Catégorie par défaut héritée par les documents de ce type. Override possible à l'upload.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-[12px] font-medium text-zinc-700">
+          Type de locataire (scope client uniquement)
+        </label>
+        <select name="appliesToTenantType" className="input mt-1" defaultValue="">
+          <option value="">— Non applicable / tous —</option>
+          <option value="LT">Locataires LT (long terme)</option>
+          <option value="CT">Locataires CT (court terme)</option>
+          <option value="all">Tous les locataires</option>
+        </select>
+        <p className="mt-1 text-[11px] text-zinc-500">
+          Ignoré si le scope n'est pas « Client ».
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

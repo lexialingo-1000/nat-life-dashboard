@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, boolean, integer, timestamp, varchar, unique } from 'drizzle-orm/pg-core';
-import { documentScopeEnum } from './enums';
+import { documentScopeEnum, documentCategoryEnum } from './enums';
 
 export const documentTypes = pgTable(
   'document_types',
@@ -8,6 +8,9 @@ export const documentTypes = pgTable(
     code: varchar('code', { length: 64 }).notNull(),
     label: text('label').notNull(),
     scope: documentScopeEnum('scope').notNull(),
+    // V1.9 Lot E — catégorie par défaut héritée par les documents de ce type
+    // (override possible côté table documents).
+    category: documentCategoryEnum('category'),
     isActive: boolean('is_active').notNull().default(true),
     sortOrder: integer('sort_order').notNull().default(0),
     hasExpiration: boolean('has_expiration').notNull().default(false),

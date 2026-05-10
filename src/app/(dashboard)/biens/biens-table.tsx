@@ -5,10 +5,12 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 
 export type BienLotRow = {
-  lotId: string;
-  lotName: string;
-  lotType: string;
-  lotStatus: string;
+  // lotId/lotName/etc. nullable : un bien sans lot apparaît quand même
+  // (LEFT JOIN biens → lots côté query).
+  lotId: string | null;
+  lotName: string | null;
+  lotType: string | null;
+  lotStatus: string | null;
   surfaceCarrez: string | null;
   propertyId: string;
   propertyName: string;
@@ -19,13 +21,15 @@ export type BienLotRow = {
 
 const PROPERTY_STATUT_LABELS: Record<string, string> = {
   en_cours_acquisition: 'En cours acquisition',
-  loue_ou_vacant: 'Loué / Vacant',
+  loue: 'Loué',
+  vacant: 'Vacant',
   vendu: 'Vendu',
 };
 
 const PROPERTY_STATUT_BADGES: Record<string, string> = {
   en_cours_acquisition: 'badge-blue',
-  loue_ou_vacant: 'badge-emerald',
+  loue: 'badge-emerald',
+  vacant: 'badge-amber',
   vendu: 'badge-neutral',
 };
 
@@ -69,14 +73,26 @@ const columns: ColumnDef<BienLotRow>[] = [
   {
     accessorKey: 'lotName',
     header: 'Lot',
-    cell: ({ row }) => (
-      <Link
-        href={`/biens/lots/${row.original.lotId}`}
-        className="link-cell-soft whitespace-nowrap"
-      >
-        {row.original.lotName}
-      </Link>
-    ),
+    cell: ({ row }) => {
+      if (!row.original.lotId) {
+        return (
+          <Link
+            href={`/biens/properties/${row.original.propertyId}/lots/new`}
+            className="text-[12px] italic text-blue-700 hover:underline"
+          >
+            + Ajouter un lot
+          </Link>
+        );
+      }
+      return (
+        <Link
+          href={`/biens/lots/${row.original.lotId}`}
+          className="link-cell-soft whitespace-nowrap"
+        >
+          {row.original.lotName}
+        </Link>
+      );
+    },
   },
   {
     accessorKey: 'companyName',
@@ -93,7 +109,11 @@ const columns: ColumnDef<BienLotRow>[] = [
   {
     accessorKey: 'lotType',
     header: 'Type',
-    cell: ({ getValue }) => <span className="badge-neutral">{getValue() as string}</span>,
+    cell: ({ getValue }) => {
+      const v = getValue() as string | null;
+      if (!v) return <span className="text-[12px] text-zinc-300">—</span>;
+      return <span className="badge-neutral">{v}</span>;
+    },
   },
   {
     accessorKey: 'surfaceCarrez',
@@ -109,7 +129,8 @@ const columns: ColumnDef<BienLotRow>[] = [
     accessorKey: 'lotStatus',
     header: 'Statut',
     cell: ({ getValue }) => {
-      const v = getValue() as string;
+      const v = getValue() as string | null;
+      if (!v) return <span className="text-[12px] text-zinc-300">—</span>;
       return (
         <span className={STATUS_BADGES[v] ?? 'badge-neutral'}>
           {STATUS_LABELS[v] ?? v}

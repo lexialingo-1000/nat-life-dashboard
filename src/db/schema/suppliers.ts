@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, varchar, boolean } from 'drizzle-orm/pg-core';
-import { supplierInvoicingTypeEnum, supplierTypeEnum } from './enums';
+import { supplierInvoicingTypeEnum, supplierTypeEnum, documentCategoryEnum } from './enums';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -47,6 +47,8 @@ export const supplierDocuments = pgTable('supplier_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
+  // V1.9 Lot E — override de la catégorie héritée du type. Null = utilise type.category.
+  category: documentCategoryEnum('category'),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),

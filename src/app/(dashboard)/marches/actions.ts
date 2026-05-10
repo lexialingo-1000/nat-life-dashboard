@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots, marcheTaches, suppliers } from '@/db/schema';
+import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheTaches, suppliers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
@@ -272,28 +272,6 @@ export async function getMarcheDocumentUrlAction(
   }
 }
 
-export async function createSousLotAction(formData: FormData): Promise<void> {
-  const marcheId = String(formData.get('marcheId') ?? '');
-  const name = String(formData.get('name') ?? '').trim();
-  if (!marcheId || !name) throw new Error('Champs obligatoires manquants');
-
-  const amountHtRaw = formData.get('amountHt');
-  const amountHt =
-    amountHtRaw !== '' && amountHtRaw != null ? String(Number(amountHtRaw)) : null;
-
-  await db.insert(marcheSousLots).values({ marcheId, name, amountHt });
-  revalidatePath(`/marches/${marcheId}`);
-}
-
-export async function deleteSousLotAction(formData: FormData): Promise<void> {
-  const id = String(formData.get('id') ?? '');
-  const marcheId = String(formData.get('marcheId') ?? '');
-  if (!id) throw new Error('ID manquant');
-
-  await db.delete(marcheSousLots).where(eq(marcheSousLots.id, id));
-  revalidatePath(`/marches/${marcheId}`);
-}
-
 // === V1.8 P2-3+4 : Tâches dans sous-lots de marché ===========================
 
 const tacheStatusValues = ['a_faire', 'en_cours', 'termine', 'valide'] as const;
@@ -308,10 +286,6 @@ const tacheCreateSchema = z.object({
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   status: z.enum(tacheStatusValues).default('a_faire'),
-});
-
-const tacheUpdateSchema = tacheCreateSchema.extend({
-  id: z.string().uuid(),
 });
 
 export async function createTacheAction(formData: FormData): Promise<void> {
@@ -342,50 +316,6 @@ export async function createTacheAction(formData: FormData): Promise<void> {
   const returnTo = formData.get('returnTo');
   revalidatePath('/biens');
   redirect(safeReturnTo(returnTo, '/biens'));
-}
-
-export async function updateTacheAction(formData: FormData): Promise<void> {
-  const parsed = tacheUpdateSchema.safeParse({
-    id: formData.get('id'),
-    marcheSousLotId: formData.get('marcheSousLotId'),
-    lotId: formData.get('lotId'),
-    title: formData.get('title'),
-    description: formData.get('description'),
-    locationDescription: formData.get('locationDescription'),
-    supplierContactId: formData.get('supplierContactId'),
-    status: formData.get('status') ?? 'a_faire',
-  });
-  if (!parsed.success) {
-    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
-  }
-  const data = parsed.data;
-
-  await db
-    .update(marcheTaches)
-    .set({
-      title: data.title,
-      description: data.description || null,
-      locationDescription: data.locationDescription || null,
-      supplierContactId: data.supplierContactId || null,
-      status: data.status,
-      updatedAt: new Date(),
-    })
-    .where(eq(marcheTaches.id, data.id));
-
-  const returnTo = formData.get('returnTo');
-  revalidatePath('/biens');
-  redirect(safeReturnTo(returnTo, '/biens'));
-}
-
-export async function deleteTacheAction(formData: FormData): Promise<void> {
-  const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
-
-  await db.delete(marcheTaches).where(eq(marcheTaches.id, id));
-
-  const returnTo = formData.get('returnTo');
-  revalidatePath('/biens');
-  if (returnTo && typeof returnTo === 'string') redirect(safeReturnTo(returnTo, '/biens'));
 }
 
 /**

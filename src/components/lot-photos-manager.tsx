@@ -1,5 +1,8 @@
 'use client';
 
+// Cloné de property-photos-manager.tsx (V1.9 D2). Diff : scope='lots' au
+// lieu de 'properties' + champ form `lotId` au lieu de `propertyId`.
+
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, Upload, Trash2, X, ChevronLeft, ChevronRight, ImageIcon, Loader2 } from 'lucide-react';
@@ -12,8 +15,8 @@ interface PhotoItem {
 }
 
 interface Props {
-  propertyId: string;
-  propertySlug: string;
+  lotId: string;
+  lotSlug: string;
   photos: PhotoItem[];
   photoTypeId: string | null;
   uploadAction: (formData: FormData) => Promise<void>;
@@ -21,9 +24,9 @@ interface Props {
   getUrlAction: (formData: FormData) => Promise<{ url: string } | { error: string }>;
 }
 
-export function PropertyPhotosManager({
-  propertyId,
-  propertySlug,
+export function LotPhotosManager({
+  lotId,
+  lotSlug,
   photos,
   photoTypeId,
   uploadAction,
@@ -38,7 +41,6 @@ export function PropertyPhotosManager({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load presigned URLs for all photos on mount
   useEffect(() => {
     for (const photo of photos) {
       if (urls[photo.id]) continue;
@@ -77,9 +79,9 @@ export function PropertyPhotosManager({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            scope: 'properties',
-            parentSlug: propertySlug,
-            parentId: propertyId,
+            scope: 'lots',
+            parentSlug: lotSlug,
+            parentId: lotId,
             fileName: file.name,
           }),
         });
@@ -89,7 +91,7 @@ export function PropertyPhotosManager({
         await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
 
         const fd = new FormData();
-        fd.set('propertyId', propertyId);
+        fd.set('lotId', lotId);
         fd.set('typeId', photoTypeId);
         fd.set('name', file.name);
         fd.set('storageKey', storageKey);
@@ -106,7 +108,7 @@ export function PropertyPhotosManager({
     return (
       <div className="rounded-md border border-dashed border-zinc-200 p-8 text-center text-[13px] text-zinc-500">
         <ImageIcon className="mx-auto mb-3 h-8 w-8 text-zinc-300" strokeWidth={1.5} />
-        Type de document "Photo" non configuré.{' '}
+        Type de document "Photo" non configuré pour les lots.{' '}
         <a href="/admin/types-documents" className="text-blue-700 hover:underline">
           Ajouter le type via l'administration.
         </a>
@@ -116,7 +118,6 @@ export function PropertyPhotosManager({
 
   return (
     <div className="space-y-5" onKeyDown={handleKeyDown} tabIndex={-1}>
-      {/* Upload zone */}
       <div
         className={`relative rounded-md border-2 border-dashed p-6 text-center transition-colors ${
           isDragging
@@ -169,7 +170,6 @@ export function PropertyPhotosManager({
         <p className="text-[12px] text-red-600">{uploadError}</p>
       )}
 
-      {/* Photo grid */}
       {photos.length === 0 ? (
         <p className="text-center text-[13px] text-zinc-400">
           Aucune photo pour l'instant.
@@ -193,7 +193,6 @@ export function PropertyPhotosManager({
                   <Loader2 className="h-5 w-5 animate-spin text-zinc-300" strokeWidth={2} />
                 </div>
               )}
-              {/* Delete overlay */}
               <div className="absolute inset-0 flex items-end justify-end gap-1.5 bg-gradient-to-t from-black/40 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
                 {/* V1.11 L — bouton download photo (cliente : "On doit pouvoir
                     retelecharger en local une photo qui a été uploadée"). */}
@@ -229,7 +228,7 @@ export function PropertyPhotosManager({
                     if (!confirm(`Supprimer "${photo.name}" ?`)) return;
                     const fd = new FormData();
                     fd.set('documentId', photo.id);
-                    fd.set('propertyId', propertyId);
+                    fd.set('lotId', lotId);
                     try {
                       await deleteAction(fd);
                       router.refresh();
@@ -247,7 +246,6 @@ export function PropertyPhotosManager({
         </div>
       )}
 
-      {/* Lightbox */}
       {lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"

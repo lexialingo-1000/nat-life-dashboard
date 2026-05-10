@@ -6,10 +6,47 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
 import { formatDate } from '@/lib/utils';
 
+type DocumentCategory =
+  | 'notaire'
+  | 'banque'
+  | 'juridique'
+  | 'comptabilite'
+  | 'courant'
+  | 'location';
+
+const CATEGORY_LABELS: Record<DocumentCategory, string> = {
+  notaire: 'Notaire',
+  banque: 'Banque',
+  juridique: 'Juridique',
+  comptabilite: 'Comptabilité',
+  courant: 'Courant',
+  location: 'Location',
+};
+
+const CATEGORY_BADGE: Record<DocumentCategory, string> = {
+  notaire: 'badge-blue',
+  banque: 'badge-emerald',
+  juridique: 'badge-amber',
+  comptabilite: 'badge-blue',
+  courant: 'badge-neutral',
+  location: 'badge-emerald',
+};
+
+const CATEGORY_ORDER: DocumentCategory[] = [
+  'notaire',
+  'banque',
+  'juridique',
+  'comptabilite',
+  'courant',
+  'location',
+];
+
 type DocumentRow = {
   id: string;
   name: string;
   typeLabel: string;
+  /** V1.9 Lot E — null si pas encore catégorisé. Optional pour compat call sites. */
+  category?: DocumentCategory | null;
   storageKey: string;
   documentDate: string | null;
   expiresAt: string | null;
@@ -20,6 +57,7 @@ type DocumentType = {
   id: string;
   label: string;
   hasExpiration: boolean;
+  category?: DocumentCategory | null;
 };
 
 type ServerAction<R = void> = (formData: FormData) => Promise<R>;
@@ -186,7 +224,21 @@ export function DocumentsManager({
       fd.set('storageKey', storageKey);
       const res = await getUrlAction(fd);
       if ('url' in res) {
-        window.open(res.url, '_blank');
+        // V1.10 J — window.open() bloqué par popup-blocker des navigateurs quand
+        // appelé après un await (clic utilisateur "expiré"). Cliente Natacha
+        // rapportait : "Document/doc ne telecharge pas" sur fiche marché.
+        // Création dynamique d'un <a> + .click() programmatique : le navigateur
+        // accepte car l'action descend du même clic utilisateur via la transition.
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        // download attribute : MinIO presigned URL inclut response-content-disposition,
+        // mais on l'override pour compat navigateurs.
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
         alert(`Erreur téléchargement : ${res.error}`);
       }
@@ -210,7 +262,14 @@ export function DocumentsManager({
         accessorKey: 'typeLabel',
         header: 'Type',
         cell: ({ row }) => (
-          <span className="badge-neutral">{row.original.typeLabel}</span>
+          <div className="flex items-center gap-2">
+            <span className="badge-neutral">{row.original.typeLabel}</span>
+            {row.original.category && (
+              <span className={CATEGORY_BADGE[row.original.category]}>
+                {CATEGORY_LABELS[row.original.category]}
+              </span>
+            )}
+          </div>
         ),
       },
       {
@@ -371,11 +430,32 @@ export function DocumentsManager({
               className="input mt-1"
             >
               <option value="">— Choisir —</option>
-              {availableTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
+              {(() => {
+                // Groupe les options par catégorie via <optgroup>. Types sans catégorie
+                // tombent dans une section « Sans catégorie » à la fin.
+                const grouped = new Map<DocumentCategory | '__none__', typeof availableTypes>();
+                for (const t of availableTypes) {
+                  const key = t.category ?? '__none__';
+                  if (!grouped.has(key)) grouped.set(key, []);
+                  grouped.get(key)!.push(t);
+                }
+                const orderedKeys: (DocumentCategory | '__none__')[] = [
+                  ...CATEGORY_ORDER.filter((k) => grouped.has(k)),
+                  ...(grouped.has('__none__') ? ['__none__' as const] : []),
+                ];
+                return orderedKeys.map((key) => (
+                  <optgroup
+                    key={key}
+                    label={key === '__none__' ? 'Sans catégorie' : CATEGORY_LABELS[key]}
+                  >
+                    {grouped.get(key)!.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ));
+              })()}
             </select>
           </div>
 

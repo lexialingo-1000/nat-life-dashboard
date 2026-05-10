@@ -23,6 +23,8 @@ interface Props<T> {
   striped?: boolean;
   /** Active une colonne checkbox de sélection multi (header + lignes). Default: false. */
   enableSelection?: boolean;
+  /** Tri initial visible (chevron actif au mount). Le user peut le changer en cliquant un header. */
+  initialSorting?: SortingState;
   /** Message vide. */
   emptyMessage?: string;
 }
@@ -61,9 +63,10 @@ export function DataTable<T>({
   enableFilters = true,
   striped = true,
   enableSelection = false,
+  initialSorting,
   emptyMessage = 'Aucune donnée.',
 }: Props<T>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 

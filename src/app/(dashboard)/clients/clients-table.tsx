@@ -38,7 +38,9 @@ const columns: ColumnDef<ClientRow>[] = [
     header: 'Statut',
     cell: ({ row }) => {
       const t = row.original.tenantType;
-      if (!t) return <span className="text-[12px] text-zinc-400">B2B</span>;
+      // V1.11 M — B2B doit avoir un cadre de couleur (gris) comme bail long terme
+      // (cliente : "Dans client / colonne statut/ B2B doit avoir un cadre de couleur").
+      if (!t) return <span className="badge-neutral">B2B</span>;
       const cfg = TENANT_BADGES[t];
       return <span className={cfg.className}>{cfg.label}</span>;
     },

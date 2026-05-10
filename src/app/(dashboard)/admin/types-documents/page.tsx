@@ -106,7 +106,7 @@ export default async function TypesDocumentsPage({
                 <th className="w-8" />
                 <th className="w-[140px]">Scope</th>
                 <th>Libellé</th>
-                <th className="w-[180px]">Code</th>
+                <th className="w-[150px]">Catégorie</th>
                 <th className="w-[110px]">Expiration</th>
                 <th className="w-[110px]">Obligatoire</th>
                 <th className="w-[100px]">Locataire</th>

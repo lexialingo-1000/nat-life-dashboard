@@ -8,7 +8,8 @@ import { createPropertyAction } from '../actions';
 export const dynamic = 'force-dynamic';
 
 const PROPERTY_STATUTS = [
-  { value: 'loue_ou_vacant', label: 'Loué ou Vacant' },
+  { value: 'loue', label: 'Loué' },
+  { value: 'vacant', label: 'Vacant' },
   { value: 'en_cours_acquisition', label: 'En cours Acquisition' },
   { value: 'vendu', label: 'Vendu' },
 ] as const;
@@ -40,7 +41,7 @@ export default async function NewPropertyPage() {
         </h1>
       </div>
 
-      <form action={createPropertyAction} className="card space-y-5 p-6">
+      <form action={createPropertyAction} className="card space-y-5 p-6" autoComplete="off">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-zinc-700">
@@ -51,6 +52,10 @@ export default async function NewPropertyPage() {
               required
               className="input mt-1"
               placeholder="Ex: CABASSOLS, Appartement le Gauguin…"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
           </div>
 
@@ -85,7 +90,7 @@ export default async function NewPropertyPage() {
             <label className="block text-sm font-medium text-zinc-700">
               Statut <span className="text-red-500">*</span>
             </label>
-            <select name="statut" required className="input mt-1" defaultValue="loue_ou_vacant">
+            <select name="statut" required className="input mt-1" defaultValue="vacant">
               {PROPERTY_STATUTS.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -100,17 +105,37 @@ export default async function NewPropertyPage() {
               name="address"
               className="input mt-1"
               placeholder="18 Chemin Brunet"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-zinc-700">Ville</label>
-            <input name="city" className="input mt-1" placeholder="Aix-en-Provence" />
+            <input
+              name="city"
+              className="input mt-1"
+              placeholder="Aix-en-Provence"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-zinc-700">Code postal</label>
-            <input name="postalCode" className="input mt-1" placeholder="13090" />
+            <input
+              name="postalCode"
+              className="input mt-1"
+              placeholder="13090"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
           </div>
 
           <div>
@@ -131,29 +156,15 @@ export default async function NewPropertyPage() {
 
           <div className="col-span-2">
             <label className="block text-sm font-medium text-zinc-700">Référence cadastrale</label>
-            <input name="cadastre" className="input mt-1" placeholder="Ex: AB 123" />
-          </div>
-        </div>
-
-        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
-          <h3 className="mb-3 text-sm font-medium text-zinc-700">Notaire (optionnel)</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-zinc-600">Nom</label>
-              <input name="notaireName" className="input mt-1" placeholder="Me Dupont" />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-600">Étude</label>
-              <input name="notaireEtude" className="input mt-1" />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-600">Téléphone</label>
-              <input name="notairePhone" type="tel" className="input mt-1" />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-600">Email</label>
-              <input name="notaireEmail" type="email" className="input mt-1" />
-            </div>
+            <input
+              name="cadastre"
+              className="input mt-1"
+              placeholder="Ex: AB 123"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
           </div>
         </div>
 

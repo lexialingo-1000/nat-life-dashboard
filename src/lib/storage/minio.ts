@@ -55,15 +55,6 @@ export function buildStoragePrefix(scope: StorageScope, name: string): string {
   return `${folder}/${slugify(name)}`;
 }
 
-export async function ensureBucket(): Promise<void> {
-  const minio = getMinio();
-  const exists = await minio.bucketExists(BUCKET);
-  if (!exists) {
-    await minio.makeBucket(BUCKET, process.env.MINIO_REGION ?? 'eu-west-1');
-    console.log(`[minio] bucket ${BUCKET} created`);
-  }
-}
-
 /**
  * Génère une URL signée pour upload direct depuis le frontend (PUT).
  */

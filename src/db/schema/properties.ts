@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, integer, jsonb, numeric } from 'drizzle-orm/pg-core';
-import { propertyTypeEnum, lotStatusEnum, propertyStatutEnum } from './enums';
+import { propertyTypeEnum, lotStatusEnum, propertyStatutEnum, documentCategoryEnum } from './enums';
 import { companies } from './companies';
 import { documentTypes } from './document-types';
 import { users } from './users';
@@ -11,7 +11,7 @@ export const properties = pgTable('properties', {
     .references(() => companies.id, { onDelete: 'restrict' }),
   name: text('name').notNull(),
   type: propertyTypeEnum('type').notNull(),
-  statut: propertyStatutEnum('statut').notNull().default('loue_ou_vacant'),
+  statut: propertyStatutEnum('statut').notNull().default('vacant'),
   address: text('address'),
   city: text('city'),
   postalCode: text('postal_code'),
@@ -42,6 +42,7 @@ export const propertyDocuments = pgTable('property_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
+  category: documentCategoryEnum('category'),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
@@ -76,6 +77,7 @@ export const lotDocuments = pgTable('lot_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
+  category: documentCategoryEnum('category'),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),

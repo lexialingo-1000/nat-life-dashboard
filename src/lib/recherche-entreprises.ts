@@ -89,22 +89,3 @@ export async function lookupBySiren(siren: string): Promise<CompanyLookupResult 
   }
   return toResult(data.results[0]);
 }
-
-/**
- * Recherche par nom (raison sociale ou dénomination).
- * Retourne jusqu'à 10 résultats pour permettre à l'utilisateur de choisir.
- */
-export async function searchByName(query: string): Promise<CompanyLookupResult[]> {
-  const trimmed = query.trim();
-  if (trimmed.length < 2) return [];
-
-  const response = await fetch(`${API_URL}?q=${encodeURIComponent(trimmed)}&per_page=10`);
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error('API gouv : quota atteint, réessayer dans quelques secondes');
-    }
-    throw new Error(`API gouv : erreur ${response.status}`);
-  }
-  const data = (await response.json()) as { results: ApiResult[] };
-  return (data.results ?? []).map(toResult);
-}

@@ -11,6 +11,8 @@ export default async function BiensPage() {
   let rows: BienLotRow[] = [];
   let dbError: string | null = null;
   try {
+    // LEFT JOIN lots : un bien sans lot reste visible avec ligne placeholder
+    // « + Ajouter un lot » (Natacha — Le Gauguin invisible si pas de lot lié).
     const raw = await db
       .select({
         lotId: lots.id,
@@ -24,9 +26,9 @@ export default async function BiensPage() {
         companyId: companies.id,
         companyName: companies.name,
       })
-      .from(lots)
-      .innerJoin(properties, eq(lots.propertyId, properties.id))
+      .from(properties)
       .innerJoin(companies, eq(properties.companyId, companies.id))
+      .leftJoin(lots, eq(lots.propertyId, properties.id))
       .orderBy(asc(companies.name), asc(properties.name), asc(lots.name));
 
     rows = raw.map((r) => ({

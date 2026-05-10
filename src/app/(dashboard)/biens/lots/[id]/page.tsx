@@ -21,6 +21,7 @@ import { Tabs, type TabItem } from '@/components/tabs';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
+import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { DeleteButton } from '@/components/delete-button';
 import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
@@ -165,12 +166,15 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
   let lotDocs: any[] = [];
   let lotDocTypes: any[] = [];
+  let lotPhotos: any[] = [];
+  let lotPhotoTypeId: string | null = null;
   if (lot) {
     lotDocs = await db
       .select({
         id: lotDocuments.id,
         name: lotDocuments.name,
         typeLabel: documentTypes.label,
+        typeCode: documentTypes.code,
         storageKey: lotDocuments.storageKey,
         expiresAt: lotDocuments.expiresAt,
         documentDate: lotDocuments.documentDate,
@@ -184,12 +188,34 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     lotDocTypes = await db
       .select({
         id: documentTypes.id,
+        code: documentTypes.code,
         label: documentTypes.label,
         hasExpiration: documentTypes.hasExpiration,
       })
       .from(documentTypes)
       .where(and(eq(documentTypes.scope, 'lot'), eq(documentTypes.isActive, true)))
       .orderBy(asc(documentTypes.sortOrder));
+
+    lotPhotoTypeId = lotDocTypes.find((t) => t.code === 'photo')?.id ?? null;
+
+    // Photos = lot_documents filtrées sur type code='photo'.
+    lotPhotos = await db
+      .select({
+        id: lotDocuments.id,
+        name: lotDocuments.name,
+        storageKey: lotDocuments.storageKey,
+        uploadedAt: lotDocuments.uploadedAt,
+      })
+      .from(lotDocuments)
+      .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
+      .where(
+        and(
+          eq(lotDocuments.lotId, lot.id),
+          eq(documentTypes.code, 'photo'),
+          eq(documentTypes.scope, 'lot'),
+        )
+      )
+      .orderBy(desc(lotDocuments.uploadedAt));
   }
 
   if (!lot) {
@@ -350,6 +376,25 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     </div>
   );
 
+  const photosTab = (
+    <div className="card p-6">
+      <LotPhotosManager
+        lotId={lot.id}
+        lotSlug={slugify(`${lot.propertyName}-${lot.name}`)}
+        photos={lotPhotos.map((p) => ({
+          id: p.id,
+          name: p.name,
+          storageKey: p.storageKey,
+          uploadedAt: p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
+        }))}
+        photoTypeId={lotPhotoTypeId}
+        uploadAction={uploadLotDocumentAction}
+        deleteAction={deleteLotDocumentAction}
+        getUrlAction={getLotDocumentUrlAction}
+      />
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
@@ -370,6 +415,12 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       label: 'Travaux',
       count: lotMarches.length || undefined,
       content: marchesTab,
+    },
+    {
+      id: 'photos',
+      label: 'Photos',
+      count: lotPhotos.length || undefined,
+      content: photosTab,
     },
     { id: 'documents', label: 'Documents', count: lotDocs.length, content: documentsTab },
   ];

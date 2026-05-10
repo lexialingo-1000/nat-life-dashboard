@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, integer, numeric, primaryKey } from 'drizzle-orm/pg-core';
-import { marcheStatusEnum } from './enums';
+import { marcheStatusEnum, documentCategoryEnum } from './enums';
 import { properties, lots } from './properties';
 import { suppliers } from './suppliers';
 import { documentTypes } from './document-types';
@@ -91,6 +91,7 @@ export const marcheDocuments = pgTable('marche_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
+  category: documentCategoryEnum('category'),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),

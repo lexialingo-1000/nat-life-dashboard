@@ -244,6 +244,9 @@ export function LocationsTable({
       data={rows}
       emptyMessage={emptyMessage}
       enableSelection={enableSelection}
+      // V1.9 — défaut : plus récente date début en haut. User peut cliquer un header
+      // pour basculer en alphabétique (locataire / bien / lot) à la demande.
+      initialSorting={[{ id: 'dateDebut', desc: true }]}
     />
   );
 }

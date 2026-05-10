@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { createLevelAction } from '@/app/(dashboard)/biens/actions';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function InlineLevelForm({ lotId }: Props) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +22,7 @@ export function InlineLevelForm({ lotId }: Props) {
           setError(null);
           await createLevelAction(formData);
           formRef.current?.reset();
+          router.refresh();
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Erreur lors de la création');
         }

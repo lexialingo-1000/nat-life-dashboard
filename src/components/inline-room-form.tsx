@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { createRoomAction } from '@/app/(dashboard)/biens/actions';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function InlineRoomForm({ lotId, levelId }: Props) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +23,7 @@ export function InlineRoomForm({ lotId, levelId }: Props) {
           setError(null);
           await createRoomAction(formData);
           formRef.current?.reset();
+          router.refresh();
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Erreur lors de la création');
         }

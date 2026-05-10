@@ -38,12 +38,31 @@ export interface DocTypeRow {
   scope: string;
   label: string;
   code: string;
+  category: string | null;
   hasExpiration: boolean;
   isRequired: boolean;
   appliesToTenantType: string | null;
   isActive: boolean;
   sortOrder: number;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  notaire: 'Notaire',
+  banque: 'Banque',
+  juridique: 'Juridique',
+  comptabilite: 'Comptabilité',
+  courant: 'Courant',
+  location: 'Location',
+};
+
+const CATEGORY_BADGE: Record<string, string> = {
+  notaire: 'badge-blue',
+  banque: 'badge-emerald',
+  juridique: 'badge-amber',
+  comptabilite: 'badge-blue',
+  courant: 'badge-neutral',
+  location: 'badge-emerald',
+};
 
 interface Props {
   rows: DocTypeRow[];
@@ -113,8 +132,18 @@ export function DocumentTypesSortableList({ rows }: Props) {
               {SCOPE_LABELS[t.scope] ?? t.scope}
             </span>
           </td>
-          <td className="font-medium text-zinc-900">{t.label}</td>
-          <td className="font-mono text-[12px] text-zinc-500">{t.code}</td>
+          <td className="font-medium text-zinc-900">
+            {t.label}
+          </td>
+          <td>
+            {t.category ? (
+              <span className={CATEGORY_BADGE[t.category] ?? 'badge-neutral'}>
+                {CATEGORY_LABELS[t.category] ?? t.category}
+              </span>
+            ) : (
+              <span className="text-[12px] text-zinc-300">—</span>
+            )}
+          </td>
           <td>
             {t.hasExpiration ? (
               <span className="inline-flex items-center gap-1 text-[12px] text-blue-700">

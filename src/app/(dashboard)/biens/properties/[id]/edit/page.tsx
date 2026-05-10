@@ -9,7 +9,8 @@ import { updatePropertyAction } from '../../actions';
 export const dynamic = 'force-dynamic';
 
 const STATUT_OPTIONS = [
-  { value: 'loue_ou_vacant', label: 'Loué ou Vacant' },
+  { value: 'loue', label: 'Loué' },
+  { value: 'vacant', label: 'Vacant' },
   { value: 'en_cours_acquisition', label: 'En cours Acquisition' },
   { value: 'vendu', label: 'Vendu' },
 ];
@@ -64,13 +65,22 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
         <p className="mt-1.5 text-[13px] text-zinc-500">{p.companyName}</p>
       </header>
 
-      <form action={updatePropertyAction} className="space-y-6">
+      <form action={updatePropertyAction} className="space-y-6" autoComplete="off">
         <input type="hidden" name="id" value={p.id} />
 
         <Section title="Identité">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nom" required>
-              <input name="name" defaultValue={p.name} required className="input" />
+              <input
+                name="name"
+                defaultValue={p.name}
+                required
+                className="input"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+              />
             </Field>
             <Field label="Type" required>
               <select name="type" defaultValue={p.type} required className="input">
@@ -82,7 +92,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
               </select>
             </Field>
             <Field label="Statut" required>
-              <select name="statut" defaultValue={p.statut ?? 'loue_ou_vacant'} required className="input">
+              <select name="statut" defaultValue={p.statut ?? 'vacant'} required className="input">
                 {STATUT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -95,7 +105,15 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
 
         <Section title="Adresse">
           <Field label="Rue / voie">
-            <input name="address" defaultValue={p.address ?? ''} className="input" />
+            <input
+              name="address"
+              defaultValue={p.address ?? ''}
+              className="input"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
           </Field>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Code postal">
@@ -104,10 +122,22 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
                 defaultValue={p.postalCode ?? ''}
                 className="input font-mono"
                 placeholder="13090"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
               />
             </Field>
             <Field label="Ville" className="col-span-2">
-              <input name="city" defaultValue={p.city ?? ''} className="input" />
+              <input
+                name="city"
+                defaultValue={p.city ?? ''}
+                className="input"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+              />
             </Field>
           </div>
         </Section>
@@ -138,31 +168,19 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
               defaultValue={p.cadastre ?? ''}
               className="input font-mono"
               placeholder="000 AB 0123"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
           </Field>
         </Section>
 
-        <Section title="Notaire">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Nom">
-              <input name="notaireName" defaultValue={notaire.name ?? ''} className="input" />
-            </Field>
-            <Field label="Étude">
-              <input name="notaireEtude" defaultValue={notaire.etude ?? ''} className="input" />
-            </Field>
-            <Field label="Téléphone">
-              <input name="notairePhone" defaultValue={notaire.phone ?? ''} className="input" />
-            </Field>
-            <Field label="Email">
-              <input
-                type="email"
-                name="notaireEmail"
-                defaultValue={notaire.email ?? ''}
-                className="input"
-              />
-            </Field>
-          </div>
-        </Section>
+        {/* Notaire conservé en BDD (jsonb) — UI retirée V1.9 (un seul notaire récurrent côté Natacha). */}
+        <input type="hidden" name="notaireName" defaultValue={notaire.name ?? ''} />
+        <input type="hidden" name="notaireEtude" defaultValue={notaire.etude ?? ''} />
+        <input type="hidden" name="notairePhone" defaultValue={notaire.phone ?? ''} />
+        <input type="hidden" name="notaireEmail" defaultValue={notaire.email ?? ''} />
 
         <Section title="Notes">
           <textarea

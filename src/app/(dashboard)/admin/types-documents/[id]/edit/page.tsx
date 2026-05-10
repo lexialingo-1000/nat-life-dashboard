@@ -20,6 +20,15 @@ const SCOPE_LABELS: Record<string, string> = {
   location: 'Location',
 };
 
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'notaire', label: 'Notaire' },
+  { value: 'banque', label: 'Banque' },
+  { value: 'juridique', label: 'Juridique' },
+  { value: 'comptabilite', label: 'Comptabilité' },
+  { value: 'courant', label: 'Courant' },
+  { value: 'location', label: 'Location' },
+];
+
 export default async function EditDocumentTypePage({ params }: { params: { id: string } }) {
   const rows = await db
     .select()
@@ -69,15 +78,37 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Libellé *</label>
-          <input
-            name="label"
-            required
-            defaultValue={t.label}
-            className="input mt-1"
-            placeholder="Attestation Qualibat"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">Libellé *</label>
+            <input
+              name="label"
+              required
+              defaultValue={t.label}
+              className="input mt-1"
+              placeholder="Attestation Qualibat"
+            />
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">
+              Catégorie (regroupement transversal)
+            </label>
+            <select
+              name="category"
+              defaultValue={t.category ?? ''}
+              className="input mt-1"
+            >
+              <option value="">— Aucune —</option>
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-zinc-500">
+              Override possible côté document à l'upload.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
