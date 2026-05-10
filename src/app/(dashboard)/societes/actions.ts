@@ -67,7 +67,20 @@ export async function searchByNameAction(formData: FormData) {
 export async function deleteSocieteAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
-  await db.delete(companies).where(eq(companies.id, id));
+
+  try {
+    await db.delete(companies).where(eq(companies.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    // FK properties.company_id ON DELETE RESTRICT : message lisible si la société détient des biens.
+    if (/foreign key|violates|propert/i.test(msg)) {
+      throw new Error(
+        'Suppression impossible : cette société détient des biens immobiliers. Supprime ou réassigne les biens d\'abord.'
+      );
+    }
+    throw new Error(`Suppression impossible : ${msg}`);
+  }
+
   revalidatePath('/societes');
   redirect('/societes');
 }

@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { suppliers, supplierContacts, supplierDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { SheetWrapper } from '@/components/sheet-wrapper';
 import { DeleteButton } from '@/components/delete-button';
@@ -24,7 +23,8 @@ export default async function FournisseurSheetPage({ params }: { params: { id: s
   if (!UUID_RE.test(params.id)) return null;
 
   const rows = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
-  if (rows.length === 0) notFound();
+  // Row absent (suppression en cours, race condition) → ne pas crasher le slot @sheet : laisser le layout vide.
+  if (rows.length === 0) return null;
   const s = rows[0];
 
   const [contactsCountRow] = await db

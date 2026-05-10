@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
 import { SheetWrapper } from '@/components/sheet-wrapper';
@@ -33,7 +32,8 @@ export default async function SocieteSheetPage({ params }: { params: { id: strin
   if (!UUID_RE.test(params.id)) return null;
 
   const rows = await db.select().from(companies).where(eq(companies.id, params.id)).limit(1);
-  if (rows.length === 0) notFound();
+  // Row absent (suppression en cours, race condition) → ne pas crasher le slot @sheet : laisser le layout vide.
+  if (rows.length === 0) return null;
   const c = rows[0];
 
   return (

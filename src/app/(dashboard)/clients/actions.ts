@@ -151,7 +151,20 @@ export async function createCustomerInlineAction(formData: FormData): Promise<
 export async function deleteCustomerAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
-  await db.delete(customers).where(eq(customers.id, id));
+
+  try {
+    await db.delete(customers).where(eq(customers.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    // FK locations.customer_id ON DELETE RESTRICT : message lisible si le client a des baux.
+    if (/foreign key|violates|location/i.test(msg)) {
+      throw new Error(
+        'Suppression impossible : ce client a des locations rattachées. Supprime ou réassigne les locations d\'abord.'
+      );
+    }
+    throw new Error(`Suppression impossible : ${msg}`);
+  }
+
   revalidatePath('/clients');
   redirect('/clients');
 }

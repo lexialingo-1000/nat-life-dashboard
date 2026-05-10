@@ -190,7 +190,20 @@ const contactSchema = z.object({
 export async function deleteSupplierAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
-  await db.delete(suppliers).where(eq(suppliers.id, id));
+
+  try {
+    await db.delete(suppliers).where(eq(suppliers.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    // FK marches_travaux.supplier_id ON DELETE RESTRICT : message lisible si le fournisseur a des marchés.
+    if (/foreign key|violates|marche/i.test(msg)) {
+      throw new Error(
+        'Suppression impossible : ce fournisseur a des marchés rattachés. Supprime ou réassigne les marchés d\'abord.'
+      );
+    }
+    throw new Error(`Suppression impossible : ${msg}`);
+  }
+
   revalidatePath('/fournisseurs');
   redirect('/fournisseurs');
 }

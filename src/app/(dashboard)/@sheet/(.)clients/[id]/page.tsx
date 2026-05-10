@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { customers, customerDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { SheetWrapper } from '@/components/sheet-wrapper';
 import { DeleteButton } from '@/components/delete-button';
@@ -18,7 +17,8 @@ export default async function ClientSheetPage({ params }: { params: { id: string
   if (!UUID_RE.test(params.id)) return null;
 
   const rows = await db.select().from(customers).where(eq(customers.id, params.id)).limit(1);
-  if (rows.length === 0) notFound();
+  // Row absent (suppression en cours, race condition) → ne pas crasher le slot @sheet : laisser le layout vide.
+  if (rows.length === 0) return null;
   const c = rows[0];
 
   const [docsCountRow] = await db
