@@ -134,6 +134,13 @@
       "when": 1747000000000,
       "tag": "0018_marches_marche_type_id",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1747100000000,
+      "tag": "0019_company_accounting_docs",
+      "breakpoints": true
     }
   ]
 }

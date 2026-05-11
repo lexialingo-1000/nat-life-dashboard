@@ -1,6 +1,15 @@
 import { db } from '@/db/client';
-import { companies, properties, lots, companyDocuments, documentTypes } from '@/db/schema';
-import { eq, sql, asc, and } from 'drizzle-orm';
+import {
+  companies,
+  properties,
+  lots,
+  companyDocuments,
+  documentTypes,
+  companyAccountingDocuments,
+  suppliers,
+  marchesTravaux,
+} from '@/db/schema';
+import { eq, sql, asc, and, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
@@ -15,6 +24,12 @@ import {
 } from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
+import { AccountingDocumentsManager, type AccountingDocKind } from '@/components/accounting-documents-manager';
+import {
+  uploadAccountingDocAction,
+  deleteAccountingDocAction,
+  getAccountingDocUrlAction,
+} from '../accounting-actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -195,11 +210,122 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     </div>
   );
 
+  // V1.9 PR #4 — Onglet Compta (devis/commande/facture). Stockage doc seul,
+  // pas de logique métier (V1.5 post-réforme PA).
+  const accountingDocs = await db
+    .select({
+      id: companyAccountingDocuments.id,
+      kind: companyAccountingDocuments.kind,
+      name: companyAccountingDocuments.name,
+      storageKey: companyAccountingDocuments.storageKey,
+      documentDate: companyAccountingDocuments.documentDate,
+      amountHt: companyAccountingDocuments.amountHt,
+      uploadedAt: companyAccountingDocuments.uploadedAt,
+      supplierId: companyAccountingDocuments.supplierId,
+      supplierCompanyName: suppliers.companyName,
+      supplierFirstName: suppliers.firstName,
+      supplierLastName: suppliers.lastName,
+      marcheId: companyAccountingDocuments.marcheId,
+      marcheName: marchesTravaux.name,
+    })
+    .from(companyAccountingDocuments)
+    .innerJoin(suppliers, eq(companyAccountingDocuments.supplierId, suppliers.id))
+    .leftJoin(marchesTravaux, eq(companyAccountingDocuments.marcheId, marchesTravaux.id))
+    .where(eq(companyAccountingDocuments.companyId, company.id))
+    .orderBy(desc(companyAccountingDocuments.documentDate));
+
+  const accountingRows = accountingDocs.map((d) => ({
+    id: d.id,
+    kind: d.kind as AccountingDocKind,
+    name: d.name,
+    storageKey: d.storageKey,
+    documentDate: d.documentDate,
+    amountHt: d.amountHt,
+    uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+    supplierLabel:
+      d.supplierCompanyName ?? `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ?? 'Fournisseur',
+    marcheLabel: d.marcheName ?? null,
+  }));
+
+  // Fournisseurs actifs + marchés liés à cette société (via property→company)
+  const supplierOptions = await db
+    .select({
+      id: suppliers.id,
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+    })
+    .from(suppliers)
+    .where(eq(suppliers.isActive, true))
+    .orderBy(asc(suppliers.companyName));
+
+  const supplierOpts = supplierOptions.map((s) => ({
+    id: s.id,
+    label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
+  }));
+
+  const marcheOptions = await db
+    .select({
+      id: marchesTravaux.id,
+      name: marchesTravaux.name,
+      supplierId: marchesTravaux.supplierId,
+      propertyName: properties.name,
+    })
+    .from(marchesTravaux)
+    .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
+    .where(eq(properties.companyId, company.id))
+    .orderBy(asc(marchesTravaux.name));
+
+  const marcheOpts = marcheOptions.map((m) => ({
+    id: m.id,
+    label: `${m.name} — ${m.propertyName}`,
+    supplierId: m.supplierId,
+  }));
+
+  const renderAccountingSection = (kind: AccountingDocKind) => {
+    const docs = accountingRows
+      .filter((d) => d.kind === kind)
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        storageKey: d.storageKey,
+        documentDate: d.documentDate,
+        amountHt: d.amountHt,
+        uploadedAt: d.uploadedAt,
+        supplierLabel: d.supplierLabel,
+        marcheLabel: d.marcheLabel,
+      }));
+    return (
+      <div className="card p-6">
+        <AccountingDocumentsManager
+          kind={kind}
+          companyId={company.id}
+          companySlug={slugify(company.name)}
+          documents={docs}
+          suppliers={supplierOpts}
+          marches={marcheOpts}
+          uploadAction={uploadAccountingDocAction}
+          deleteAction={deleteAccountingDocAction}
+          getUrlAction={getAccountingDocUrlAction}
+        />
+      </div>
+    );
+  };
+
+  const comptaTab = (
+    <div className="space-y-6">
+      {renderAccountingSection('devis')}
+      {renderAccountingSection('commande')}
+      {renderAccountingSection('facture')}
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'biens', label: 'Biens', count: props.length, content: biensTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
+    { id: 'compta', label: 'Compta', count: accountingRows.length, content: comptaTab },
   ];
 
   return (

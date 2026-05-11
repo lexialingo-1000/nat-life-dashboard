@@ -9,3 +9,4 @@ export * from './marche-types';
 export * from './marches';
 export * from './locations';
 export * from './marche-taches';
+export * from './company-accounting-documents';
