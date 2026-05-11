@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
+import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
 
 export type SocieteRow = {
@@ -15,7 +17,7 @@ export type SocieteRow = {
   isActive: boolean;
 };
 
-const columns: ColumnDef<SocieteRow>[] = [
+const baseColumns: ColumnDef<SocieteRow>[] = [
   {
     accessorKey: 'name',
     header: 'Société',
@@ -95,6 +97,37 @@ const columns: ColumnDef<SocieteRow>[] = [
   },
 ];
 
-export function SocietesTable({ rows }: { rows: SocieteRow[] }) {
+interface Props {
+  rows: SocieteRow[];
+  deleteAction?: (formData: FormData) => Promise<void>;
+}
+
+export function SocietesTable({ rows, deleteAction }: Props) {
+  const columns = useMemo<ColumnDef<SocieteRow>[]>(() => {
+    if (!deleteAction) return baseColumns;
+    return [
+      ...baseColumns,
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <DeleteButton
+              variant="icon"
+              action={deleteAction}
+              id={row.original.id}
+              label="Supprimer cette société"
+              confirmationPhrase={row.original.name}
+              description={`Supprimer définitivement la société "${row.original.name}" ? Tous ses biens, lots, marchés, documents et docs comptables associés seront aussi supprimés. Action irréversible.`}
+            />
+          </div>
+        ),
+      },
+    ];
+  }, [deleteAction]);
+
   return <DataTable columns={columns} data={rows} emptyMessage="Aucune société." enableSelection />;
 }

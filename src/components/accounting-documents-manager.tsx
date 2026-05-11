@@ -14,6 +14,18 @@ const KIND_LABEL: Record<AccountingDocKind, string> = {
   facture: 'Facture',
 };
 
+const KIND_LABEL_PLURAL: Record<AccountingDocKind, string> = {
+  devis: 'Devis',
+  commande: 'Commandes',
+  facture: 'Factures',
+};
+
+const KIND_ARTICLE_NEW: Record<AccountingDocKind, string> = {
+  devis: 'Nouveau devis',
+  commande: 'Nouvelle commande',
+  facture: 'Nouvelle facture',
+};
+
 interface AccountingRow {
   id: string;
   supplierLabel: string;
@@ -289,11 +301,11 @@ export function AccountingDocumentsManager({
       )}
 
       <div className="flex items-center justify-between">
-        <h3 className="text-[14px] font-medium text-zinc-900">{KIND_LABEL[kind]}s ({documents.length})</h3>
+        <h3 className="text-[14px] font-medium text-zinc-900">{KIND_LABEL_PLURAL[kind]} ({documents.length})</h3>
         {!isOpen && (
           <button type="button" onClick={() => setOpen(true)} className="btn-secondary">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nouveau {KIND_LABEL[kind].toLowerCase()}
+            {KIND_ARTICLE_NEW[kind]}
           </button>
         )}
       </div>
@@ -355,7 +367,7 @@ export function AccountingDocumentsManager({
               onChange={(e) => setDocName(e.target.value)}
               required
               className="input mt-1"
-              placeholder={`${KIND_LABEL[kind]} fournisseur 2026`}
+              placeholder={`${KIND_LABEL[kind]} ${KIND_LABEL[kind].toLowerCase() === 'devis' ? 'plomberie' : 'fournisseur'} 2026`}
             />
           </div>
 

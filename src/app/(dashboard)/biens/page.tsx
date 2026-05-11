@@ -4,6 +4,7 @@ import { asc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { BiensTable, type BienLotRow } from './biens-table';
+import { deleteLotAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,7 +77,7 @@ export default async function BiensPage() {
 
       {!dbError && (
         <div className="card overflow-hidden">
-          <BiensTable rows={rows} />
+          <BiensTable rows={rows} deleteAction={deleteLotAction} />
         </div>
       )}
     </div>

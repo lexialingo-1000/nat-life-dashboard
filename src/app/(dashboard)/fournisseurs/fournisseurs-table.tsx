@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
+import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
 
 export type FournisseurRow = {
@@ -22,11 +24,24 @@ const INVOICING_LABELS: Record<string, string> = {
   manual_upload: 'Manuel',
 };
 
+export const SUPPLIER_TYPE_LABELS: Record<string, string> = {
+  notaire: 'Notaire',
+  banque: 'Banque',
+  juridique: 'Juridique',
+  comptabilite: 'Comptabilité',
+  architecte: 'Architecte',
+  entrepreneur: 'Entrepreneur',
+  syndic: 'Syndic',
+  diagnostic: 'Diagnostic',
+  assurance: 'Assurance',
+  autre: 'Autre',
+};
+
 // V1.10 I — colonnes Type, Email, Téléphone retirées (cliente Natacha :
 // "enleve la premiere colonne on a plus besoin du type de fournisseur.
 // La premiere colonne doit etre NOM. Remplacer NOM par FOURNISSEUR.
 // Supprime les mails et numero telephone de la liste").
-const columns: ColumnDef<FournisseurRow>[] = [
+const baseColumns: ColumnDef<FournisseurRow>[] = [
   {
     accessorKey: 'displayName',
     header: 'Fournisseur',
@@ -77,6 +92,37 @@ const columns: ColumnDef<FournisseurRow>[] = [
   },
 ];
 
-export function FournisseursTable({ rows }: { rows: FournisseurRow[] }) {
+interface Props {
+  rows: FournisseurRow[];
+  deleteAction?: (formData: FormData) => Promise<void>;
+}
+
+export function FournisseursTable({ rows, deleteAction }: Props) {
+  const columns = useMemo<ColumnDef<FournisseurRow>[]>(() => {
+    if (!deleteAction) return baseColumns;
+    return [
+      ...baseColumns,
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <DeleteButton
+              variant="icon"
+              action={deleteAction}
+              id={row.original.id}
+              label="Supprimer ce fournisseur"
+              confirmationPhrase={row.original.displayName}
+              description={`Supprimer définitivement le fournisseur "${row.original.displayName}" ? Tous ses contacts et documents associés seront aussi supprimés. Action irréversible.`}
+            />
+          </div>
+        ),
+      },
+    ];
+  }, [deleteAction]);
+
   return <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." enableSelection />;
 }

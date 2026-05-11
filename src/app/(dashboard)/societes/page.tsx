@@ -3,6 +3,7 @@ import { companies } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import { SocietesTable, type SocieteRow } from './societes-table';
+import { deleteSocieteAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,7 @@ export default async function SocietesPage() {
 
       {!dbError && (
         <div className="card overflow-hidden">
-          <SocietesTable rows={rows} />
+          <SocietesTable rows={rows} deleteAction={deleteSocieteAction} />
         </div>
       )}
     </div>

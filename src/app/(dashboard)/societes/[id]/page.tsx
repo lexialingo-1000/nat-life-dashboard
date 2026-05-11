@@ -264,6 +264,10 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
   }));
 
+  // V1.9 fix : on charge TOUS les marchés (toutes sociétés). Le filtrage par
+  // fournisseur est fait côté client dans <AccountingDocumentsManager>. Permet
+  // de saisir une facture FKA pour un marché exécuté sur VALROSE (flux
+  // inter-société courant).
   const marcheOptions = await db
     .select({
       id: marchesTravaux.id,
@@ -273,7 +277,6 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     })
     .from(marchesTravaux)
     .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
-    .where(eq(properties.companyId, company.id))
     .orderBy(asc(marchesTravaux.name));
 
   const marcheOpts = marcheOptions.map((m) => ({

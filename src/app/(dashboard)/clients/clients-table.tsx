@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
+import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
 
 export type ClientRow = {
@@ -19,7 +21,7 @@ const TENANT_BADGES: Record<string, { label: string; className: string }> = {
   CT: { label: 'Saisonnier', className: 'badge-amber' },
 };
 
-const columns: ColumnDef<ClientRow>[] = [
+const baseColumns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: 'displayName',
     header: 'Client',
@@ -99,6 +101,37 @@ const columns: ColumnDef<ClientRow>[] = [
   },
 ];
 
-export function ClientsTable({ rows }: { rows: ClientRow[] }) {
+interface Props {
+  rows: ClientRow[];
+  deleteAction?: (formData: FormData) => Promise<void>;
+}
+
+export function ClientsTable({ rows, deleteAction }: Props) {
+  const columns = useMemo<ColumnDef<ClientRow>[]>(() => {
+    if (!deleteAction) return baseColumns;
+    return [
+      ...baseColumns,
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <DeleteButton
+              variant="icon"
+              action={deleteAction}
+              id={row.original.id}
+              label="Supprimer ce client"
+              confirmationPhrase={row.original.displayName}
+              description={`Supprimer définitivement le client "${row.original.displayName}" ? Ses documents et locations associés seront aussi supprimés. Action irréversible.`}
+            />
+          </div>
+        ),
+      },
+    ];
+  }, [deleteAction]);
+
   return <DataTable columns={columns} data={rows} emptyMessage="Aucun client." enableSelection />;
 }

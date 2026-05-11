@@ -1,8 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
+import { DeleteButton } from '@/components/delete-button';
 
 export type BienLotRow = {
   // lotId/lotName/etc. nullable : un bien sans lot apparaît quand même
@@ -47,7 +49,7 @@ const STATUS_BADGES: Record<string, string> = {
   travaux: 'badge-amber',
 };
 
-const columns: ColumnDef<BienLotRow>[] = [
+const baseColumns: ColumnDef<BienLotRow>[] = [
   {
     accessorKey: 'propertyName',
     header: 'Bien',
@@ -140,6 +142,40 @@ const columns: ColumnDef<BienLotRow>[] = [
   },
 ];
 
-export function BiensTable({ rows }: { rows: BienLotRow[] }) {
+interface Props {
+  rows: BienLotRow[];
+  deleteAction?: (formData: FormData) => Promise<void>;
+}
+
+export function BiensTable({ rows, deleteAction }: Props) {
+  const columns = useMemo<ColumnDef<BienLotRow>[]>(() => {
+    if (!deleteAction) return baseColumns;
+    return [
+      ...baseColumns,
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 48,
+        cell: ({ row }) => {
+          if (!row.original.lotId) return null;
+          return (
+            <div className="flex justify-end">
+              <DeleteButton
+                variant="icon"
+                action={deleteAction}
+                id={row.original.lotId}
+                label="Supprimer ce lot"
+                confirmationPhrase={row.original.lotName ?? 'lot'}
+                description={`Supprimer le lot "${row.original.lotName}" de "${row.original.propertyName}" ? Si ce lot a des locations ou marchés actifs, la suppression sera refusée. Action irréversible.`}
+              />
+            </div>
+          );
+        },
+      },
+    ];
+  }, [deleteAction]);
+
   return <DataTable columns={columns} data={rows} emptyMessage="Aucun lot." enableSelection />;
 }

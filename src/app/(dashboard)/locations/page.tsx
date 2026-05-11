@@ -4,6 +4,7 @@ import { desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { Plus, UserPlus } from 'lucide-react';
 import { LocationsTable, type LocationRow, type LocationStatus } from './locations-table';
+import { deleteLocationAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,7 +124,7 @@ export default async function LocationsListPage() {
 
       {!dbError && (
         <div className="card overflow-hidden">
-          <LocationsTable rows={rows} enableSelection />
+          <LocationsTable rows={rows} enableSelection deleteAction={deleteLocationAction} />
         </div>
       )}
     </div>

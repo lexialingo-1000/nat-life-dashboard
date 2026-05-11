@@ -102,6 +102,30 @@ export async function updateLotAction(formData: FormData): Promise<void> {
   redirect(`/biens/lots/${id}`);
 }
 
+export async function deleteLotAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+
+  // Locations + marche_lot_affectations sont en RESTRICT côté FK → si usage
+  // existant, delete échoue (code 23503). On traduit en message lisible.
+  // Niveaux/pièces/docs en CASCADE → cleanup auto.
+  try {
+    await db.delete(lots).where(eq(lots.id, id));
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    const msg = e instanceof Error ? e.message : String(e);
+    if (code === '23503' || /foreign key|violates/i.test(msg)) {
+      throw new Error(
+        `Suppression impossible : ce lot est utilisé par une location ou un marché de travaux. Supprime d'abord ces dépendances.`
+      );
+    }
+    throw new Error(msg || 'Erreur lors de la suppression du lot.');
+  }
+
+  revalidatePath('/biens');
+  redirect('/biens');
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Niveaux & pièces (vague 3 retours Natacha) — édition in-place sur fiche lot.
 // Pas de redirect : les actions revalidatent le path et le form se reset.

@@ -3,6 +3,7 @@ import { suppliers, supplierContacts } from '@/db/schema';
 import { asc, sql, eq } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import { FournisseursTable, type FournisseurRow } from './fournisseurs-table';
+import { deleteSupplierAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +73,7 @@ export default async function FournisseursPage() {
 
       {!dbError && (
         <div className="card overflow-hidden">
-          <FournisseursTable rows={rows} />
+          <FournisseursTable rows={rows} deleteAction={deleteSupplierAction} />
         </div>
       )}
     </div>
