@@ -223,7 +223,7 @@ export function LocationsTable({
               action={deleteAction}
               id={row.original.id}
               label="Supprimer cette location"
-              confirmationPhrase={row.original.lotName}
+              confirmationPhrase={row.original.customerLabel}
               description={`Supprimer la location de "${row.original.customerLabel}" sur ${row.original.propertyName} · ${row.original.lotName} (du ${formatDate(
                 row.original.dateDebut
               )}${

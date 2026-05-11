@@ -34,7 +34,7 @@ export function DeleteButton({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const canConfirm = typed === confirmationPhrase;
+  const canConfirm = typed.trim() === confirmationPhrase.trim();
 
   const handleConfirm = () => {
     if (!canConfirm) return;

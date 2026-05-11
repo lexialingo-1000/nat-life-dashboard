@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Loader2, Plus, Search, X } from 'lucide-react';
 
 export interface ComboboxOption {
@@ -52,7 +53,12 @@ export function EntityCombobox({
   const [showCreate, setShowCreate] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -181,7 +187,7 @@ export function EntityCombobox({
         </div>
       )}
 
-      {showCreate && createAction && (
+      {showCreate && createAction && mounted && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4"
           onClick={() => !creating && setShowCreate(false)}
@@ -263,7 +269,8 @@ export function EntityCombobox({
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

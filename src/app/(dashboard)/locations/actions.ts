@@ -187,6 +187,7 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
     await db.delete(locationDocuments).where(eq(locationDocuments.locationId, id));
     await db.delete(locations).where(eq(locations.id, id));
   } catch (err) {
+    console.error('[deleteLocationAction] id=%s lotId=%s customerId=%s err=', id, lotId, customerId, err);
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
     throw new Error(`Suppression impossible : ${msg}`);
   }
