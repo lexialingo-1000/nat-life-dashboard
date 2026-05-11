@@ -146,6 +146,4 @@ export async function deleteDocumentByScopeAction(formData: FormData): Promise<v
   redirect(BACK_PATHS[scope](parentId));
 }
 
-export const SUPPORTED_SCOPES = SCOPES;
 export type DocumentScope = Scope;
-export const PARENT_FIELD_BY_SCOPE = PARENT_FIELDS;

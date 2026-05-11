@@ -18,21 +18,155 @@ import { DeleteButton } from '@/components/delete-button';
 import {
   updateDocumentAction,
   deleteDocumentByScopeAction,
-  PARENT_FIELD_BY_SCOPE,
   type DocumentScope,
 } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
 
-const TABLES = {
-  company: companyDocuments,
-  supplier: supplierDocuments,
-  customer: customerDocuments,
-  property: propertyDocuments,
-  lot: lotDocuments,
-  marche: marcheDocuments,
-  location: locationDocuments,
-} as const;
+async function fetchDoc(scope: DocumentScope, docId: string) {
+  const baseSelect = {
+    typeLabel: documentTypes.label,
+    hasExpiration: documentTypes.hasExpiration,
+  };
+  switch (scope) {
+    case 'company': {
+      const r = await db
+        .select({
+          id: companyDocuments.id,
+          name: companyDocuments.name,
+          parentId: companyDocuments.companyId,
+          storageKey: companyDocuments.storageKey,
+          documentDate: companyDocuments.documentDate,
+          expiresAt: companyDocuments.expiresAt,
+          notes: companyDocuments.notes,
+          ...baseSelect,
+        })
+        .from(companyDocuments)
+        .innerJoin(documentTypes, eq(companyDocuments.typeId, documentTypes.id))
+        .where(eq(companyDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'supplier': {
+      const r = await db
+        .select({
+          id: supplierDocuments.id,
+          name: supplierDocuments.name,
+          parentId: supplierDocuments.supplierId,
+          storageKey: supplierDocuments.storageKey,
+          documentDate: supplierDocuments.documentDate,
+          expiresAt: supplierDocuments.expiresAt,
+          notes: supplierDocuments.notes,
+          ...baseSelect,
+        })
+        .from(supplierDocuments)
+        .innerJoin(documentTypes, eq(supplierDocuments.typeId, documentTypes.id))
+        .where(eq(supplierDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'customer': {
+      const r = await db
+        .select({
+          id: customerDocuments.id,
+          name: customerDocuments.name,
+          parentId: customerDocuments.customerId,
+          storageKey: customerDocuments.storageKey,
+          documentDate: customerDocuments.documentDate,
+          expiresAt: customerDocuments.expiresAt,
+          notes: customerDocuments.notes,
+          ...baseSelect,
+        })
+        .from(customerDocuments)
+        .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))
+        .where(eq(customerDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'property': {
+      const r = await db
+        .select({
+          id: propertyDocuments.id,
+          name: propertyDocuments.name,
+          parentId: propertyDocuments.propertyId,
+          storageKey: propertyDocuments.storageKey,
+          documentDate: propertyDocuments.documentDate,
+          expiresAt: propertyDocuments.expiresAt,
+          notes: propertyDocuments.notes,
+          ...baseSelect,
+        })
+        .from(propertyDocuments)
+        .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
+        .where(eq(propertyDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'lot': {
+      const r = await db
+        .select({
+          id: lotDocuments.id,
+          name: lotDocuments.name,
+          parentId: lotDocuments.lotId,
+          storageKey: lotDocuments.storageKey,
+          documentDate: lotDocuments.documentDate,
+          expiresAt: lotDocuments.expiresAt,
+          notes: lotDocuments.notes,
+          ...baseSelect,
+        })
+        .from(lotDocuments)
+        .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
+        .where(eq(lotDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'marche': {
+      const r = await db
+        .select({
+          id: marcheDocuments.id,
+          name: marcheDocuments.name,
+          parentId: marcheDocuments.marcheId,
+          storageKey: marcheDocuments.storageKey,
+          documentDate: marcheDocuments.documentDate,
+          expiresAt: marcheDocuments.expiresAt,
+          notes: marcheDocuments.notes,
+          ...baseSelect,
+        })
+        .from(marcheDocuments)
+        .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))
+        .where(eq(marcheDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+    case 'location': {
+      const r = await db
+        .select({
+          id: locationDocuments.id,
+          name: locationDocuments.name,
+          parentId: locationDocuments.locationId,
+          storageKey: locationDocuments.storageKey,
+          documentDate: locationDocuments.documentDate,
+          expiresAt: locationDocuments.expiresAt,
+          notes: locationDocuments.notes,
+          ...baseSelect,
+        })
+        .from(locationDocuments)
+        .innerJoin(documentTypes, eq(locationDocuments.typeId, documentTypes.id))
+        .where(eq(locationDocuments.id, docId))
+        .limit(1);
+      return r[0];
+    }
+  }
+}
+
+const VALID_SCOPES = new Set<DocumentScope>([
+  'company',
+  'supplier',
+  'customer',
+  'property',
+  'lot',
+  'marche',
+  'location',
+]);
 
 const SCOPE_LABELS: Record<DocumentScope, string> = {
   company: 'Société',
@@ -55,7 +189,7 @@ const BACK_PATHS: Record<DocumentScope, (parentId: string) => string> = {
 };
 
 function isValidScope(s: string): s is DocumentScope {
-  return s in TABLES;
+  return VALID_SCOPES.has(s as DocumentScope);
 }
 
 export default async function EditDocumentPage({
@@ -65,33 +199,9 @@ export default async function EditDocumentPage({
 }) {
   if (!isValidScope(params.scope)) notFound();
   const scope: DocumentScope = params.scope;
-  const table = TABLES[scope];
-  const parentField = PARENT_FIELD_BY_SCOPE[scope];
 
-  // SELECT * équivalent : on prend tous les champs utiles côté form.
-  const rows = await db
-    .select({
-      id: table.id,
-      name: table.name,
-      typeId: table.typeId,
-      typeLabel: documentTypes.label,
-      hasExpiration: documentTypes.hasExpiration,
-      storageKey: table.storageKey,
-      documentDate: table.documentDate,
-      expiresAt: table.expiresAt,
-      notes: table.notes,
-      uploadedAt: table.uploadedAt,
-      // @ts-expect-error — Drizzle ne sait pas que les 7 tables exposent toutes
-      // un champ parent (companyId/supplierId/.../locationId). On lit via indexer.
-      parentId: table[parentField],
-    })
-    .from(table)
-    .innerJoin(documentTypes, eq(table.typeId, documentTypes.id))
-    .where(eq(table.id, params.docId))
-    .limit(1);
-
-  if (rows.length === 0) notFound();
-  const doc = rows[0];
+  const doc = await fetchDoc(scope, params.docId);
+  if (!doc) notFound();
 
   const backHref = BACK_PATHS[scope](doc.parentId);
   const scopeLabel = SCOPE_LABELS[scope];
