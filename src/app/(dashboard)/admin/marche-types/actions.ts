@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marcheTypes } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { marcheTypes, marchesTravaux, marcheSousLots } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -115,4 +115,33 @@ export async function toggleMarcheTypeActiveAction(formData: FormData): Promise<
     .where(eq(marcheTypes.id, id));
 
   revalidatePath('/admin/marche-types');
+}
+
+export async function deleteMarcheTypeAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+
+  // Compte les usages : marche_types est référencé par marches_travaux et
+  // marche_sous_lots (les deux avec ON DELETE SET NULL → la suppression DB
+  // est techniquement safe, mais on refuse si usage > 0 pour préserver le
+  // contexte historique. La cliente peut désactiver le type via le toggle.
+  const [marchesCount] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(marchesTravaux)
+    .where(eq(marchesTravaux.marcheTypeId, id));
+  const [sousLotsCount] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(marcheSousLots)
+    .where(eq(marcheSousLots.marcheTypeId, id));
+
+  const totalUsages = (marchesCount?.n ?? 0) + (sousLotsCount?.n ?? 0);
+  if (totalUsages > 0) {
+    throw new Error(
+      `Type utilisé par ${marchesCount?.n ?? 0} marché(s) et ${sousLotsCount?.n ?? 0} sous-lot(s). Désactive-le plutôt (toggle "Type actif") pour préserver l'historique.`
+    );
+  }
+
+  await db.delete(marcheTypes).where(eq(marcheTypes.id, id));
+  revalidatePath('/admin/marche-types');
+  redirect('/admin/marche-types');
 }

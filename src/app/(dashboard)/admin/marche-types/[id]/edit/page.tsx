@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
-import { updateMarcheTypeAction } from '../../actions';
+import { DeleteButton } from '@/components/delete-button';
+import { updateMarcheTypeAction, deleteMarcheTypeAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,14 +83,23 @@ export default async function EditMarcheTypePage({ params }: { params: { id: str
           </label>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Link href="/admin/marche-types" className="btn-secondary">
-            Annuler
-          </Link>
-          <button type="submit" className="btn-primary">
-            <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Enregistrer
-          </button>
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <DeleteButton
+            action={deleteMarcheTypeAction}
+            id={t.id}
+            label="Supprimer ce type"
+            confirmationPhrase={t.label}
+            description={`Supprimer le type "${t.label}" ? Si ce type est utilisé par un marché ou un sous-lot, la suppression sera refusée — désactive-le plutôt via le toggle "Type actif" pour préserver l'historique.`}
+          />
+          <div className="flex gap-3">
+            <Link href="/admin/marche-types" className="btn-secondary">
+              Annuler
+            </Link>
+            <button type="submit" className="btn-primary">
+              <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+              Enregistrer
+            </button>
+          </div>
         </div>
       </form>
     </div>

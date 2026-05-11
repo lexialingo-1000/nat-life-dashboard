@@ -85,6 +85,11 @@ export function LocationsTable({
 }: Props) {
   const columns = useMemo<ColumnDef<LocationRow>[]>(() => {
     const hidden = new Set<LocationColumnId>(hideColumns ?? []);
+    // Quand 'customer' est caché (fiche client : on connaît déjà le locataire),
+    // la 1ère col visible doit pointer sur /locations/[id], pas /biens/...
+    // (V11 §17 — "Sur cet onglet LOCATION du client quand on clique sur la
+    // ligne, on doit aller sur la fiche location").
+    const customerHidden = hidden.has('customer');
 
     const all: { id: LocationColumnId; def: ColumnDef<LocationRow> }[] = [
       {
@@ -108,14 +113,23 @@ export function LocationsTable({
         def: {
           accessorKey: 'propertyName',
           header: 'Bien',
-          cell: ({ row }) => (
-            <Link
-              href={`/biens/properties/${row.original.propertyId}`}
-              className="link-cell-soft whitespace-nowrap"
-            >
-              {row.original.propertyName}
-            </Link>
-          ),
+          cell: ({ row }) =>
+            customerHidden ? (
+              <EntityLink
+                href={`/locations/${row.original.id}`}
+                className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
+                title="Clic : aperçu · Double-clic : fiche complète location"
+              >
+                {row.original.propertyName}
+              </EntityLink>
+            ) : (
+              <Link
+                href={`/biens/properties/${row.original.propertyId}`}
+                className="link-cell-soft whitespace-nowrap"
+              >
+                {row.original.propertyName}
+              </Link>
+            ),
         },
       },
       {

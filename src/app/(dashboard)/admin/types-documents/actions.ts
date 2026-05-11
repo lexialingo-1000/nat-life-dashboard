@@ -179,3 +179,28 @@ export async function toggleActiveAction(formData: FormData): Promise<void> {
 
   revalidatePath('/admin/types-documents');
 }
+
+export async function deleteDocumentTypeAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('ID manquant');
+
+  // Les 7 tables de docs (company/supplier/customer/property/lot/marche/location)
+  // référencent documentTypes avec onDelete: 'restrict'. Si au moins un doc utilise
+  // ce type, la suppression DB fail avec code 23503 → on traduit le message pour
+  // suggérer la désactivation.
+  try {
+    await db.delete(documentTypes).where(eq(documentTypes.id, id));
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    const msg = e instanceof Error ? e.message : String(e);
+    if (code === '23503' || /foreign key|violates/i.test(msg)) {
+      throw new Error(
+        `Ce type est utilisé par un ou plusieurs documents existants. Désactive-le plutôt via le toggle "Type actif" (les documents historiques garderont leur référence).`
+      );
+    }
+    throw new Error(msg || 'Erreur lors de la suppression du type.');
+  }
+
+  revalidatePath('/admin/types-documents');
+  redirect('/admin/types-documents');
+}

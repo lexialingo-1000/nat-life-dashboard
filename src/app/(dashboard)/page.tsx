@@ -1,4 +1,5 @@
 import { ExpirationsWidget } from '@/components/expirations-widget';
+import { RequiredDocumentsOverdueWidget } from '@/components/required-documents-overdue-widget';
 import { db } from '@/db/client';
 import { companies, suppliers, customers, properties, lots, marchesTravaux } from '@/db/schema';
 import { sql } from 'drizzle-orm';
@@ -100,6 +101,18 @@ export default async function DashboardHome() {
         <Kpi label="Clients" value={counts?.clients} icon={UserCircle} href="/clients" />
         <Kpi label="Marchés" value={counts?.marches} icon={HardHat} href="/marches" />
         <Kpi label="Immeubles" value={counts?.properties} icon={Building2} href="/biens" />
+      </section>
+
+      {/* Required documents overdue / missing widget (V1.9 PR #3 D1) */}
+      <section>
+        <SectionHeader
+          eyebrow="Action requise"
+          title="Documents obligatoires manquants ou expirés"
+          description="Fournisseurs et clients pour lesquels un document marqué obligatoire est manquant ou périmé."
+        />
+        <div className="mt-5">
+          <RequiredDocumentsOverdueWidget />
+        </div>
       </section>
 
       {/* Expirations widget */}

@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
-import { updateDocumentTypeAction } from '../../actions';
+import { DeleteButton } from '@/components/delete-button';
+import { updateDocumentTypeAction, deleteDocumentTypeAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -184,14 +185,23 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Link href="/admin/types-documents" className="btn-secondary">
-            Annuler
-          </Link>
-          <button type="submit" className="btn-primary">
-            <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Enregistrer
-          </button>
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <DeleteButton
+            action={deleteDocumentTypeAction}
+            id={t.id}
+            label="Supprimer ce type"
+            confirmationPhrase={t.label}
+            description={`Supprimer le type de document "${t.label}" ? Si ce type est utilisé par au moins un document existant, la suppression sera refusée — désactive-le plutôt via le toggle "Actif" pour préserver l'historique.`}
+          />
+          <div className="flex gap-2">
+            <Link href="/admin/types-documents" className="btn-secondary">
+              Annuler
+            </Link>
+            <button type="submit" className="btn-primary">
+              <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+              Enregistrer
+            </button>
+          </div>
         </div>
       </form>
     </div>

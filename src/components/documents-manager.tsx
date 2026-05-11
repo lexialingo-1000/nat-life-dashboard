@@ -1,10 +1,21 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
+import { Download, Loader2, Pencil, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
+import Link from 'next/link';
 import { DataTable } from './data-table';
 import { formatDate } from '@/lib/utils';
+
+const SCOPE_SINGULAR: Record<string, string> = {
+  companies: 'company',
+  suppliers: 'supplier',
+  customers: 'customer',
+  properties: 'property',
+  lots: 'lot',
+  marches: 'marche',
+  locations: 'location',
+};
 
 type DocumentCategory =
   | 'notaire'
@@ -328,32 +339,42 @@ export function DocumentsManager({
         header: '',
         enableSorting: false,
         enableColumnFilter: false,
-        size: 80,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              onClick={() => handleDownload(row.original.storageKey)}
-              disabled={pendingTransition}
-              title="Télécharger"
-              className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDelete(row.original)}
-              disabled={pendingTransition}
-              title="Supprimer"
-              className="rounded p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        ),
+        size: 120,
+        cell: ({ row }) => {
+          const scopeSingular = SCOPE_SINGULAR[scope] ?? scope;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Link
+                href={`/documents/edit/${scopeSingular}/${row.original.id}`}
+                title="Modifier (date, expiration, notes)"
+                className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleDownload(row.original.storageKey)}
+                disabled={pendingTransition}
+                title="Télécharger"
+                className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(row.original)}
+                disabled={pendingTransition}
+                title="Supprimer"
+                className="rounded p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          );
+        },
       },
     ],
-    [pendingTransition]
+    [pendingTransition, scope]
   );
 
   const sortedDocuments = useMemo(
