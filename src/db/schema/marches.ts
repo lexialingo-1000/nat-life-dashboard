@@ -14,6 +14,7 @@ export const marchesTravaux = pgTable('marches_travaux', {
   supplierId: uuid('supplier_id')
     .notNull()
     .references(() => suppliers.id, { onDelete: 'restrict' }),
+  marcheTypeId: uuid('marche_type_id').references(() => marcheTypes.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
   description: text('description'),
   amountHt: numeric('amount_ht', { precision: 14, scale: 2 }),

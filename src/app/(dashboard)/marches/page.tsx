@@ -2,6 +2,7 @@ import { db } from '@/db/client';
 import {
   marchesTravaux,
   marcheLotAffectations,
+  marcheTypes,
   lots,
   properties,
   companies,
@@ -10,6 +11,8 @@ import {
 import { asc, eq, sql } from 'drizzle-orm';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import { MarchesTable, type MarcheRow } from './marches-table';
+import { deleteMarcheAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +23,7 @@ export default async function MarchesPage({
 }) {
   const activeSupplierId = searchParams.supplierId ?? undefined;
 
-  let rows: any[] = [];
+  let rows: MarcheRow[] = [];
   let supplierList: { id: string; label: string }[] = [];
   let dbError: string | null = null;
   try {
@@ -40,10 +43,13 @@ export default async function MarchesPage({
         amountHt: marchesTravaux.amountHt,
         status: marchesTravaux.status,
         supplierId: suppliers.id,
+        supplierCompanyName: suppliers.companyName,
+        supplierFirstName: suppliers.firstName,
+        supplierLastName: suppliers.lastName,
         propertyId: properties.id,
         propertyName: properties.name,
         companyName: companies.name,
-        supplierName: suppliers.companyName,
+        marcheTypeLabel: marcheTypes.label,
         lotsConcernes: sql<string | null>`(
           SELECT string_agg(${lots.name}, ', ' ORDER BY ${lots.name})
           FROM ${marcheLotAffectations}
@@ -54,13 +60,28 @@ export default async function MarchesPage({
       .from(marchesTravaux)
       .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
       .innerJoin(companies, eq(properties.companyId, companies.id))
-      .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id));
+      .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
+      .leftJoin(marcheTypes, eq(marchesTravaux.marcheTypeId, marcheTypes.id));
 
     const filtered = activeSupplierId
       ? base.where(eq(marchesTravaux.supplierId, activeSupplierId))
       : base;
-    // V1.9 — tri alphabétique par défaut (Natacha : "ordre alphabétique du nom, idem de partout").
-    rows = await filtered.orderBy(asc(marchesTravaux.name));
+    const rawRows = await filtered.orderBy(asc(marchesTravaux.name));
+    rows = rawRows.map((r) => ({
+      id: r.id,
+      supplierId: r.supplierId,
+      supplierLabel:
+        r.supplierCompanyName ??
+        `${r.supplierFirstName ?? ''} ${r.supplierLastName ?? ''}`.trim() ??
+        '—',
+      marcheTypeLabel: r.marcheTypeLabel,
+      companyName: r.companyName,
+      propertyId: r.propertyId,
+      propertyName: r.propertyName,
+      lotsConcernes: r.lotsConcernes,
+      amountHt: r.amountHt,
+      status: r.status,
+    }));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }
@@ -128,50 +149,7 @@ export default async function MarchesPage({
       )}
 
       {!dbError && rows.length > 0 && (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wider text-zinc-500">
-              <tr>
-                <th className="px-4 py-3">Fournisseur</th>
-                <th className="px-4 py-3">Société</th>
-                <th className="px-4 py-3">Bien</th>
-                <th className="px-4 py-3">Lots concernés</th>
-                <th className="px-4 py-3">Montant HT</th>
-                <th className="px-4 py-3">Statut</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {rows.map((m) => (
-                <tr key={m.id} className="hover:bg-zinc-50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/marches/${m.id}`}
-                      className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-                    >
-                      {m.supplierName ?? '—'}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-xs">{m.companyName}</td>
-                  <td className="px-4 py-3 text-xs">
-                    <Link
-                      href={`/biens/properties/${m.propertyId}`}
-                      className="link-cell-soft"
-                    >
-                      {m.propertyName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
-                    {m.lotsConcernes ?? <span className="text-zinc-400">parties communes</span>}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">
-                    {m.amountHt ? `${Number(m.amountHt).toLocaleString('fr-FR')} €` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs">{m.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <MarchesTable rows={rows} deleteAction={deleteMarcheAction} />
       )}
     </div>
   );

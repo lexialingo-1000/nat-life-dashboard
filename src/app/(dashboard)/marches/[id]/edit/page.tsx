@@ -5,6 +5,7 @@ import {
   properties,
   lots,
   suppliers,
+  marcheTypes,
 } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -31,6 +32,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
       dateFinPrevu: marchesTravaux.dateFinPrevu,
       status: marchesTravaux.status,
       notes: marchesTravaux.notes,
+      marcheTypeId: marchesTravaux.marcheTypeId,
       propertyName: properties.name,
     })
     .from(marchesTravaux)
@@ -68,6 +70,12 @@ export default async function EditMarchePage({ params }: { params: { id: string 
     .from(marcheLotAffectations)
     .where(eq(marcheLotAffectations.marcheId, marche.id));
 
+  const marcheTypeRows = await db
+    .select({ id: marcheTypes.id, label: marcheTypes.label })
+    .from(marcheTypes)
+    .where(eq(marcheTypes.isActive, true))
+    .orderBy(asc(marcheTypes.sortOrder));
+
   return (
     <div className="max-w-3xl space-y-6">
       <BackLink fallbackHref={`/marches/${marche.id}`} label="Marché de travaux" />
@@ -82,9 +90,11 @@ export default async function EditMarchePage({ params }: { params: { id: string 
         propertyName={marche.propertyName}
         lots={propertyLots}
         suppliers={supplierOptions}
+        marcheTypes={marcheTypeRows}
         defaultValues={{
           id: marche.id,
           supplierId: marche.supplierId,
+          marcheTypeId: marche.marcheTypeId,
           description: marche.description,
           amountHt: marche.amountHt,
           amountTtc: marche.amountTtc,

@@ -3,13 +3,17 @@ import {
   marchesTravaux,
   marcheLotAffectations,
   marcheDocuments,
+  marcheSousLots,
+  marcheTaches,
+  marcheTypes,
   lots,
   properties,
   companies,
   suppliers,
+  supplierContacts,
   documentTypes,
 } from '@/db/schema';
-import { eq, asc, and } from 'drizzle-orm';
+import { eq, asc, and, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
@@ -25,6 +29,7 @@ import {
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
+import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +68,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       dateFinReelle: marchesTravaux.dateFinReelle,
       status: marchesTravaux.status,
       notes: marchesTravaux.notes,
+      marcheTypeId: marchesTravaux.marcheTypeId,
       propertyId: properties.id,
       propertyName: properties.name,
       companyId: companies.id,
@@ -114,6 +120,85 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .where(and(eq(documentTypes.scope, 'marche'), eq(documentTypes.isActive, true)))
     .orderBy(asc(documentTypes.sortOrder));
 
+  // Query sous-lots + tâches pour l'onglet Suivi (V1.9 M2)
+  const sousLotsRows = await db
+    .select({
+      id: marcheSousLots.id,
+      name: marcheSousLots.name,
+      status: marcheSousLots.status,
+      sortOrder: marcheSousLots.sortOrder,
+      marcheTypeLabel: marcheTypes.label,
+    })
+    .from(marcheSousLots)
+    .leftJoin(marcheTypes, eq(marcheSousLots.marcheTypeId, marcheTypes.id))
+    .where(eq(marcheSousLots.marcheId, marche.id))
+    .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
+
+  const sousLotIds = sousLotsRows.map((s) => s.id);
+  const tachesRows =
+    sousLotIds.length > 0
+      ? await db
+          .select({
+            id: marcheTaches.id,
+            title: marcheTaches.title,
+            status: marcheTaches.status,
+            locationDescription: marcheTaches.locationDescription,
+            photos: marcheTaches.photos,
+            lotId: marcheTaches.lotId,
+            marcheSousLotId: marcheTaches.marcheSousLotId,
+            supplierContactFirstName: supplierContacts.firstName,
+            supplierContactLastName: supplierContacts.lastName,
+          })
+          .from(marcheTaches)
+          .leftJoin(supplierContacts, eq(marcheTaches.supplierContactId, supplierContacts.id))
+          .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
+      : [];
+
+  const tachesBySousLot = new Map<string, typeof tachesRows>();
+  for (const t of tachesRows) {
+    if (!t.marcheSousLotId) continue;
+    const list = tachesBySousLot.get(t.marcheSousLotId) ?? [];
+    list.push(t);
+    tachesBySousLot.set(t.marcheSousLotId, list);
+  }
+
+  const marcheTypeRow = marche.marcheTypeId
+    ? await db
+        .select({ label: marcheTypes.label })
+        .from(marcheTypes)
+        .where(eq(marcheTypes.id, marche.marcheTypeId))
+        .limit(1)
+    : [];
+  const marcheTypeLabel = marcheTypeRow[0]?.label ?? null;
+
+  const marcheTreeNode: MarcheNode = {
+    id: marche.id,
+    supplierName:
+      marche.supplierName ??
+      `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
+      'Marché',
+    status: marche.status,
+    amountHt: marche.amountHt,
+    sousLots: sousLotsRows.map((sl) => ({
+      id: sl.id,
+      name: sl.name,
+      status: sl.status,
+      marcheTypeLabel: sl.marcheTypeLabel,
+      taches: (tachesBySousLot.get(sl.id) ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        locationDescription: t.locationDescription,
+        supplierContactName:
+          t.supplierContactFirstName || t.supplierContactLastName
+            ? `${t.supplierContactFirstName ?? ''} ${t.supplierContactLastName ?? ''}`.trim()
+            : null,
+        photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
+        lotId: t.lotId,
+      })),
+    })),
+  };
+
   const supplierLabel =
     marche.supplierName ??
     `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
@@ -161,6 +246,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             >
               {supplierLabel}
             </Link>
+          </Row>
+          <Row label="Type de travaux">
+            {marcheTypeLabel ?? <span className="text-zinc-400">—</span>}
           </Row>
           <Row label="Description">{marche.description ?? '—'}</Row>
         </dl>
@@ -217,9 +305,18 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  const suiviTab = (
+    <div className="space-y-3">
+      <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}`} />
+    </div>
+  );
+
+  const totalTaches = marcheTreeNode.sousLots.reduce((acc, sl) => acc + sl.taches.length, 0);
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
+    { id: 'suivi', label: 'Suivi', count: totalTaches, content: suiviTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 

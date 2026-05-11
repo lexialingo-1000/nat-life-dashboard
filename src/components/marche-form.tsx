@@ -23,9 +23,15 @@ interface SupplierOption {
   label: string;
 }
 
+interface MarcheTypeOption {
+  id: string;
+  label: string;
+}
+
 export interface MarcheFormValues {
   id?: string;
   supplierId?: string;
+  marcheTypeId?: string | null;
   description?: string | null;
   amountHt?: string | null;
   amountTtc?: string | null;
@@ -44,6 +50,7 @@ interface Props {
   propertyName: string;
   lots: LotOption[];
   suppliers: SupplierOption[];
+  marcheTypes: MarcheTypeOption[];
   defaultValues?: MarcheFormValues;
   cancelHref: string;
   submitLabel?: string;
@@ -64,6 +71,7 @@ export function MarcheForm({
   propertyName,
   lots,
   suppliers,
+  marcheTypes,
   defaultValues = {},
   cancelHref,
   submitLabel = 'Enregistrer',
@@ -131,6 +139,21 @@ export function MarcheForm({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium">Type de travaux</label>
+          <div className="mt-1">
+            <EntityCombobox
+              name="marcheTypeId"
+              options={marcheTypes}
+              defaultValue={defaultValues.marcheTypeId ?? undefined}
+              placeholder="(optionnel) Plomberie, Peinture, Maçonnerie…"
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Optionnel. Tu peux aussi laisser vide et catégoriser plus finement les sous-lots.
+          </p>
         </div>
 
         <div>

@@ -1,5 +1,5 @@
 import { db } from '@/db/client';
-import { properties, lots, suppliers } from '@/db/schema';
+import { properties, lots, suppliers, marcheTypes } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -43,6 +43,12 @@ export default async function NewMarchePage({ params }: { params: { id: string }
       s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur',
   }));
 
+  const marcheTypeRows = await db
+    .select({ id: marcheTypes.id, label: marcheTypes.label })
+    .from(marcheTypes)
+    .where(eq(marcheTypes.isActive, true))
+    .orderBy(asc(marcheTypes.sortOrder));
+
   return (
     <div className="max-w-3xl space-y-6">
       <BackLink fallbackHref={`/biens/properties/${property.id}`} label={property.name} />
@@ -58,6 +64,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
         propertyName={property.name}
         lots={propertyLots}
         suppliers={supplierOptions}
+        marcheTypes={marcheTypeRows}
         defaultValues={{ lotIds: propertyLots.map((l) => l.id) }}
         cancelHref={`/biens/properties/${property.id}`}
         submitLabel="Créer le marché"
