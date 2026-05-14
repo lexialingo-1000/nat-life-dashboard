@@ -44,7 +44,7 @@ export function MarchesTable({ rows, deleteAction }: Props) {
           <EntityLink
             href={`/marches/${row.original.id}`}
             className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-            title="Clic : aperçu · Double-clic : fiche complète marché"
+            title="Voir la fiche marché"
           >
             {row.original.supplierLabel}
           </EntityLink>

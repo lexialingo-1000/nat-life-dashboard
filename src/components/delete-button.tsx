@@ -34,7 +34,17 @@ export function DeleteButton({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const canConfirm = typed.trim() === confirmationPhrase.trim();
+  // Comparaison tolérante : casse, accents, espaces multiples (V11 Natacha :
+  // "le bouton ne passe pas en rouge"). Certains noms en DB ont un double-espace
+  // ou la cliente tape en minuscules — on normalise les deux côtés.
+  const normalize = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  const canConfirm = normalize(typed) === normalize(confirmationPhrase);
 
   const handleConfirm = () => {
     if (!canConfirm) return;

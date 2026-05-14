@@ -25,7 +25,7 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
       <EntityLink
         href={`/societes/${row.original.id}`}
         className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Clic : aperçu · Double-clic : fiche complète"
+        title="Voir la fiche"
       >
         {row.original.name}
       </EntityLink>

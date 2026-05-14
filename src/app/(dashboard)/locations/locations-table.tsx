@@ -101,7 +101,7 @@ export function LocationsTable({
             <EntityLink
               href={`/locations/${row.original.id}`}
               className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-              title="Clic : aperçu · Double-clic : fiche complète location"
+              title="Voir la fiche location"
             >
               {row.original.customerLabel}
             </EntityLink>
@@ -118,7 +118,7 @@ export function LocationsTable({
               <EntityLink
                 href={`/locations/${row.original.id}`}
                 className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-                title="Clic : aperçu · Double-clic : fiche complète location"
+                title="Voir la fiche location"
               >
                 {row.original.propertyName}
               </EntityLink>

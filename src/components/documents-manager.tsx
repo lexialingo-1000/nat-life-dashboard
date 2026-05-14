@@ -272,16 +272,28 @@ export function DocumentsManager({
         id: 'typeLabel',
         accessorKey: 'typeLabel',
         header: 'Type',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <span className="badge-neutral">{row.original.typeLabel}</span>
-            {row.original.category && (
-              <span className={CATEGORY_BADGE[row.original.category]}>
-                {CATEGORY_LABELS[row.original.category]}
-              </span>
-            )}
-          </div>
-        ),
+        cell: ({ row }) => <span className="badge-neutral">{row.original.typeLabel}</span>,
+      },
+      {
+        // V11 (Natacha §U3) — colonne dédiée Catégorie sur toutes les listes
+        // de documents. Avant V11 elle était fusionnée au Type via un badge
+        // à droite. Filtrable et triable de manière indépendante.
+        id: 'category',
+        accessorKey: 'category',
+        header: 'Catégorie',
+        cell: ({ row }) =>
+          row.original.category ? (
+            <span className={CATEGORY_BADGE[row.original.category]}>
+              {CATEGORY_LABELS[row.original.category]}
+            </span>
+          ) : (
+            <span className="text-[12px] text-zinc-400">—</span>
+          ),
+        filterFn: (row, _id, value) => {
+          const v = row.original.category;
+          if (!v) return false;
+          return CATEGORY_LABELS[v].toLowerCase().startsWith(String(value).toLowerCase());
+        },
       },
       {
         id: 'documentDate',

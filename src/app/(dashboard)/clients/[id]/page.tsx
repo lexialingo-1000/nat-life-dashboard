@@ -79,6 +79,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       expiresAt: customerDocuments.expiresAt,
       documentDate: customerDocuments.documentDate,
       uploadedAt: customerDocuments.uploadedAt,
+      category: customerDocuments.category,
     })
     .from(customerDocuments)
     .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))
@@ -245,6 +246,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
           uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
+          category: d.category,
         }))}
         availableTypes={customerTypes}
         uploadAction={uploadCustomerDocumentAction}

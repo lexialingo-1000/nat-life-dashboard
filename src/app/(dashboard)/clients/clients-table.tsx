@@ -29,7 +29,7 @@ const baseColumns: ColumnDef<ClientRow>[] = [
       <EntityLink
         href={`/clients/${row.original.id}`}
         className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Clic : aperçu · Double-clic : fiche complète"
+        title="Voir la fiche"
       >
         {row.original.displayName}
       </EntityLink>

@@ -111,15 +111,11 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
 export async function createCustomerInlineAction(formData: FormData): Promise<
   { id: string; label: string } | { error: string }
 > {
-  const parsed = customerSchema.safeParse({
-    companyName: formData.get('companyName'),
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
-    address: formData.get('address'),
-    phone: formData.get('phone'),
-    email: formData.get('email'),
-    notes: formData.get('notes'),
-  });
+  // Le dialog d'EntityCombobox ne contient que companyName/firstName/lastName/email/phone.
+  // formData.get('address'/'notes') retournerait `null` → schema `z.string().optional().or(z.literal(''))`
+  // rejetterait null en "Invalid input". Object.fromEntries omet les clés absentes
+  // → schema voit `undefined` → `.optional()` accepte.
+  const parsed = customerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }

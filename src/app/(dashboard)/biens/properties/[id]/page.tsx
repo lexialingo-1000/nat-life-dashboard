@@ -303,6 +303,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       expiresAt: propertyDocuments.expiresAt,
       documentDate: propertyDocuments.documentDate,
       uploadedAt: propertyDocuments.uploadedAt,
+      category: propertyDocuments.category,
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
@@ -362,6 +363,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       expiresAt: propertyDocuments.expiresAt,
       documentDate: propertyDocuments.documentDate,
       uploadedAt: propertyDocuments.uploadedAt,
+      category: propertyDocuments.category,
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
@@ -606,6 +608,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             documentDate: d.documentDate,
             expiresAt: d.expiresAt,
             uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          category: d.category,
           }))}
           // Lock à un seul type — DocumentsManager auto-select quand availableTypes.length === 1.
           availableTypes={[

@@ -179,6 +179,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         expiresAt: lotDocuments.expiresAt,
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
+      category: lotDocuments.category,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
@@ -367,6 +368,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          category: d.category,
         }))}
         availableTypes={lotDocTypes}
         uploadAction={uploadLotDocumentAction}

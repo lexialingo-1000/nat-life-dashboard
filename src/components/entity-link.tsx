@@ -1,6 +1,3 @@
-'use client';
-
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -11,26 +8,20 @@ interface Props {
 }
 
 /**
- * Lien d'entité destiné aux cellules de liste interceptées par le pattern
- * sheet (`@sheet/(.)entity/[id]`) :
- * - simple-clic : navigation Next.js classique → l'intercepting route ouvre
- *   le panel latéral.
- * - double-clic : `window.location.assign` force un rechargement complet,
- *   contourne l'intercept et atterrit sur la fiche complète.
+ * V11 (Natacha §U2) : on supprime le panneau latéral à l'aperçu. Avant, le
+ * simple clic utilisait `<Link>` Next → l'intercepting route `@sheet/(.)entity/[id]`
+ * ouvrait un panel latéral, le double-clic forçait `window.location.assign`
+ * pour atterrir sur la fiche complète.
+ *
+ * Désormais : simple clic = `<a href>` natif → full navigation, contourne
+ * l'intercept @sheet, on arrive directement sur la fiche. Le double-clic
+ * n'est plus nécessaire. Les routes `@sheet/(.)…` deviennent du dead code
+ * (à supprimer dans un cleanup ultérieur).
  */
 export function EntityLink({ href, className, title, children }: Props) {
   return (
-    <Link
-      href={href}
-      className={className}
-      title={title}
-      onDoubleClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.location.assign(href);
-      }}
-    >
+    <a href={href} className={className} title={title}>
       {children}
-    </Link>
+    </a>
   );
 }

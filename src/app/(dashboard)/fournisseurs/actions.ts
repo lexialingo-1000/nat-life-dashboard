@@ -138,17 +138,11 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
 export async function createSupplierInlineAction(formData: FormData): Promise<
   { id: string; label: string } | { error: string }
 > {
-  const parsed = supplierSchema.safeParse({
-    companyName: formData.get('companyName'),
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
-    address: formData.get('address'),
-    phone: formData.get('phone'),
-    email: formData.get('email'),
-    invoicingType: formData.get('invoicingType') ?? 'manual_upload',
-    type: formData.get('type') ?? 'autre',
-    notes: formData.get('notes'),
-  });
+  // Le dialog d'EntityCombobox ne contient que companyName/firstName/lastName/email/phone.
+  // formData.get('address'/'notes'/...) retournerait `null` → schema `z.string().optional().or(z.literal(''))`
+  // rejetterait null en "Invalid input". Object.fromEntries omet les clés absentes
+  // → schema voit `undefined` → `.optional()` accepte.
+  const parsed = supplierSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }

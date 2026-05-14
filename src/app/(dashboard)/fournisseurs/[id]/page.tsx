@@ -59,6 +59,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       expiresAt: supplierDocuments.expiresAt,
       documentDate: supplierDocuments.documentDate,
       uploadedAt: supplierDocuments.uploadedAt,
+      category: supplierDocuments.category,
     })
     .from(supplierDocuments)
     .innerJoin(documentTypes, eq(supplierDocuments.typeId, documentTypes.id))
@@ -271,6 +272,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          category: d.category,
         }))}
         availableTypes={supplierTypes}
         uploadAction={uploadSupplierDocumentAction}

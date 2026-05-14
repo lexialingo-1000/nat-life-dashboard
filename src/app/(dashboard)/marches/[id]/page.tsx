@@ -30,6 +30,7 @@ import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
+import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -104,6 +105,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       expiresAt: marcheDocuments.expiresAt,
       documentDate: marcheDocuments.documentDate,
       uploadedAt: marcheDocuments.uploadedAt,
+      category: marcheDocuments.category,
     })
     .from(marcheDocuments)
     .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))
@@ -296,6 +298,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          category: d.category,
         }))}
         availableTypes={marcheDocTypes}
         uploadAction={uploadMarcheDocumentAction}
@@ -307,6 +310,18 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
   const suiviTab = (
     <div className="space-y-3">
+      <div className="rounded-md border border-blue-100 bg-blue-50/50 p-4 text-[13px] text-blue-900">
+        <p className="font-medium">Comment fonctionne le suivi&nbsp;?</p>
+        <p className="mt-1 text-blue-800">
+          Un marché se découpe en <strong>sous-lots</strong> (corps d&apos;état&nbsp;:
+          plomberie, électricité, peinture…). Chaque sous-lot regroupe des{' '}
+          <strong>tâches</strong> (statut à faire / en cours / terminé / validé) que
+          tu peux modifier directement depuis cette vue. Crée d&apos;abord un sous-lot
+          ci-dessous, puis ajoute-lui des tâches via le bouton «&nbsp;Ajouter&nbsp;» à droite
+          de chaque sous-lot.
+        </p>
+      </div>
+      <InlineSousLotForm marcheId={marche.id} />
       <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}`} />
     </div>
   );
