@@ -119,6 +119,7 @@ export function DocumentsManager({
   const [docName, setDocName] = useState('');
   const [documentDate, setDocumentDate] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [category, setCategory] = useState<DocumentCategory | ''>('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -126,12 +127,22 @@ export function DocumentsManager({
 
   const selectedType = availableTypes.find((t) => t.id === typeId);
 
+  // V11 §U3 — pré-remplissage automatique de la catégorie : si le type sélectionné
+  // a une catégorie par défaut configurée côté admin, on l'applique tant que
+  // l'utilisateur n'a pas explicitement choisi autre chose. Reste éditable.
+  const handleTypeChange = (newTypeId: string) => {
+    setTypeId(newTypeId);
+    const t = availableTypes.find((x) => x.id === newTypeId);
+    if (t?.category && !category) setCategory(t.category);
+  };
+
   const reset = () => {
     setFile(null);
     setTypeId('');
     setDocName('');
     setDocumentDate('');
     setExpiresAt('');
+    setCategory('');
     setShowForm(false);
     setError(null);
   };
@@ -219,6 +230,7 @@ export function DocumentsManager({
       fd.set('storageKey', storageKey);
       if (documentDate) fd.set('documentDate', documentDate);
       if (expiresAt) fd.set('expiresAt', expiresAt);
+      if (category) fd.set('category', category);
 
       await uploadAction(fd);
       reset();
@@ -458,7 +470,7 @@ export function DocumentsManager({
             <label className="block text-xs font-medium text-zinc-700">Type *</label>
             <select
               value={typeId}
-              onChange={(e) => setTypeId(e.target.value)}
+              onChange={(e) => handleTypeChange(e.target.value)}
               required
               className="input mt-1"
             >
@@ -490,6 +502,25 @@ export function DocumentsManager({
                 ));
               })()}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">Catégorie</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as DocumentCategory | '')}
+              className="input mt-1"
+            >
+              <option value="">— Sans catégorie —</option>
+              {CATEGORY_ORDER.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-zinc-500">
+              Pré-remplie selon le type sélectionné si configuré, modifiable.
+            </p>
           </div>
 
           <div>

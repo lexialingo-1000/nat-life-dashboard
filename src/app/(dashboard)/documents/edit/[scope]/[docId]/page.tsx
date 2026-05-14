@@ -39,6 +39,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: companyDocuments.documentDate,
           expiresAt: companyDocuments.expiresAt,
           notes: companyDocuments.notes,
+          category: companyDocuments.category,
           ...baseSelect,
         })
         .from(companyDocuments)
@@ -57,6 +58,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: supplierDocuments.documentDate,
           expiresAt: supplierDocuments.expiresAt,
           notes: supplierDocuments.notes,
+          category: supplierDocuments.category,
           ...baseSelect,
         })
         .from(supplierDocuments)
@@ -75,6 +77,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: customerDocuments.documentDate,
           expiresAt: customerDocuments.expiresAt,
           notes: customerDocuments.notes,
+          category: customerDocuments.category,
           ...baseSelect,
         })
         .from(customerDocuments)
@@ -93,6 +96,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: propertyDocuments.documentDate,
           expiresAt: propertyDocuments.expiresAt,
           notes: propertyDocuments.notes,
+          category: propertyDocuments.category,
           ...baseSelect,
         })
         .from(propertyDocuments)
@@ -111,6 +115,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: lotDocuments.documentDate,
           expiresAt: lotDocuments.expiresAt,
           notes: lotDocuments.notes,
+          category: lotDocuments.category,
           ...baseSelect,
         })
         .from(lotDocuments)
@@ -129,6 +134,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: marcheDocuments.documentDate,
           expiresAt: marcheDocuments.expiresAt,
           notes: marcheDocuments.notes,
+          category: marcheDocuments.category,
           ...baseSelect,
         })
         .from(marcheDocuments)
@@ -147,6 +153,7 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: locationDocuments.documentDate,
           expiresAt: locationDocuments.expiresAt,
           notes: locationDocuments.notes,
+          category: locationDocuments.category,
           ...baseSelect,
         })
         .from(locationDocuments)
@@ -264,6 +271,26 @@ export default async function EditDocumentPage({
               />
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">Catégorie</label>
+          <select
+            name="category"
+            defaultValue={doc.category ?? ''}
+            className="input mt-1"
+          >
+            <option value="">— Sans catégorie —</option>
+            <option value="notaire">Notaire</option>
+            <option value="banque">Banque</option>
+            <option value="juridique">Juridique</option>
+            <option value="comptabilite">Comptabilité</option>
+            <option value="courant">Courant</option>
+            <option value="location">Location</option>
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Indépendante du type. Permet de filtrer les listes de documents.
+          </p>
         </div>
 
         <div>

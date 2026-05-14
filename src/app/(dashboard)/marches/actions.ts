@@ -227,6 +227,7 @@ const marcheDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
+  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
 });
 
 export async function uploadMarcheDocumentAction(formData: FormData): Promise<void> {
@@ -243,6 +244,7 @@ export async function uploadMarcheDocumentAction(formData: FormData): Promise<vo
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
+    category: data.category || null,
   });
   revalidatePath(`/marches/${data.marcheId}`);
 }

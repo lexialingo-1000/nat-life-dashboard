@@ -86,6 +86,10 @@ const updateSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
+  category: z
+    .enum(['notaire', 'banque', 'juridique', 'comptabilite', 'courant', 'location'])
+    .optional()
+    .or(z.literal('')),
 });
 
 export async function updateDocumentAction(formData: FormData): Promise<void> {
@@ -94,7 +98,7 @@ export async function updateDocumentAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
 
-  const { scope, id, parentId, name, documentDate, expiresAt, notes } = parsed.data;
+  const { scope, id, parentId, name, documentDate, expiresAt, notes, category } = parsed.data;
   const table = TABLES[scope];
 
   await db
@@ -104,6 +108,7 @@ export async function updateDocumentAction(formData: FormData): Promise<void> {
       documentDate: documentDate || null,
       expiresAt: expiresAt || null,
       notes: notes || null,
+      category: category || null,
     })
     .where(eq(table.id, id));
 
