@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { Plus, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import {
@@ -19,14 +19,15 @@ const SCOPE_LABELS: Record<string, string> = {
   location: 'Location',
 };
 
-const CATEGORY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'notaire', label: 'Notaire' },
-  { value: 'banque', label: 'Banque' },
-  { value: 'juridique', label: 'Juridique' },
-  { value: 'comptabilite', label: 'Comptabilité' },
-  { value: 'courant', label: 'Courant' },
-  { value: 'location', label: 'Location' },
-];
+export interface LookupOption {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  categories: LookupOption[];
+  supplierTypes: LookupOption[];
+}
 
 const initialState: CreateDocumentTypeState = { status: 'idle' };
 
@@ -49,13 +50,15 @@ function SubmitButton() {
   );
 }
 
-export function DocumentTypeCreateForm() {
+export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
   const [state, formAction] = useFormState(createDocumentTypeAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [scope, setScope] = useState<string>('supplier');
 
   useEffect(() => {
     if (state.status === 'success' && formRef.current) {
       formRef.current.reset();
+      setScope('supplier');
     }
   }, [state]);
 
@@ -103,7 +106,13 @@ export function DocumentTypeCreateForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Scope</label>
-          <select name="scope" required className="input mt-1" defaultValue="supplier">
+          <select
+            name="scope"
+            required
+            className="input mt-1"
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+          >
             {Object.entries(SCOPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -115,33 +124,51 @@ export function DocumentTypeCreateForm() {
           <label className="block text-[12px] font-medium text-zinc-700">
             Catégorie (regroupement transversal)
           </label>
-          <select name="category" className="input mt-1" defaultValue="">
+          <select name="categoryId" className="input mt-1" defaultValue="">
             <option value="">— Aucune —</option>
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c.value} value={c.value}>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
                 {c.label}
               </option>
             ))}
           </select>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Catégorie par défaut héritée par les documents de ce type. Override possible à l'upload.
+            Paramétrable via <span className="font-mono">Paramètres → Catégories de documents</span>.
           </p>
         </div>
       </div>
 
-      <div>
-        <label className="block text-[12px] font-medium text-zinc-700">
-          Type de locataire (scope client uniquement)
-        </label>
-        <select name="appliesToTenantType" className="input mt-1" defaultValue="">
-          <option value="">— Non applicable / tous —</option>
-          <option value="LT">Locataires LT (long terme)</option>
-          <option value="CT">Locataires CT (court terme)</option>
-          <option value="all">Tous les locataires</option>
-        </select>
-        <p className="mt-1 text-[11px] text-zinc-500">
-          Ignoré si le scope n'est pas « Client ».
-        </p>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">
+            Type de locataire (scope client uniquement)
+          </label>
+          <select name="appliesToTenantType" className="input mt-1" defaultValue="" disabled={scope !== 'customer'}>
+            <option value="">— Non applicable / tous —</option>
+            <option value="LT">Locataires LT (long terme)</option>
+            <option value="CT">Locataires CT (court terme)</option>
+            <option value="all">Tous les locataires</option>
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Ignoré si le scope n'est pas « Client ».
+          </p>
+        </div>
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">
+            Type de fournisseur (scope fournisseur uniquement)
+          </label>
+          <select name="supplierTypeId" className="input mt-1" defaultValue="" disabled={scope !== 'supplier'}>
+            <option value="">— Tous les fournisseurs —</option>
+            {supplierTypes.map((st) => (
+              <option key={st.id} value={st.id}>
+                {st.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Si défini, ce type de doc s'applique uniquement aux fournisseurs de cette catégorie.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

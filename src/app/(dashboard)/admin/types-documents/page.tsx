@@ -1,7 +1,8 @@
 import { db } from '@/db/client';
-import { documentTypes } from '@/db/schema';
+import { documentTypes, documentCategories, supplierTypes } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
 import { DocumentTypeCreateForm } from './document-type-create-form';
 import { DocumentTypesSortableList } from './document-types-sortable-list';
 
@@ -31,6 +32,8 @@ export default async function TypesDocumentsPage({
   const activeScope = SCOPE_KEYS.includes(searchParams.scope ?? '') ? searchParams.scope : undefined;
 
   let rows: any[] = [];
+  let categories: { id: string; label: string }[] = [];
+  let suppliers: { id: string; label: string }[] = [];
   let dbError: string | null = null;
   try {
     const base = db.select().from(documentTypes);
@@ -42,12 +45,24 @@ export default async function TypesDocumentsPage({
       asc(documentTypes.sortOrder),
       asc(documentTypes.label),
     );
+    categories = await db
+      .select({ id: documentCategories.id, label: documentCategories.label })
+      .from(documentCategories)
+      .where(eq(documentCategories.isActive, true))
+      .orderBy(asc(documentCategories.sortOrder), asc(documentCategories.label));
+    suppliers = await db
+      .select({ id: supplierTypes.id, label: supplierTypes.label })
+      .from(supplierTypes)
+      .where(eq(supplierTypes.isActive, true))
+      .orderBy(asc(supplierTypes.sortOrder), asc(supplierTypes.label));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }
 
   return (
     <div className="space-y-8">
+      <BackLink fallbackHref="/admin/parametres" label="Paramètres" />
+
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Administration
@@ -129,7 +144,7 @@ export default async function TypesDocumentsPage({
           </h2>
         </div>
 
-        <DocumentTypeCreateForm />
+        <DocumentTypeCreateForm categories={categories} supplierTypes={suppliers} />
       </section>
     </div>
   );

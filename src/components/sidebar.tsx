@@ -41,10 +41,10 @@ const sections = [
   {
     title: 'Administration',
     items: [
-      { href: '/admin/types-documents', label: 'Types de documents', icon: FileBox },
-      { href: '/admin/marche-types', label: 'Types de marchés', icon: HardHat },
-      { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
+      // V12bis PR2 — Paramètres = hub unique regroupant types-documents,
+      // types-marchés, catégories de documents, types de fournisseurs.
       { href: '/admin/parametres', label: 'Paramètres', icon: Settings },
+      { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
     ],
   },
 ];

@@ -14,6 +14,8 @@ export const suppliers = pgTable('suppliers', {
   storagePath: text('storage_path'),
   invoicingType: supplierInvoicingTypeEnum('invoicing_type').notNull().default('manual_upload'),
   type: supplierTypeEnum('type').notNull().default('autre'),
+  // V12bis PR2 — type paramétrable (FK vers supplier_types table)
+  typeId: uuid('type_id'),
   pennylaneSupplierId: varchar('pennylane_supplier_id', { length: 64 }),
   notes: text('notes'),
   isActive: boolean('is_active').notNull().default(true),

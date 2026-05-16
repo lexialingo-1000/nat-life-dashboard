@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
-import { documentTypes } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { documentTypes, documentCategories, supplierTypes } from '@/db/schema';
+import { asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Save } from 'lucide-react';
@@ -21,15 +21,6 @@ const SCOPE_LABELS: Record<string, string> = {
   location: 'Location',
 };
 
-const CATEGORY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'notaire', label: 'Notaire' },
-  { value: 'banque', label: 'Banque' },
-  { value: 'juridique', label: 'Juridique' },
-  { value: 'comptabilite', label: 'Comptabilité' },
-  { value: 'courant', label: 'Courant' },
-  { value: 'location', label: 'Location' },
-];
-
 export default async function EditDocumentTypePage({ params }: { params: { id: string } }) {
   const rows = await db
     .select()
@@ -39,6 +30,18 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
   if (rows.length === 0) notFound();
   const t = rows[0];
   const isCustomerScope = t.scope === 'customer';
+  const isSupplierScope = t.scope === 'supplier';
+
+  const categories = await db
+    .select({ id: documentCategories.id, label: documentCategories.label })
+    .from(documentCategories)
+    .where(eq(documentCategories.isActive, true))
+    .orderBy(asc(documentCategories.sortOrder), asc(documentCategories.label));
+  const supplierTypeOptions = await db
+    .select({ id: supplierTypes.id, label: supplierTypes.label })
+    .from(supplierTypes)
+    .where(eq(supplierTypes.isActive, true))
+    .orderBy(asc(supplierTypes.sortOrder), asc(supplierTypes.label));
 
   return (
     <div className="space-y-8">
@@ -95,19 +98,19 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
               Catégorie (regroupement transversal)
             </label>
             <select
-              name="category"
-              defaultValue={t.category ?? ''}
+              name="categoryId"
+              defaultValue={t.categoryId ?? ''}
               className="input mt-1"
             >
               <option value="">— Aucune —</option>
-              {CATEGORY_OPTIONS.map((c) => (
-                <option key={c.value} value={c.value}>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
                   {c.label}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-[11px] text-zinc-500">
-              Override possible côté document à l'upload.
+              Paramétrable via <span className="font-mono">Paramètres → Catégories de documents</span>.
             </p>
           </div>
         </div>
@@ -134,6 +137,32 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
               </p>
             )}
           </div>
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">
+              Type de fournisseur {isSupplierScope ? '' : '(non applicable)'}
+            </label>
+            <select
+              name="supplierTypeId"
+              defaultValue={t.supplierTypeId ?? ''}
+              disabled={!isSupplierScope}
+              className="input mt-1 disabled:bg-zinc-50 disabled:text-zinc-400"
+            >
+              <option value="">— Tous les fournisseurs —</option>
+              {supplierTypeOptions.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.label}
+                </option>
+              ))}
+            </select>
+            {!isSupplierScope && (
+              <p className="mt-1 text-[11px] text-zinc-500">
+                Réservé aux types scope « Fournisseur ».
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-[12px] font-medium text-zinc-700">
               Ordre d'affichage

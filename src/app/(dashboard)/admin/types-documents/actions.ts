@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { documentTypes } from '@/db/schema';
+import { documentTypes, documentCategories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -42,6 +42,11 @@ const tenantPreprocess = z.preprocess(
   z.enum(['LT', 'CT', 'all']).nullable()
 );
 
+const uuidOrNull = z.preprocess(
+  (v) => (v === '' || v == null || v === undefined ? null : v),
+  z.string().uuid().nullable()
+);
+
 const createSchema = z.object({
   code: z
     .string()
@@ -50,7 +55,10 @@ const createSchema = z.object({
     .regex(/^[a-z0-9_]+$/, 'Code en minuscule, chiffres et underscores uniquement'),
   label: z.string().min(1).max(255),
   scope: z.enum(SCOPE_VALUES),
-  category: categoryPreprocess.optional(),
+  // V12bis PR2 — categoryId FK remplace l'enum hardcodé (enum gardé en parallèle
+  // pour compat documents-manager auto-prefill).
+  categoryId: uuidOrNull.optional(),
+  supplierTypeId: uuidOrNull.optional(),
   hasExpiration: checkboxToBool.optional(),
   isRequired: checkboxToBool.optional(),
   appliesToTenantType: tenantPreprocess.optional(),
@@ -59,13 +67,31 @@ const createSchema = z.object({
 const updateSchema = z.object({
   id: z.string().uuid(),
   label: z.string().min(1).max(255),
-  category: categoryPreprocess,
+  categoryId: uuidOrNull,
+  supplierTypeId: uuidOrNull,
   hasExpiration: checkboxToBool,
   isRequired: checkboxToBool,
   appliesToTenantType: tenantPreprocess,
   sortOrder: z.preprocess((v) => Number(v ?? 0), z.number().int().min(0).max(9999)),
   isActive: checkboxToBool,
 });
+
+// Lookup categoryId → enum code (pour compat documents-manager auto-prefill).
+// Si le code de la catégorie est dans l'enum legacy, on l'écrit aussi dans
+// documentTypes.category. Sinon (ex: URBANISME), null.
+async function resolveLegacyCategoryEnum(
+  categoryId: string | null
+): Promise<(typeof CATEGORY_VALUES)[number] | null> {
+  if (!categoryId) return null;
+  const [row] = await db
+    .select({ code: documentCategories.code })
+    .from(documentCategories)
+    .where(eq(documentCategories.id, categoryId))
+    .limit(1);
+  if (!row) return null;
+  const legacy = CATEGORY_VALUES.find((v) => v === row.code);
+  return legacy ?? null;
+}
 
 function humanizeDbError(e: unknown, code: string, scope: string): string {
   const msg = e instanceof Error ? e.message : String(e);
@@ -92,16 +118,29 @@ export async function createDocumentTypeAction(
     };
   }
 
-  const { code, label, scope, category, hasExpiration, isRequired, appliesToTenantType } = parsed.data;
+  const {
+    code,
+    label,
+    scope,
+    categoryId,
+    supplierTypeId,
+    hasExpiration,
+    isRequired,
+    appliesToTenantType,
+  } = parsed.data;
 
   const finalAppliesTo = scope === 'customer' ? appliesToTenantType ?? null : null;
+  const finalSupplierTypeId = scope === 'supplier' ? supplierTypeId ?? null : null;
+  const legacyCategoryEnum = await resolveLegacyCategoryEnum(categoryId ?? null);
 
   try {
     await db.insert(documentTypes).values({
       code,
       label,
       scope,
-      category: category ?? null,
+      category: legacyCategoryEnum,
+      categoryId: categoryId ?? null,
+      supplierTypeId: finalSupplierTypeId,
       hasExpiration: hasExpiration ?? false,
       isRequired: isRequired ?? false,
       appliesToTenantType: finalAppliesTo,
@@ -131,12 +170,17 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
 
   const finalAppliesTo =
     current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
+  const finalSupplierTypeId =
+    current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
+  const legacyCategoryEnum = await resolveLegacyCategoryEnum(parsed.data.categoryId);
 
   await db
     .update(documentTypes)
     .set({
       label: parsed.data.label,
-      category: parsed.data.category,
+      category: legacyCategoryEnum,
+      categoryId: parsed.data.categoryId,
+      supplierTypeId: finalSupplierTypeId,
       hasExpiration: parsed.data.hasExpiration,
       isRequired: parsed.data.isRequired,
       appliesToTenantType: finalAppliesTo,

@@ -141,6 +141,13 @@
       "when": 1747100000000,
       "tag": "0019_company_accounting_docs",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1747500000000,
+      "tag": "0020_supplier_types_and_doc_categories",
+      "breakpoints": true
     }
   ]
 }
