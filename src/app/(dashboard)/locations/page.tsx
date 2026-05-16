@@ -98,9 +98,8 @@ export default async function LocationsListPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* <a href> et pas <Link> : full reload pour bypass l'intercept
-              @sheet/(.)clients/[id] qui capturerait sinon le segment "new"
-              et laisserait /locations affiché derrière. */}
+          {/* <a href> natif : full reload pour éviter une soft-nav qui
+              pourrait conserver l'état précédent du layout. */}
           <a
             href="/clients/new?returnTo=/locations"
             className="btn-secondary"

@@ -7,10 +7,8 @@ const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
 
 export default async function DashboardLayout({
   children,
-  sheet,
 }: {
   children: React.ReactNode;
-  sheet: React.ReactNode;
 }) {
   let userEmail: string | null = null;
 
@@ -49,7 +47,6 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
-      {sheet}
     </div>
   );
 }
