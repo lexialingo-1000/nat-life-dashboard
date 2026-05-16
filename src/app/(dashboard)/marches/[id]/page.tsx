@@ -320,7 +320,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         </p>
       </div>
       <InlineSousLotForm marcheId={marche.id} />
-      <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}`} />
+      <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}?tab=suivi`} />
     </div>
   );
 

@@ -168,6 +168,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   let lotDocTypes: any[] = [];
   let lotPhotos: any[] = [];
   let lotPhotoTypeId: string | null = null;
+  let lotPlans: any[] = [];
+  let lotPlanType: any | null = null;
   if (lot) {
     lotDocs = await db
       .select({
@@ -198,6 +200,28 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       .orderBy(asc(documentTypes.sortOrder));
 
     lotPhotoTypeId = lotDocTypes.find((t) => t.code === 'photo')?.id ?? null;
+    lotPlanType = lotDocTypes.find((t) => t.code === 'plan') ?? null;
+    lotPlans = await db
+      .select({
+        id: lotDocuments.id,
+        name: lotDocuments.name,
+        typeLabel: documentTypes.label,
+        storageKey: lotDocuments.storageKey,
+        expiresAt: lotDocuments.expiresAt,
+        documentDate: lotDocuments.documentDate,
+        uploadedAt: lotDocuments.uploadedAt,
+        category: lotDocuments.category,
+      })
+      .from(lotDocuments)
+      .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
+      .where(
+        and(
+          eq(lotDocuments.lotId, lot.id),
+          eq(documentTypes.code, 'plan'),
+          eq(documentTypes.scope, 'lot'),
+        )
+      )
+      .orderBy(desc(lotDocuments.uploadedAt));
 
     // Photos = lot_documents filtrées sur type code='photo'.
     lotPhotos = await db
@@ -353,6 +377,10 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     </div>
   );
 
+  // V12bis PR4 D1 — filtre les types photo/plan du tab Documents (onglets dédiés).
+  const lotDocTypesNoMedia = lotDocTypes.filter((t) => t.code !== 'photo' && t.code !== 'plan');
+  const lotDocsNoMedia = lotDocs.filter((d) => d.typeCode !== 'photo' && d.typeCode !== 'plan');
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -360,7 +388,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         parentId={lot.id}
         parentSlug={slugify(`${lot.propertyName}-${lot.name}`)}
         parentIdFieldName="lotId"
-        documents={lotDocs.map((d) => ({
+        documents={lotDocsNoMedia.map((d) => ({
           id: d.id,
           name: d.name,
           typeLabel: d.typeLabel,
@@ -370,11 +398,46 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
-        availableTypes={lotDocTypes}
+        availableTypes={lotDocTypesNoMedia}
         uploadAction={uploadLotDocumentAction}
         deleteAction={deleteLotDocumentAction}
         getUrlAction={getLotDocumentUrlAction}
       />
+    </div>
+  );
+
+  // V12bis PR4 D1 — onglet Plans dédié (analogue à photosTab, type 'plan' scope=lot).
+  const plansTab = (
+    <div className="card p-6">
+      {lotPlanType ? (
+        <DocumentsManager
+          scope="lots"
+          parentId={lot.id}
+          parentSlug={slugify(`${lot.propertyName}-${lot.name}`)}
+          parentIdFieldName="lotId"
+          documents={lotPlans.map((d) => ({
+            id: d.id,
+            name: d.name,
+            typeLabel: d.typeLabel,
+            storageKey: d.storageKey,
+            documentDate: d.documentDate,
+            expiresAt: d.expiresAt,
+            uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+            category: d.category,
+          }))}
+          availableTypes={[lotPlanType]}
+          uploadAction={uploadLotDocumentAction}
+          deleteAction={deleteLotDocumentAction}
+          getUrlAction={getLotDocumentUrlAction}
+        />
+      ) : (
+        <p className="text-[13px] text-zinc-500">
+          Type de document « Plan » non configuré pour le scope Lot.{' '}
+          <Link href="/admin/types-documents" className="text-blue-700 hover:underline">
+            Ajouter via Paramètres → Types de documents.
+          </Link>
+        </p>
+      )}
     </div>
   );
 
@@ -424,7 +487,13 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       count: lotPhotos.length || undefined,
       content: photosTab,
     },
-    { id: 'documents', label: 'Documents', count: lotDocs.length, content: documentsTab },
+    {
+      id: 'plans',
+      label: 'Plans',
+      count: lotPlans.length || undefined,
+      content: plansTab,
+    },
+    { id: 'documents', label: 'Documents', count: lotDocsNoMedia.length, content: documentsTab },
   ];
 
   return (

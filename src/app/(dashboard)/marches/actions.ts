@@ -317,6 +317,10 @@ const tacheCreateSchema = z.object({
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   status: z.enum(tacheStatusValues).default('a_faire'),
+  // V12bis PR4 J4
+  dueDate: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().nullable())
+    .optional(),
 });
 
 const tacheUpdateSchema = tacheCreateSchema.extend({
@@ -332,6 +336,7 @@ export async function createTacheAction(formData: FormData): Promise<void> {
     locationDescription: formData.get('locationDescription'),
     supplierContactId: formData.get('supplierContactId'),
     status: formData.get('status') ?? 'a_faire',
+    dueDate: formData.get('dueDate'),
   });
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -346,6 +351,7 @@ export async function createTacheAction(formData: FormData): Promise<void> {
     locationDescription: data.locationDescription || null,
     supplierContactId: data.supplierContactId || null,
     status: data.status,
+    dueDate: data.dueDate || null,
   });
 
   const returnTo = formData.get('returnTo');

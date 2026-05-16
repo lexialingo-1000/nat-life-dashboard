@@ -100,18 +100,32 @@ export default async function NewTachePage({
           />
         </div>
 
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Description</label>
-          <textarea
-            name="description"
-            rows={3}
-            className="input mt-1"
-            placeholder="Détails techniques, dimensions, références…"
-            autoComplete="off"
-            data-form-type="other"
-            data-lpignore="true"
-            data-1p-ignore="true"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">Échéance</label>
+            <input
+              type="date"
+              name="dueDate"
+              className="input mt-1"
+              autoComplete="off"
+            />
+            <p className="mt-1 text-[11px] text-zinc-500">
+              Date limite prévue pour la tâche.
+            </p>
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">Description</label>
+            <textarea
+              name="description"
+              rows={2}
+              className="input mt-1"
+              placeholder="Détails (optionnel)"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
+          </div>
         </div>
 
         <div>

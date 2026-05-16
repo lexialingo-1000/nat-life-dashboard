@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 export interface TabItem {
   id: string;
@@ -12,10 +13,44 @@ export interface TabItem {
 interface Props {
   tabs: TabItem[];
   defaultTabId?: string;
+  /** V12bis PR4 — sync l'ID actif avec ?tab=… dans l'URL. */
+  syncWithSearchParams?: boolean;
 }
 
-export function Tabs({ tabs, defaultTabId }: Props) {
-  const [activeId, setActiveId] = useState<string>(defaultTabId ?? tabs[0]?.id ?? '');
+export function Tabs({ tabs, defaultTabId, syncWithSearchParams = true }: Props) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const initialId = (() => {
+    if (syncWithSearchParams) {
+      const fromUrl = searchParams?.get('tab');
+      if (fromUrl && tabs.some((t) => t.id === fromUrl)) return fromUrl;
+    }
+    return defaultTabId ?? tabs[0]?.id ?? '';
+  })();
+
+  const [activeId, setActiveId] = useState<string>(initialId);
+
+  // Sync state ↔ URL bidirectionnel.
+  useEffect(() => {
+    if (!syncWithSearchParams) return;
+    const fromUrl = searchParams?.get('tab');
+    if (fromUrl && fromUrl !== activeId && tabs.some((t) => t.id === fromUrl)) {
+      setActiveId(fromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const onSelect = (id: string) => {
+    setActiveId(id);
+    if (syncWithSearchParams && pathname) {
+      const params = new URLSearchParams(searchParams?.toString() ?? '');
+      params.set('tab', id);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  };
+
   const active = tabs.find((t) => t.id === activeId) ?? tabs[0];
 
   return (
@@ -31,7 +66,7 @@ export function Tabs({ tabs, defaultTabId }: Props) {
               aria-controls={`tab-panel-${tab.id}`}
               id={`tab-${tab.id}`}
               type="button"
-              onClick={() => setActiveId(tab.id)}
+              onClick={() => onSelect(tab.id)}
               className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'text-zinc-900'

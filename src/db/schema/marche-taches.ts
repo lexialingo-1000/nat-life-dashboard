@@ -38,6 +38,8 @@ export const marcheTaches = pgTable('marche_taches', {
   /** @deprecated V1.8 — utiliser `photos[]`. Conservé pour rétrocompat, à drop en V1.8.5+. */
   pictureStorageKey: text('picture_storage_key'),
   status: marcheTacheStatusEnum('status').notNull().default('a_faire'),
+  // V12bis PR4 J4 — échéance (remplace progressivement description sur les forms).
+  dueDate: date('due_date'),
   completedAt: date('completed_at'),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

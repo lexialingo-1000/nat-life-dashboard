@@ -1,8 +1,10 @@
 'use client';
 
+import { useTransition } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Plus, Camera, MapPin, User } from 'lucide-react';
+import { ChevronRight, Plus, Camera, MapPin, User, Trash2 } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
+import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 
 /**
  * Vue cascade Marché > Sous-lot > Tâches dépliable, pattern `<details>` HTML
@@ -175,6 +177,7 @@ function SousLotBranch({
           >
             <Plus className="h-3 w-3" strokeWidth={2} /> Ajouter
           </Link>
+          <DeleteSousLotButton id={sousLot.id} name={sousLot.name} marcheId={marcheId} />
         </div>
       </summary>
       <div className="border-t border-zinc-100">
@@ -218,7 +221,59 @@ function TacheRow({ tache, returnTo }: { tache: TacheNode; returnTo: string }) {
             {tache.photosCount}
           </span>
         )}
+        <DeleteTacheButton id={tache.id} title={tache.title} />
       </div>
     </li>
+  );
+}
+
+// V12bis PR4 J1 — boutons de suppression inline sur sous-lot + tâche.
+
+function DeleteSousLotButton({ id, name, marcheId }: { id: string; name: string; marcheId: string }) {
+  const [pending, startTransition] = useTransition();
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Supprimer le sous-lot "${name}" ? Cette action supprime aussi toutes ses tâches associées.`)) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('id', id);
+      fd.set('marcheId', marcheId);
+      await deleteSousLotAction(fd);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      title="Supprimer ce sous-lot"
+      className="rounded p-0.5 text-zinc-300 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+    >
+      <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+    </button>
+  );
+}
+
+function DeleteTacheButton({ id, title }: { id: string; title: string }) {
+  const [pending, startTransition] = useTransition();
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Supprimer la tâche "${title}" ?`)) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('id', id);
+      await deleteTacheAction(fd);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      title="Supprimer cette tâche"
+      className="rounded p-0.5 text-zinc-300 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+    >
+      <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+    </button>
   );
 }

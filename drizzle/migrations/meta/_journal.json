@@ -148,6 +148,13 @@
       "when": 1747500000000,
       "tag": "0020_supplier_types_and_doc_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1747510000000,
+      "tag": "0021_marche_taches_due_date_and_lot_plan_type",
+      "breakpoints": true
     }
   ]
 }
