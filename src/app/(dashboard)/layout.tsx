@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components/sidebar';
+import { Breadcrumb } from '@/components/breadcrumb';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -43,7 +44,10 @@ export default async function DashboardLayout({
             <span className="kbd">.env.local</span> pour réactiver Supabase Auth.
           </div>
         )}
-        <div className="max-w-[1280px] px-10 py-7">{children}</div>
+        <div className="max-w-[1280px] px-10 py-7">
+          <Breadcrumb />
+          {children}
+        </div>
       </main>
       {sheet}
     </div>

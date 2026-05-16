@@ -8,12 +8,15 @@ import { updatePropertyAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
+// Loué/Vacant retirés en V12bis : le statut locatif appartient au LOT, pas au BIEN.
+// Migration enum `en_portefeuille` reportée à V1.10/PR5 ; en attendant on conserve
+// les valeurs DB existantes via hidden input quand le statut courant est legacy.
 const STATUT_OPTIONS = [
-  { value: 'loue', label: 'Loué' },
-  { value: 'vacant', label: 'Vacant' },
-  { value: 'en_cours_acquisition', label: 'En cours Acquisition' },
+  { value: 'en_cours_acquisition', label: 'En portefeuille' },
   { value: 'vendu', label: 'Vendu' },
 ];
+
+const LEGACY_STATUS = new Set(['loue', 'vacant']);
 
 const TYPE_OPTIONS = [
   { value: 'appartement', label: 'Appartement' },
@@ -92,13 +95,29 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
               </select>
             </Field>
             <Field label="Statut" required>
-              <select name="statut" defaultValue={p.statut ?? 'vacant'} required className="input">
-                {STATUT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              {p.statut && LEGACY_STATUS.has(p.statut) ? (
+                <>
+                  <input type="hidden" name="statut" value={p.statut} />
+                  <input
+                    value={p.statut === 'loue' ? 'Loué (legacy lot)' : 'Vacant (legacy lot)'}
+                    disabled
+                    className="input bg-zinc-50 text-zinc-500"
+                  />
+                </>
+              ) : (
+                <select
+                  name="statut"
+                  defaultValue={p.statut && !LEGACY_STATUS.has(p.statut) ? p.statut : 'en_cours_acquisition'}
+                  required
+                  className="input"
+                >
+                  {STATUT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </Field>
           </div>
         </Section>

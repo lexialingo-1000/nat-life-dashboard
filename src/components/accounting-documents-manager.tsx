@@ -222,7 +222,7 @@ export function AccountingDocumentsManager({
       },
       {
         accessorKey: 'documentDate',
-        header: 'Date',
+        header: 'Date document',
         sortingFn: 'datetime',
         cell: ({ row }) => (
           <span className="tnum text-[12px] text-zinc-700">{formatDate(row.original.documentDate)}</span>

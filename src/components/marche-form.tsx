@@ -180,25 +180,8 @@ export function MarcheForm({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium">Date du devis</label>
-          <input
-            name="dateDevis"
-            type="date"
-            defaultValue={defaultValues.dateDevis ?? ''}
-            className="input mt-1"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Date de signature</label>
-          <input
-            name="dateSignature"
-            type="date"
-            defaultValue={defaultValues.dateSignature ?? ''}
-            className="input mt-1"
-          />
-        </div>
+        <input type="hidden" name="dateDevis" value={defaultValues.dateDevis ?? ''} />
+        <input type="hidden" name="dateSignature" value={defaultValues.dateSignature ?? ''} />
 
         <div>
           <label className="block text-sm font-medium">Début prévu</label>

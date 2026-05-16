@@ -105,17 +105,7 @@ export default async function EditLotPage({ params }: { params: { id: string } }
               className="input mt-1 tabular-nums"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium">Surface Boutin (m²)</label>
-            <input
-              name="surfaceBoutin"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={lot.surfaceBoutin ?? ''}
-              className="input mt-1 tabular-nums"
-            />
-          </div>
+          <input type="hidden" name="surfaceBoutin" value={lot.surfaceBoutin ?? ''} />
         </div>
 
         <div>

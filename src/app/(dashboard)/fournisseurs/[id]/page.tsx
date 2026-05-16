@@ -307,7 +307,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       content: marchesTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'factures', label: 'Factures', content: facturesTab },
+    { id: 'factures', label: 'Compta', content: facturesTab },
   ];
 
   return (

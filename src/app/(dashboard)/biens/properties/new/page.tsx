@@ -7,10 +7,9 @@ import { createPropertyAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
+// V12bis : Loué/Vacant retirés — statut locatif vit sur le LOT.
 const PROPERTY_STATUTS = [
-  { value: 'loue', label: 'Loué' },
-  { value: 'vacant', label: 'Vacant' },
-  { value: 'en_cours_acquisition', label: 'En cours Acquisition' },
+  { value: 'en_cours_acquisition', label: 'En portefeuille' },
   { value: 'vendu', label: 'Vendu' },
 ] as const;
 
@@ -90,7 +89,7 @@ export default async function NewPropertyPage() {
             <label className="block text-sm font-medium text-zinc-700">
               Statut <span className="text-red-500">*</span>
             </label>
-            <select name="statut" required className="input mt-1" defaultValue="vacant">
+            <select name="statut" required className="input mt-1" defaultValue="en_cours_acquisition">
               {PROPERTY_STATUTS.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}

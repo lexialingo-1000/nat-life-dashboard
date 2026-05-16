@@ -272,8 +272,6 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
                 : '—'}
             </span>
           </Row>
-          <Row label="Date devis">{marche.dateDevis ?? '—'}</Row>
-          <Row label="Date signature">{marche.dateSignature ?? '—'}</Row>
           <Row label="Début prévu">{marche.dateDebutPrevu ?? '—'}</Row>
           <Row label="Fin prévue">{marche.dateFinPrevu ?? '—'}</Row>
           <Row label="Début réel">{marche.dateDebutReel ?? '—'}</Row>

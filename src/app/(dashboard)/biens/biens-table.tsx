@@ -51,28 +51,6 @@ const STATUS_BADGES: Record<string, string> = {
 
 const baseColumns: ColumnDef<BienLotRow>[] = [
   {
-    accessorKey: 'propertyName',
-    header: 'Bien',
-    cell: ({ row }) => {
-      const statut = row.original.propertyStatut;
-      return (
-        <div className="flex items-center gap-2 whitespace-nowrap">
-          <Link
-            href={`/biens/properties/${row.original.propertyId}`}
-            className="link-cell font-medium uppercase tracking-[0.04em]"
-          >
-            {row.original.propertyName}
-          </Link>
-          {statut && (
-            <span className={PROPERTY_STATUT_BADGES[statut] ?? 'badge-neutral'}>
-              {PROPERTY_STATUT_LABELS[statut] ?? statut}
-            </span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: 'lotName',
     header: 'Lot',
     cell: ({ row }) => {
@@ -89,10 +67,34 @@ const baseColumns: ColumnDef<BienLotRow>[] = [
       return (
         <Link
           href={`/biens/lots/${row.original.lotId}`}
-          className="link-cell-soft whitespace-nowrap"
+          className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
         >
           {row.original.lotName}
         </Link>
+      );
+    },
+    sortingFn: (a, b) =>
+      (a.original.lotName ?? '').localeCompare(b.original.lotName ?? '', 'fr', { sensitivity: 'base' }),
+  },
+  {
+    accessorKey: 'propertyName',
+    header: 'Bien',
+    cell: ({ row }) => {
+      const statut = row.original.propertyStatut;
+      return (
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Link
+            href={`/biens/properties/${row.original.propertyId}`}
+            className="link-cell-soft text-[12px]"
+          >
+            {row.original.propertyName}
+          </Link>
+          {statut && (
+            <span className={PROPERTY_STATUT_BADGES[statut] ?? 'badge-neutral'}>
+              {PROPERTY_STATUT_LABELS[statut] ?? statut}
+            </span>
+          )}
+        </div>
       );
     },
   },
@@ -177,5 +179,13 @@ export function BiensTable({ rows, deleteAction }: Props) {
     ];
   }, [deleteAction]);
 
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucun lot." enableSelection />;
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyMessage="Aucun lot."
+      enableSelection
+      initialSorting={[{ id: 'lotName', desc: false }]}
+    />
+  );
 }
