@@ -6,6 +6,8 @@ import {
   documentTypes,
   marchesTravaux,
   properties,
+  companies,
+  companyAccountingDocuments,
 } from '@/db/schema';
 import { eq, and, asc, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -282,17 +284,108 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
+  // V12bis PR5 B2 — Compta agrégée : devis/commandes/factures de toutes les
+  // sociétés où ce fournisseur intervient.
+  const supplierAccountingDocs = await db
+    .select({
+      id: companyAccountingDocuments.id,
+      kind: companyAccountingDocuments.kind,
+      name: companyAccountingDocuments.name,
+      documentDate: companyAccountingDocuments.documentDate,
+      amountHt: companyAccountingDocuments.amountHt,
+      amountTtc: companyAccountingDocuments.amountTtc,
+      uploadedAt: companyAccountingDocuments.uploadedAt,
+      companyId: companies.id,
+      companyName: companies.name,
+      marcheId: marchesTravaux.id,
+      marcheName: marchesTravaux.name,
+    })
+    .from(companyAccountingDocuments)
+    .innerJoin(companies, eq(companies.id, companyAccountingDocuments.companyId))
+    .leftJoin(marchesTravaux, eq(marchesTravaux.id, companyAccountingDocuments.marcheId))
+    .where(eq(companyAccountingDocuments.supplierId, s.id))
+    .orderBy(desc(companyAccountingDocuments.documentDate), desc(companyAccountingDocuments.uploadedAt));
+
+  const KIND_LABEL: Record<string, string> = {
+    devis: 'Devis',
+    commande: 'Commande',
+    facture: 'Facture',
+  };
+  const KIND_BADGE: Record<string, string> = {
+    devis: 'bg-zinc-100 text-zinc-700',
+    commande: 'bg-blue-100 text-blue-700',
+    facture: 'bg-emerald-100 text-emerald-700',
+  };
+
+  const totalHt = supplierAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
+    0
+  );
+
   const facturesTab = (
-    <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Aucune facture pour l'instant. La synchronisation Pennylane (achats) arrivera en V1.5
-        après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
-        septembre 2026).
-      </p>
-      <p className="mt-3 text-[12px] text-zinc-400">
-        En attendant, les factures peuvent être archivées dans l'onglet « Documents » avec le
-        type « Autre ».
-      </p>
+    <div className="card p-6 space-y-4">
+      {supplierAccountingDocs.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Aucun devis / commande / facture rattaché à ce fournisseur. Les documents compta sont
+          saisis sur la fiche société (onglet Compta).
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-zinc-500">
+              {supplierAccountingDocs.length} document{supplierAccountingDocs.length > 1 ? 's' : ''} compta
+              · agrégés depuis toutes les sociétés.
+            </p>
+            <span className="font-mono text-[13px] tabular-nums text-zinc-700">
+              Total HT : {totalHt.toLocaleString('fr-FR')} €
+            </span>
+          </div>
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Société</th>
+                <th>Marché</th>
+                <th>Date document</th>
+                <th>Document</th>
+                <th className="text-right">HT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplierAccountingDocs.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <span className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${KIND_BADGE[d.kind] ?? ''}`}>
+                      {KIND_LABEL[d.kind] ?? d.kind}
+                    </span>
+                  </td>
+                  <td>
+                    <Link href={`/societes/${d.companyId}`} className="link-cell-soft text-[12px]">
+                      {d.companyName}
+                    </Link>
+                  </td>
+                  <td className="text-[12px] text-zinc-500">
+                    {d.marcheId ? (
+                      <Link href={`/marches/${d.marcheId}`} className="link-cell-soft">
+                        {d.marcheName}
+                      </Link>
+                    ) : (
+                      <span className="text-zinc-300">—</span>
+                    )}
+                  </td>
+                  <td className="font-mono text-[12px] tabular-nums text-zinc-700">
+                    {d.documentDate ?? '—'}
+                  </td>
+                  <td className="text-[13px] text-zinc-900">{d.name}</td>
+                  <td className="text-right font-mono tabular-nums">
+                    {d.amountHt ? `${Number(d.amountHt).toLocaleString('fr-FR')} €` : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   );
 
@@ -307,7 +400,12 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       content: marchesTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'factures', label: 'Compta', content: facturesTab },
+    {
+      id: 'factures',
+      label: 'Compta',
+      count: supplierAccountingDocs.length || undefined,
+      content: facturesTab,
+    },
   ];
 
   return (

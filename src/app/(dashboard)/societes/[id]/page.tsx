@@ -134,6 +134,9 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           <Row label="SIREN">
             <span className="font-mono tnum">{company.siren ?? '—'}</span>
           </Row>
+          <Row label="N° TVA intracom">
+            <span className="font-mono tnum">{(company as any).tvaIntracom ?? '—'}</span>
+          </Row>
         </dl>
       </div>
       <div className="card p-5">

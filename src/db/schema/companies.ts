@@ -12,6 +12,8 @@ export const companies = pgTable('companies', {
   address: text('address'),
   activitePrincipale: text('activite_principale'),
   nafCode: varchar('naf_code', { length: 10 }),
+  // V12bis PR5 A1 — numéro TVA intracom
+  tvaIntracom: varchar('tva_intracom', { length: 20 }),
   isActive: boolean('is_active').notNull().default(true),
   settings: jsonb('settings').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

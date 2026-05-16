@@ -37,6 +37,7 @@ export default async function EditSocietePage({ params }: { params: { id: string
             address: company.address,
             activitePrincipale: company.activitePrincipale,
             nafCode: company.nafCode,
+            tvaIntracom: (company as { tvaIntracom?: string | null }).tvaIntracom ?? '',
             isActive: (company as { isActive?: boolean }).isActive ?? true,
           }}
           enableSirenLookup

@@ -33,6 +33,12 @@ const createSchema = z.object({
   address: z.string().optional().or(z.literal('')),
   activitePrincipale: z.string().optional().or(z.literal('')),
   nafCode: z.string().optional().or(z.literal('')),
+  tvaIntracom: z
+    .string()
+    .max(20)
+    .regex(/^[A-Z0-9 ]*$/i, 'Format invalide')
+    .optional()
+    .or(z.literal('')),
 });
 
 export async function lookupSirenAction(formData: FormData) {
@@ -80,13 +86,14 @@ export async function createSocieteAction(formData: FormData) {
     address: formData.get('address'),
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
+    tvaIntracom: formData.get('tvaIntracom'),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }
 
-  const { siren, address, activitePrincipale, nafCode, formeJuridique, ...rest } = parsed.data;
+  const { siren, address, activitePrincipale, nafCode, tvaIntracom, formeJuridique, ...rest } = parsed.data;
 
   await db.insert(companies).values({
     ...rest,
@@ -95,6 +102,7 @@ export async function createSocieteAction(formData: FormData) {
     address: address || null,
     activitePrincipale: activitePrincipale || null,
     nafCode: nafCode || null,
+    tvaIntracom: tvaIntracom || null,
   });
 
   revalidatePath('/societes');
@@ -119,6 +127,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     address: formData.get('address'),
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
+    tvaIntracom: formData.get('tvaIntracom'),
     isActive: formData.get('isActive'),
   });
 
@@ -126,7 +135,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
 
-  const { id, siren, address, activitePrincipale, nafCode, formeJuridique, isActive, ...rest } =
+  const { id, siren, address, activitePrincipale, nafCode, tvaIntracom, formeJuridique, isActive, ...rest } =
     parsed.data;
 
   await db
@@ -138,6 +147,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
       address: address || null,
       activitePrincipale: activitePrincipale || null,
       nafCode: nafCode || null,
+      tvaIntracom: tvaIntracom || null,
       isActive,
       updatedAt: new Date(),
     })

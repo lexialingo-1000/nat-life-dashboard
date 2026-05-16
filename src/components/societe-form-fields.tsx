@@ -24,6 +24,7 @@ export interface SocieteFormValues {
   address?: string | null;
   activitePrincipale?: string | null;
   nafCode?: string | null;
+  tvaIntracom?: string | null;
   isActive?: boolean;
 }
 
@@ -51,6 +52,7 @@ export function SocieteFormFields({
     defaultValues.activitePrincipale ?? ''
   );
   const [nafCode, setNafCode] = useState(defaultValues.nafCode ?? '');
+  const [tvaIntracom, setTvaIntracom] = useState(defaultValues.tvaIntracom ?? '');
   const [isActive, setIsActive] = useState(defaultValues.isActive ?? true);
 
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -184,16 +186,31 @@ export function SocieteFormFields({
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium">Code NAF</label>
-        <input
-          type="text"
-          name="nafCode"
-          value={nafCode}
-          onChange={(e) => setNafCode(e.target.value)}
-          className="input mt-1 font-mono text-sm"
-          placeholder="68.20B"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Code NAF</label>
+          <input
+            type="text"
+            name="nafCode"
+            value={nafCode}
+            onChange={(e) => setNafCode(e.target.value)}
+            className="input mt-1 font-mono text-sm"
+            placeholder="68.20B"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">N° TVA intracom</label>
+          <input
+            type="text"
+            name="tvaIntracom"
+            value={tvaIntracom}
+            onChange={(e) => setTvaIntracom(e.target.value.toUpperCase())}
+            className="input mt-1 font-mono text-sm"
+            placeholder="FRXX123456789"
+            maxLength={20}
+          />
+          <p className="mt-1 text-[11px] text-zinc-500">Format FR + 11 chiffres. Optionnel.</p>
+        </div>
       </div>
 
       {showActiveToggle && (

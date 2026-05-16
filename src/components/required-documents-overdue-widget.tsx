@@ -6,6 +6,8 @@ import {
   supplierDocuments,
   customers,
   customerDocuments,
+  companies,
+  companyDocuments,
 } from '@/db/schema';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -156,11 +158,64 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
       LIMIT 50
     `);
 
-  const [supplierMissing, supplierExpired, customerMissing, customerExpired] = await Promise.all([
+  // V12bis PR5 L1 — étendu aux sociétés
+  const companyMissingRun = () =>
+    db.execute<{
+      company_id: string;
+      company_label: string;
+      type_id: string;
+      type_label: string;
+    }>(sql`
+      SELECT c.id AS company_id,
+             c.name AS company_label,
+             dt.id AS type_id,
+             dt.label AS type_label
+      FROM ${companies} c
+      CROSS JOIN ${documentTypes} dt
+      WHERE c.is_active = true
+        AND dt.is_active = true
+        AND dt.is_required = true
+        AND dt.scope = 'company'
+        AND NOT EXISTS (
+          SELECT 1 FROM ${companyDocuments} cd
+          WHERE cd.company_id = c.id AND cd.type_id = dt.id
+        )
+      ORDER BY company_label, dt.sort_order
+      LIMIT 50
+    `);
+
+  const companyExpiredRun = () =>
+    db.execute<{
+      doc_id: string;
+      company_id: string;
+      company_label: string;
+      type_label: string;
+      expires_at: string;
+    }>(sql`
+      SELECT cd.id AS doc_id,
+             c.id AS company_id,
+             c.name AS company_label,
+             dt.label AS type_label,
+             cd.expires_at::text AS expires_at
+      FROM ${companyDocuments} cd
+      INNER JOIN ${companies} c ON c.id = cd.company_id
+      INNER JOIN ${documentTypes} dt ON dt.id = cd.type_id
+      WHERE dt.is_required = true
+        AND dt.scope = 'company'
+        AND c.is_active = true
+        AND cd.expires_at IS NOT NULL
+        AND cd.expires_at < ${today}::date
+      ORDER BY cd.expires_at
+      LIMIT 50
+    `);
+
+  const [supplierMissing, supplierExpired, customerMissing, customerExpired, companyMissing, companyExpired] = await Promise.all([
     safeQuery('supplierMissing', supplierMissingRun),
     safeQuery('supplierExpired', supplierExpiredRun),
     safeQuery('customerMissing', customerMissingRun),
     safeQuery('customerExpired', customerExpiredRun),
+    safeQuery('companyMissing', companyMissingRun),
+    safeQuery('companyExpired', companyExpiredRun),
   ]);
 
   const items: OverdueItem[] = [];
@@ -198,6 +253,26 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
       key: `cus-exp-${row.doc_id}`,
       entityLabel: row.customer_label,
       entityLink: `/clients/${row.customer_id}`,
+      typeLabel: row.type_label,
+      state: 'expired',
+      expiresAt: row.expires_at,
+    });
+  }
+  // V12bis PR5 L1
+  for (const row of companyMissing) {
+    items.push({
+      key: `cmp-miss-${row.company_id}-${row.type_id}`,
+      entityLabel: row.company_label,
+      entityLink: `/societes/${row.company_id}`,
+      typeLabel: row.type_label,
+      state: 'missing',
+    });
+  }
+  for (const row of companyExpired) {
+    items.push({
+      key: `cmp-exp-${row.doc_id}`,
+      entityLabel: row.company_label,
+      entityLink: `/societes/${row.company_id}`,
       typeLabel: row.type_label,
       state: 'expired',
       expiresAt: row.expires_at,
