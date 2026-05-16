@@ -26,9 +26,21 @@ interface Props {
   /** Server action de création inline (FormData → { id, label } | { error }). */
   createAction?: (formData: FormData) => Promise<CreateResult>;
   /** Champs à demander dans le mini-form de création. Default = name+contact. */
-  createFields?: Array<'companyName' | 'firstName' | 'lastName' | 'email' | 'phone'>;
+  createFields?: Array<
+    | 'companyName'
+    | 'firstName'
+    | 'lastName'
+    | 'email'
+    | 'phone'
+    | 'name'
+    | 'description'
+  >;
   /** Mode requis (l'input caché doit avoir une valeur). */
   required?: boolean;
+  /** Callback déclenché à chaque changement de sélection (id ou ''). */
+  onChange?: (id: string) => void;
+  /** Désactiver le bouton (utilisé quand le combobox dépend d'un parent). */
+  disabled?: boolean;
 }
 
 /**
@@ -45,9 +57,15 @@ export function EntityCombobox({
   createAction,
   createFields = ['companyName', 'firstName', 'lastName', 'email', 'phone'],
   required = false,
+  onChange,
+  disabled = false,
 }: Props) {
   const [options, setOptions] = useState(initialOptions);
-  const [selectedId, setSelectedId] = useState(defaultValue ?? '');
+  const [selectedId, setSelectedIdState] = useState(defaultValue ?? '');
+  const setSelectedId = (id: string) => {
+    setSelectedIdState(id);
+    onChange?.(id);
+  };
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -108,8 +126,9 @@ export function EntityCombobox({
 
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className="input mt-1 flex w-full items-center justify-between text-left"
+        className="input mt-1 flex w-full items-center justify-between text-left disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400"
       >
         <span className={selected ? 'text-zinc-900' : 'text-zinc-400'}>
           {selected ? selected.label : placeholder}
@@ -121,26 +140,42 @@ export function EntityCombobox({
 
       {open && (
         <div className="absolute z-30 mt-1 w-full rounded-md border border-zinc-200 bg-[#fbf8f0] shadow-lg">
-          <div className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-zinc-400" />
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filtrer…"
-              className="w-full bg-transparent text-[13px] outline-none placeholder:text-zinc-400"
-            />
-            {selectedId && (
+          {/* V12bis G1 : header sticky avec Filtrer + bouton "+ Créer" au-dessus de la liste */}
+          <div className="sticky top-0 z-10 rounded-t-md border-b border-zinc-100 bg-[#fbf8f0]">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Search className="h-3.5 w-3.5 text-zinc-400" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrer…"
+                className="w-full bg-transparent text-[13px] outline-none placeholder:text-zinc-400"
+              />
+              {selectedId && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId('');
+                  }}
+                  title="Effacer la sélection"
+                  className="rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            {createAction && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId('');
+                onClick={() => {
+                  setShowCreate(true);
+                  setOpen(false);
                 }}
-                title="Effacer la sélection"
-                className="rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                className="flex w-full items-center gap-1.5 border-t border-zinc-100 px-3 py-2 text-[12px] font-medium text-blue-700 transition-colors hover:bg-blue-50"
               >
-                <X className="h-3 w-3" />
+                <Plus className="h-3.5 w-3.5" />
+                {createLabel}
               </button>
             )}
           </div>
@@ -169,21 +204,6 @@ export function EntityCombobox({
               </li>
             ))}
           </ul>
-          {createAction && (
-            <div className="border-t border-zinc-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreate(true);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-blue-700 transition-colors hover:bg-blue-50"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {createLabel}
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -200,6 +220,30 @@ export function EntityCombobox({
             <h3 className="text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-700">
               {createLabel.replace(/^\+\s*/, '')}
             </h3>
+
+            {createFields.includes('name') && (
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-600">Nom *</label>
+                <input
+                  name="name"
+                  required
+                  className="input mt-1"
+                  placeholder="Ex : Réfection toiture Brunet"
+                />
+              </div>
+            )}
+
+            {createFields.includes('description') && (
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-600">Description</label>
+                <textarea
+                  name="description"
+                  rows={2}
+                  className="input mt-1"
+                  placeholder="(optionnel)"
+                />
+              </div>
+            )}
 
             {createFields.includes('companyName') && (
               <div>

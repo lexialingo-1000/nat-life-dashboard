@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
 import { DataTable } from './data-table';
+import { EntityCombobox, type ComboboxOption } from './entity-combobox';
 import { formatDate } from '@/lib/utils';
 
 export type AccountingDocKind = 'devis' | 'commande' | 'facture';
@@ -48,6 +49,8 @@ interface MarcheOption {
   supplierId: string;
 }
 
+type InlineCreateResult = { id: string; label: string } | { error: string };
+
 interface Props {
   kind: AccountingDocKind;
   companyId: string;
@@ -58,6 +61,8 @@ interface Props {
   uploadAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
   getUrlAction: (formData: FormData) => Promise<{ url: string } | { error: string }>;
+  // V12bis PR3 A4 — création fournisseur à la volée depuis la compta.
+  createSupplierAction?: (formData: FormData) => Promise<InlineCreateResult>;
 }
 
 export function AccountingDocumentsManager({
@@ -70,6 +75,7 @@ export function AccountingDocumentsManager({
   uploadAction,
   deleteAction,
   getUrlAction,
+  createSupplierAction,
 }: Props) {
   const [isOpen, setOpen] = useState(false);
   const [isDragging, setDragging] = useState(false);
@@ -319,31 +325,31 @@ export function AccountingDocumentsManager({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[12px] font-medium text-zinc-700">Fournisseur *</label>
-              <select
-                value={supplierId}
-                onChange={(e) => { setSupplierId(e.target.value); setMarcheId(''); }}
-                className="input mt-1"
+              <EntityCombobox
+                name="__supplierId_combobox"
+                options={suppliers as ComboboxOption[]}
+                defaultValue={supplierId}
+                placeholder="— Choisir un fournisseur —"
                 required
-              >
-                <option value="">— Choisir —</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
+                onChange={(id) => {
+                  setSupplierId(id);
+                  setMarcheId('');
+                }}
+                createLabel="+ Créer un fournisseur"
+                createAction={createSupplierAction}
+                createFields={['companyName', 'firstName', 'lastName', 'email', 'phone']}
+              />
             </div>
             <div>
               <label className="block text-[12px] font-medium text-zinc-700">Marché (optionnel)</label>
-              <select
-                value={marcheId}
-                onChange={(e) => setMarcheId(e.target.value)}
+              <EntityCombobox
+                name="__marcheId_combobox"
+                options={marchesForSupplier as ComboboxOption[]}
+                defaultValue={marcheId}
+                placeholder={supplierId ? '— Aucun marché lié —' : '— Choisir un fournisseur d\'abord —'}
                 disabled={!supplierId || marchesForSupplier.length === 0}
-                className="input mt-1"
-              >
-                <option value="">— Aucun —</option>
-                {marchesForSupplier.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </select>
+                onChange={(id) => setMarcheId(id)}
+              />
               {supplierId && marchesForSupplier.length === 0 && (
                 <p className="mt-1 text-[11px] text-zinc-500">Aucun marché pour ce fournisseur.</p>
               )}

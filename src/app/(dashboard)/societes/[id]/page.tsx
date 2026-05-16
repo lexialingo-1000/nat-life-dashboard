@@ -30,6 +30,7 @@ import {
   deleteAccountingDocAction,
   getAccountingDocUrlAction,
 } from '../accounting-actions';
+import { createSupplierInlineAction } from '../../fournisseurs/actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -312,6 +313,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           uploadAction={uploadAccountingDocAction}
           deleteAction={deleteAccountingDocAction}
           getUrlAction={getAccountingDocUrlAction}
+          createSupplierAction={createSupplierInlineAction}
         />
       </div>
     );
