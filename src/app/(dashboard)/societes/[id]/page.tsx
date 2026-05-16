@@ -124,7 +124,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         <dl className="space-y-2 text-[13px]">
           <Row label="Nom">{company.name}</Row>
           <Row label="Type">
-            <span className={company.type === 'commerciale' ? 'badge-blue' : 'badge-emerald'}>
+            <span className={company.type === 'commerciale' ? 'badge-blue' : 'badge-amber'}>
               {company.type === 'commerciale' ? 'Commerciale' : 'Immobilière'}
             </span>
           </Row>

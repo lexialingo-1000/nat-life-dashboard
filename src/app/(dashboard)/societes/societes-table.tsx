@@ -55,8 +55,11 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
     header: 'Type',
     cell: ({ getValue }) => {
       const v = getValue() as string;
+      // V12bis PR6 — couleur distincte commerciale (bleu) vs immobilière (amber).
+      // `.badge-emerald` était déjà mappée sur les teintes bleues (Direction A),
+      // d'où la confusion visuelle ; on bascule sur badge-amber qui contraste.
       return (
-        <span className={v === 'commerciale' ? 'badge-blue' : 'badge-emerald'}>
+        <span className={v === 'commerciale' ? 'badge-blue' : 'badge-amber'}>
           {v === 'commerciale' ? 'Commerciale' : 'Immobilière'}
         </span>
       );

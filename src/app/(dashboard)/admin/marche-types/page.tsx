@@ -1,6 +1,7 @@
 import { db } from '@/db/client';
 import { marcheTypes } from '@/db/schema';
 import { asc } from 'drizzle-orm';
+import { BackLink } from '@/components/back-link';
 import { MarcheTypeCreateForm } from './marche-type-create-form';
 import { MarcheTypesSortableList } from './marche-types-sortable-list';
 
@@ -20,6 +21,8 @@ export default async function MarcheTypesPage() {
 
   return (
     <div className="space-y-8">
+      <BackLink fallbackHref="/admin/parametres" label="Paramètres" />
+
       <header className="page-header">
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
           Administration
