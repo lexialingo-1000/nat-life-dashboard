@@ -31,6 +31,11 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
+import { SupplierComptaRowActions } from '@/components/supplier-compta-row-actions';
+import {
+  getAccountingDocUrlAction,
+  deleteAccountingDocAction,
+} from '@/app/(dashboard)/societes/accounting-actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -310,6 +315,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       id: companyAccountingDocuments.id,
       kind: companyAccountingDocuments.kind,
       name: companyAccountingDocuments.name,
+      storageKey: companyAccountingDocuments.storageKey,
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
       amountTtc: companyAccountingDocuments.amountTtc,
@@ -377,6 +383,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
                 <th>Document</th>
                 <th className="text-right">HT</th>
                 <th className="text-right">TTC</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -410,6 +417,16 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
                   </td>
                   <td className="text-right font-mono tabular-nums font-medium">
                     {d.amountTtc ? `${Number(d.amountTtc).toLocaleString('fr-FR')} €` : '—'}
+                  </td>
+                  <td className="text-right">
+                    <SupplierComptaRowActions
+                      documentId={d.id}
+                      storageKey={d.storageKey}
+                      companyId={d.companyId}
+                      docName={d.name}
+                      getUrlAction={getAccountingDocUrlAction}
+                      deleteAction={deleteAccountingDocAction}
+                    />
                   </td>
                 </tr>
               ))}
