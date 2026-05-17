@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
 import { DataTable } from './data-table';
 import { EntityCombobox, type ComboboxOption } from './entity-combobox';
+import { MarcheInlineCreator } from './marche-inline-creator';
 import { formatDate } from '@/lib/utils';
 
 export type AccountingDocKind = 'devis' | 'commande' | 'facture';
@@ -53,6 +54,11 @@ interface MarcheOption {
 
 type InlineCreateResult = { id: string; label: string } | { error: string };
 
+interface PropertyOption {
+  id: string;
+  label: string;
+}
+
 interface Props {
   kind: AccountingDocKind;
   companyId: string;
@@ -65,6 +71,10 @@ interface Props {
   getUrlAction: (formData: FormData) => Promise<{ url: string } | { error: string }>;
   // V12bis PR3 A4 — création fournisseur à la volée depuis la compta.
   createSupplierAction?: (formData: FormData) => Promise<InlineCreateResult>;
+  // V12bis umbrella §2 — création marché à la volée (combobox marché du form upload).
+  createMarcheAction?: (formData: FormData) => Promise<InlineCreateResult>;
+  /** Propriétés (biens) de la société courante, pour le dialog "Créer marché à la volée". */
+  properties?: PropertyOption[];
 }
 
 export function AccountingDocumentsManager({
@@ -73,12 +83,16 @@ export function AccountingDocumentsManager({
   companySlug,
   documents,
   suppliers,
-  marches,
+  marches: initialMarches,
   uploadAction,
   deleteAction,
   getUrlAction,
   createSupplierAction,
+  createMarcheAction,
+  properties = [],
 }: Props) {
+  // V12bis umbrella §2 — marchés en state pour pouvoir ajouter ceux créés inline.
+  const [marches, setMarches] = useState<MarcheOption[]>(initialMarches);
   const [isOpen, setOpen] = useState(false);
   const [isDragging, setDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -363,11 +377,25 @@ export function AccountingDocumentsManager({
                 options={marcheOptionsForCombobox as ComboboxOption[]}
                 defaultValue={marcheId}
                 placeholder={marcheOptionsForCombobox.length === 0 ? '— Aucun marché —' : '— Choisir un marché —'}
-                disabled={marcheOptionsForCombobox.length === 0}
+                disabled={marcheOptionsForCombobox.length === 0 && !createMarcheAction}
                 onChange={(id) => setMarcheId(id)}
               />
               {marcheOptionsForCombobox.length === 0 && (
                 <p className="mt-1 text-[11px] text-zinc-500">Aucun marché disponible.</p>
+              )}
+              {createMarcheAction && (
+                <MarcheInlineCreator
+                  supplierId={supplierId}
+                  properties={properties}
+                  createAction={createMarcheAction}
+                  onCreated={({ id, label }) => {
+                    setMarches((prev) => [
+                      { id, label, supplierId: supplierId },
+                      ...prev.filter((m) => m.id !== id),
+                    ]);
+                    setMarcheId(id);
+                  }}
+                />
               )}
             </div>
           </div>

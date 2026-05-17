@@ -72,6 +72,41 @@ async function resolveSupplierName(supplierId: string): Promise<string> {
   return (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur';
 }
 
+/**
+ * V12bis umbrella §2 — création marché à la volée depuis un combobox (par exemple
+ * sur le form upload d'un doc compta). Retourne {id, label}|{error} sans redirect.
+ * Champs requis : propertyId + supplierId + name. Pas d'affectation de lots,
+ * pas de dates : c'est un marché minimal, l'utilisateur l'enrichira ensuite via
+ * /marches/[id]/edit.
+ */
+export async function createMarcheInlineAction(
+  formData: FormData
+): Promise<{ id: string; label: string } | { error: string }> {
+  const propertyId = String(formData.get('propertyId') ?? '');
+  const supplierId = String(formData.get('supplierId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { error: 'Bien (propertyId) invalide' };
+  if (!/^[0-9a-f-]{36}$/i.test(supplierId)) return { error: 'Fournisseur (supplierId) invalide' };
+  if (!name) return { error: 'Nom du marché requis' };
+
+  const supplierName = await resolveSupplierName(supplierId);
+
+  const inserted = await db
+    .insert(marchesTravaux)
+    .values({
+      propertyId,
+      supplierId,
+      name,
+      status: 'devis_recu',
+      storagePath: buildStoragePrefix('marches', `${name}-${supplierName}`),
+    })
+    .returning({ id: marchesTravaux.id });
+
+  revalidatePath('/marches');
+  revalidatePath(`/biens/properties/${propertyId}`);
+  return { id: inserted[0].id, label: name };
+}
+
 export async function createMarcheAction(formData: FormData): Promise<void> {
   const parsed = marcheBaseSchema.safeParse({
     propertyId: formData.get('propertyId'),

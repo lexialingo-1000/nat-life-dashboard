@@ -31,6 +31,7 @@ import {
   getAccountingDocUrlAction,
 } from '../accounting-actions';
 import { createSupplierInlineAction } from '../../fournisseurs/actions';
+import { createMarcheInlineAction } from '../../marches/actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -293,6 +294,14 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     supplierId: m.supplierId,
   }));
 
+  // V12bis umbrella §2 — properties de cette société pour création marché à la volée.
+  const propertyOptions = await db
+    .select({ id: properties.id, name: properties.name })
+    .from(properties)
+    .where(eq(properties.companyId, company.id))
+    .orderBy(asc(properties.name));
+  const propertyOpts = propertyOptions.map((p) => ({ id: p.id, label: p.name }));
+
   const renderAccountingSection = (kind: AccountingDocKind) => {
     const docs = accountingRows
       .filter((d) => d.kind === kind)
@@ -320,6 +329,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           deleteAction={deleteAccountingDocAction}
           getUrlAction={getAccountingDocUrlAction}
           createSupplierAction={createSupplierInlineAction}
+          createMarcheAction={createMarcheInlineAction}
+          properties={propertyOpts}
         />
       </div>
     );
