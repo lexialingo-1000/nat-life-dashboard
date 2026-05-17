@@ -11,7 +11,7 @@ export const properties = pgTable('properties', {
     .references(() => companies.id, { onDelete: 'restrict' }),
   name: text('name').notNull(),
   type: propertyTypeEnum('type').notNull(),
-  statut: propertyStatutEnum('statut').notNull().default('vacant'),
+  statut: propertyStatutEnum('statut').notNull().default('en_portefeuille'),
   address: text('address'),
   city: text('city'),
   postalCode: text('postal_code'),

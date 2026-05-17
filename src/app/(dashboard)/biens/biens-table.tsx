@@ -21,18 +21,23 @@ export type BienLotRow = {
   companyId: string;
 };
 
+// V12bis PR9 §4 — 4 statuts Natacha (dashboard-13). Loue/Vacant en legacy fallback.
 const PROPERTY_STATUT_LABELS: Record<string, string> = {
-  en_cours_acquisition: 'En cours acquisition',
-  loue: 'Loué',
-  vacant: 'Vacant',
+  en_cours_acquisition: "En cours d'acquisition",
+  en_portefeuille: 'En portefeuille',
+  en_cours_de_vente: 'En cours de vente',
   vendu: 'Vendu',
+  loue: 'En portefeuille',
+  vacant: 'En portefeuille',
 };
 
 const PROPERTY_STATUT_BADGES: Record<string, string> = {
   en_cours_acquisition: 'badge-blue',
-  loue: 'badge-emerald',
-  vacant: 'badge-amber',
+  en_portefeuille: 'badge-emerald',
+  en_cours_de_vente: 'badge-amber',
   vendu: 'badge-neutral',
+  loue: 'badge-emerald',
+  vacant: 'badge-emerald',
 };
 
 const STATUS_LABELS: Record<string, string> = {

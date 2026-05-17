@@ -12,7 +12,9 @@ const propertyCreateSchema = z.object({
   companyId: z.string().uuid(),
   name: z.string().min(1).max(255),
   type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
-  statut: z.enum(['en_cours_acquisition', 'loue', 'vacant', 'vendu']).default('vacant'),
+  statut: z
+    .enum(['en_cours_acquisition', 'en_portefeuille', 'en_cours_de_vente', 'vendu', 'loue', 'vacant'])
+    .default('en_portefeuille'),
   address: z.string().optional().or(z.literal('')),
   city: z.string().optional().or(z.literal('')),
   postalCode: z.string().optional().or(z.literal('')),
@@ -64,7 +66,9 @@ const propertySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255),
   type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
-  statut: z.enum(['en_cours_acquisition', 'loue', 'vacant', 'vendu']).default('vacant'),
+  statut: z
+    .enum(['en_cours_acquisition', 'en_portefeuille', 'en_cours_de_vente', 'vendu', 'loue', 'vacant'])
+    .default('en_portefeuille'),
   address: z.string().optional().or(z.literal('')),
   city: z.string().optional().or(z.literal('')),
   postalCode: z.string().optional().or(z.literal('')),

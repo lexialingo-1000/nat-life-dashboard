@@ -91,13 +91,16 @@ export function AccountingDocumentsManager({
   const [error, setError] = useState<string | null>(null);
   const [pendingTransition, startTransition] = useTransition();
 
-  // Marchés filtrés par fournisseur sélectionné (optionnel — laisser vide si
-  // pas de marché lié)
-  const marchesForSupplier = useMemo(() => {
-    if (!supplierId) return [];
-    return marches
-      .filter((m) => m.supplierId === supplierId)
-      .map((m) => ({ id: m.id, label: m.label }));
+  // V12bis PR9 §2 — fix Natacha "Je n'ai plus la liste des marchés".
+  // Avant : filter strict marches.supplier_id === supplierId → liste vide si
+  // mismatch ou supplier_id non renseigné. Maintenant : on affiche tous les
+  // marchés, et on remonte ceux du fournisseur sélectionné en tête.
+  const marcheOptionsForCombobox = useMemo(() => {
+    const all = marches.map((m) => ({ id: m.id, label: m.label, supplierId: m.supplierId }));
+    if (!supplierId) return all.map(({ id, label }) => ({ id, label }));
+    const own = all.filter((m) => m.supplierId === supplierId);
+    const others = all.filter((m) => m.supplierId !== supplierId);
+    return [...own, ...others].map(({ id, label }) => ({ id, label }));
   }, [supplierId, marches]);
 
   const reset = () => {
@@ -344,14 +347,14 @@ export function AccountingDocumentsManager({
               <label className="block text-[12px] font-medium text-zinc-700">Marché (optionnel)</label>
               <EntityCombobox
                 name="__marcheId_combobox"
-                options={marchesForSupplier as ComboboxOption[]}
+                options={marcheOptionsForCombobox as ComboboxOption[]}
                 defaultValue={marcheId}
-                placeholder={supplierId ? '— Aucun marché lié —' : '— Choisir un fournisseur d\'abord —'}
-                disabled={!supplierId || marchesForSupplier.length === 0}
+                placeholder={marcheOptionsForCombobox.length === 0 ? '— Aucun marché —' : '— Choisir un marché —'}
+                disabled={marcheOptionsForCombobox.length === 0}
                 onChange={(id) => setMarcheId(id)}
               />
-              {supplierId && marchesForSupplier.length === 0 && (
-                <p className="mt-1 text-[11px] text-zinc-500">Aucun marché pour ce fournisseur.</p>
+              {marcheOptionsForCombobox.length === 0 && (
+                <p className="mt-1 text-[11px] text-zinc-500">Aucun marché disponible.</p>
               )}
             </div>
           </div>

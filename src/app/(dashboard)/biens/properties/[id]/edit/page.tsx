@@ -8,15 +8,14 @@ import { updatePropertyAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
-// Loué/Vacant retirés en V12bis : le statut locatif appartient au LOT, pas au BIEN.
-// Migration enum `en_portefeuille` reportée à V1.10/PR5 ; en attendant on conserve
-// les valeurs DB existantes via hidden input quand le statut courant est legacy.
+// V12bis PR9 §4 — 4 statuts demandés par Natacha (dashboard-13). Loué/Vacant
+// supprimés du form (legacy DB seulement, backfill migration 0023 → en_portefeuille).
 const STATUT_OPTIONS = [
-  { value: 'en_cours_acquisition', label: 'En portefeuille' },
+  { value: 'en_cours_acquisition', label: "En cours d'acquisition" },
+  { value: 'en_portefeuille', label: 'En portefeuille' },
+  { value: 'en_cours_de_vente', label: 'En cours de vente' },
   { value: 'vendu', label: 'Vendu' },
 ];
-
-const LEGACY_STATUS = new Set(['loue', 'vacant']);
 
 const TYPE_OPTIONS = [
   { value: 'appartement', label: 'Appartement' },
@@ -95,29 +94,20 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
               </select>
             </Field>
             <Field label="Statut" required>
-              {p.statut && LEGACY_STATUS.has(p.statut) ? (
-                <>
-                  <input type="hidden" name="statut" value={p.statut} />
-                  <input
-                    value={p.statut === 'loue' ? 'Loué (legacy lot)' : 'Vacant (legacy lot)'}
-                    disabled
-                    className="input bg-zinc-50 text-zinc-500"
-                  />
-                </>
-              ) : (
-                <select
-                  name="statut"
-                  defaultValue={p.statut && !LEGACY_STATUS.has(p.statut) ? p.statut : 'en_cours_acquisition'}
-                  required
-                  className="input"
-                >
-                  {STATUT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <select
+                name="statut"
+                defaultValue={
+                  STATUT_OPTIONS.some((o) => o.value === p.statut) ? p.statut : 'en_portefeuille'
+                }
+                required
+                className="input"
+              >
+                {STATUT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
         </Section>

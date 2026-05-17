@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
-import { suppliers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { suppliers, supplierTypes } from '@/db/schema';
+import { and, asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
@@ -12,6 +12,14 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
   const rows = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const s = rows[0];
+
+  // V12bis PR9 §3 — types fournisseur paramétrables (source : table supplier_types).
+  // Inclut "artisan RC" et tout type custom ajouté par admin via /admin/supplier-types.
+  const typeOptions = await db
+    .select({ id: supplierTypes.id, code: supplierTypes.code, label: supplierTypes.label })
+    .from(supplierTypes)
+    .where(eq(supplierTypes.isActive, true))
+    .orderBy(asc(supplierTypes.sortOrder), asc(supplierTypes.label));
   const displayName =
     s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
 
@@ -79,17 +87,17 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">Type de fournisseur</label>
-            <select name="type" defaultValue={s.type} className="input mt-1">
-              <option value="notaire">Notaire</option>
-              <option value="banque">Banque</option>
-              <option value="juridique">Juridique</option>
-              <option value="comptabilite">Comptabilité</option>
-              <option value="architecte">Architecte</option>
-              <option value="entrepreneur">Entrepreneur</option>
-              <option value="syndic">Syndic</option>
-              <option value="diagnostic">Diagnostic</option>
-              <option value="assurance">Assurance</option>
-              <option value="autre">Autre</option>
+            <select
+              name="typeId"
+              defaultValue={s.typeId ?? ''}
+              className="input mt-1"
+            >
+              <option value="">— Aucun —</option>
+              {typeOptions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>

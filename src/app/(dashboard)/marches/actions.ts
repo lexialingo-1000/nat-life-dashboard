@@ -303,6 +303,73 @@ export async function deleteSousLotAction(formData: FormData): Promise<void> {
   revalidatePath(`/marches/${marcheId}`);
 }
 
+// V12bis PR9 §6 — modifier un sous-lot (retours Natacha dashboard-13).
+const sousLotUpdateSchema = z.object({
+  id: z.string().uuid(),
+  marcheId: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  description: z.string().optional().or(z.literal('')),
+  marcheTypeId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
+  amountHt: z
+    .preprocess(
+      (v) => (v === '' || v == null ? null : v),
+      z.union([z.string(), z.number()]).nullable()
+    )
+    .optional(),
+  amountTtc: z
+    .preprocess(
+      (v) => (v === '' || v == null ? null : v),
+      z.union([z.string(), z.number()]).nullable()
+    )
+    .optional(),
+  status: z
+    .enum(['devis_recu', 'signe', 'en_cours', 'livre', 'conteste', 'annule'])
+    .optional()
+    .default('devis_recu'),
+  dateDebutPrevu: z.string().optional().or(z.literal('')),
+  dateFinPrevu: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function updateSousLotAction(formData: FormData): Promise<void> {
+  const parsed = sousLotUpdateSchema.safeParse({
+    id: formData.get('id'),
+    marcheId: formData.get('marcheId'),
+    name: formData.get('name'),
+    description: formData.get('description'),
+    marcheTypeId: formData.get('marcheTypeId'),
+    amountHt: formData.get('amountHt'),
+    amountTtc: formData.get('amountTtc'),
+    status: formData.get('status') ?? 'devis_recu',
+    dateDebutPrevu: formData.get('dateDebutPrevu'),
+    dateFinPrevu: formData.get('dateFinPrevu'),
+    notes: formData.get('notes'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db
+    .update(marcheSousLots)
+    .set({
+      name: data.name,
+      description: data.description || null,
+      marcheTypeId: data.marcheTypeId ?? null,
+      amountHt: data.amountHt != null ? String(data.amountHt) : null,
+      amountTtc: data.amountTtc != null ? String(data.amountTtc) : null,
+      status: data.status,
+      dateDebutPrevu: data.dateDebutPrevu || null,
+      dateFinPrevu: data.dateFinPrevu || null,
+      notes: data.notes || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(marcheSousLots.id, data.id));
+  revalidatePath(`/marches/${data.marcheId}`);
+  redirect(`/marches/${data.marcheId}`);
+}
+
 // === V1.8 P2-3+4 : Tâches dans sous-lots de marché ===========================
 
 const tacheStatusValues = ['a_faire', 'en_cours', 'termine', 'valide'] as const;
@@ -369,6 +436,7 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
     locationDescription: formData.get('locationDescription'),
     supplierContactId: formData.get('supplierContactId'),
     status: formData.get('status') ?? 'a_faire',
+    dueDate: formData.get('dueDate'),
   });
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -378,11 +446,15 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
   await db
     .update(marcheTaches)
     .set({
+      lotId: data.lotId,
       title: data.title,
       description: data.description || null,
       locationDescription: data.locationDescription || null,
       supplierContactId: data.supplierContactId || null,
       status: data.status,
+      // V12bis PR9 §6 — dueDate était omis du UPDATE (orphelin) ; corrigé pour
+      // que la modification depuis le form /edit persiste.
+      dueDate: data.dueDate || null,
       updatedAt: new Date(),
     })
     .where(eq(marcheTaches.id, data.id));

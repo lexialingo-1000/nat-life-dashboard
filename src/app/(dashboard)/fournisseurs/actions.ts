@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { suppliers, supplierContacts, supplierDocuments } from '@/db/schema';
+import { suppliers, supplierContacts, supplierDocuments, supplierTypes } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
@@ -33,8 +33,57 @@ const supplierSchema = z.object({
       'autre',
     ])
     .default('autre'),
+  // V12bis PR9 §3 — FK vers supplier_types (table paramétrable). Optionnel pour
+  // compat ascendante : si fourni → on lookup le code et on dérive le `type`
+  // enum legacy (fallback 'autre' si code custom hors enum).
+  typeId: z.string().uuid().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
 });
+
+const LEGACY_TYPE_CODES = new Set([
+  'notaire',
+  'banque',
+  'juridique',
+  'comptabilite',
+  'architecte',
+  'entrepreneur',
+  'syndic',
+  'diagnostic',
+  'assurance',
+  'autre',
+]);
+
+type LegacySupplierTypeEnum =
+  | 'notaire'
+  | 'banque'
+  | 'juridique'
+  | 'comptabilite'
+  | 'architecte'
+  | 'entrepreneur'
+  | 'syndic'
+  | 'diagnostic'
+  | 'assurance'
+  | 'autre';
+
+/**
+ * Résout un `typeId` (FK supplier_types) en : (typeId, legacy enum value).
+ * Si typeId vide → garde les valeurs actuelles du fournisseur (no-op).
+ * Si code custom (hors enum) → legacy = 'autre', typeId = id.
+ */
+async function resolveSupplierType(
+  typeId: string | undefined
+): Promise<{ typeId: string | null; type: LegacySupplierTypeEnum } | null> {
+  if (!typeId) return null;
+  const rows = await db
+    .select({ id: supplierTypes.id, code: supplierTypes.code })
+    .from(supplierTypes)
+    .where(eq(supplierTypes.id, typeId))
+    .limit(1);
+  if (rows.length === 0) return null;
+  const code = rows[0].code;
+  const legacy = LEGACY_TYPE_CODES.has(code) ? (code as LegacySupplierTypeEnum) : 'autre';
+  return { typeId: rows[0].id, type: legacy };
+}
 
 const supplierUpdateSchema = supplierSchema.extend({
   id: z.string().uuid(),
@@ -52,6 +101,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     email: formData.get('email'),
     invoicingType: formData.get('invoicingType') ?? 'manual_upload',
     type: formData.get('type') ?? 'autre',
+    typeId: formData.get('typeId') ?? '',
     notes: formData.get('notes'),
     isActive: formData.get('isActive'),
   });
@@ -59,6 +109,8 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
   const data = parsed.data;
+  // V12bis PR9 §3 — résolution typeId → (legacy enum + FK), update les deux.
+  const resolved = await resolveSupplierType(data.typeId || undefined);
   await db
     .update(suppliers)
     .set({
@@ -69,7 +121,8 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       invoicingType: data.invoicingType,
-      type: data.type,
+      type: resolved ? resolved.type : data.type,
+      typeId: resolved ? resolved.typeId : null,
       notes: data.notes || null,
       isActive: data.isActive,
       updatedAt: new Date(),
@@ -90,6 +143,8 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
   const displayName =
     data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim() || 'fournisseur';
 
+  const resolved = await resolveSupplierType(data.typeId || undefined);
+
   const inserted = await db
     .insert(suppliers)
     .values({
@@ -101,6 +156,8 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       notes: data.notes || null,
+      type: resolved ? resolved.type : data.type,
+      typeId: resolved ? resolved.typeId : null,
       storagePath: buildStoragePrefix('suppliers', displayName),
     })
     .returning({ id: suppliers.id });
@@ -153,6 +210,8 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
     return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
   }
 
+  const resolved = await resolveSupplierType(data.typeId || undefined);
+
   const inserted = await db
     .insert(suppliers)
     .values({
@@ -164,6 +223,8 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
       phone: data.phone || null,
       email: data.email || null,
       notes: data.notes || null,
+      type: resolved ? resolved.type : data.type,
+      typeId: resolved ? resolved.typeId : null,
       storagePath: buildStoragePrefix('suppliers', displayName),
     })
     .returning({ id: suppliers.id });

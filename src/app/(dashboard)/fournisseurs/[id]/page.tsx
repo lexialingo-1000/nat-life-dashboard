@@ -3,6 +3,7 @@ import {
   suppliers,
   supplierContacts,
   supplierDocuments,
+  supplierTypes,
   documentTypes,
   marchesTravaux,
   properties,
@@ -46,6 +47,21 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   if (supplierRow.length === 0) notFound();
   const s = supplierRow[0];
 
+  // V12bis PR9 §3 — affichage du type de fournisseur sur la fiche.
+  // Source : table supplier_types (typeId). Fallback : enum legacy `type`.
+  const typeRow = s.typeId
+    ? await db
+        .select({ label: supplierTypes.label })
+        .from(supplierTypes)
+        .where(eq(supplierTypes.id, s.typeId))
+        .limit(1)
+    : [];
+  const typeLabel =
+    typeRow[0]?.label ??
+    (s.type === 'autre'
+      ? null
+      : s.type.charAt(0).toUpperCase() + s.type.slice(1));
+
   const contacts = await db
     .select()
     .from(supplierContacts)
@@ -68,7 +84,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .where(eq(supplierDocuments.supplierId, s.id))
     .orderBy(asc(documentTypes.sortOrder));
 
-  const supplierTypes = await db
+  const supplierDocTypes = await db
     .select({
       id: documentTypes.id,
       label: documentTypes.label,
@@ -134,6 +150,9 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           <Row label="Prénom">{s.firstName ?? '—'}</Row>
           <Row label="Nom">{s.lastName ?? '—'}</Row>
           <Row label="Adresse">{s.address ?? '—'}</Row>
+          <Row label="Type">
+            {typeLabel ? <span className="badge-neutral">{typeLabel}</span> : '—'}
+          </Row>
         </dl>
       </div>
       <div className="card p-5">
@@ -276,7 +295,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
-        availableTypes={supplierTypes}
+        availableTypes={supplierDocTypes}
         uploadAction={uploadSupplierDocumentAction}
         deleteAction={deleteSupplierDocumentAction}
         getUrlAction={getSupplierDocumentUrlAction}

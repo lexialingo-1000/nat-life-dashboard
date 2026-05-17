@@ -22,9 +22,11 @@ const emptyContact = (): Contact => ({
 
 interface Props {
   action: (formData: FormData) => Promise<void>;
+  /** V12bis PR9 §3 — types fournisseur paramétrables (depuis table supplier_types). */
+  typeOptions?: { id: string; code: string; label: string }[];
 }
 
-export function FournisseurCreateForm({ action }: Props) {
+export function FournisseurCreateForm({ action, typeOptions = [] }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   const addContact = () => setContacts((prev) => [...prev, emptyContact()]);
@@ -84,17 +86,13 @@ export function FournisseurCreateForm({ action }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Type de fournisseur</label>
-          <select name="type" defaultValue="autre" className="input mt-1">
-            <option value="notaire">Notaire</option>
-            <option value="banque">Banque</option>
-            <option value="juridique">Juridique</option>
-            <option value="comptabilite">Comptabilité</option>
-            <option value="architecte">Architecte</option>
-            <option value="entrepreneur">Entrepreneur</option>
-            <option value="syndic">Syndic</option>
-            <option value="diagnostic">Diagnostic</option>
-            <option value="assurance">Assurance</option>
-            <option value="autre">Autre</option>
+          <select name="typeId" defaultValue="" className="input mt-1">
+            <option value="">— Aucun —</option>
+            {typeOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>

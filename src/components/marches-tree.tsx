@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Plus, Camera, MapPin, User, Trash2 } from 'lucide-react';
+import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 
@@ -177,6 +177,16 @@ function SousLotBranch({
           >
             <Plus className="h-3 w-3" strokeWidth={2} /> Ajouter
           </Link>
+          {/* V12bis PR9 §6 — modifier le sous-lot. */}
+          <Link
+            href={`/marches/${marcheId}/sous-lots/${sousLot.id}/edit`}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+            onClick={(e) => e.stopPropagation()}
+            title="Modifier le sous-lot"
+            aria-label="Modifier le sous-lot"
+          >
+            <Pencil className="h-3 w-3" strokeWidth={2} />
+          </Link>
           <DeleteSousLotButton id={sousLot.id} name={sousLot.name} marcheId={marcheId} />
         </div>
       </summary>
@@ -186,7 +196,13 @@ function SousLotBranch({
         ) : (
           <ul className="divide-y divide-zinc-100">
             {sousLot.taches.map((t) => (
-              <TacheRow key={t.id} tache={t} returnTo={returnTo} />
+              <TacheRow
+                key={t.id}
+                tache={t}
+                marcheId={marcheId}
+                sousLotId={sousLot.id}
+                returnTo={returnTo}
+              />
             ))}
           </ul>
         )}
@@ -195,7 +211,17 @@ function SousLotBranch({
   );
 }
 
-function TacheRow({ tache, returnTo }: { tache: TacheNode; returnTo: string }) {
+function TacheRow({
+  tache,
+  marcheId,
+  sousLotId,
+  returnTo,
+}: {
+  tache: TacheNode;
+  marcheId: string;
+  sousLotId: string;
+  returnTo: string;
+}) {
   return (
     <li className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] hover:bg-[#fbf8f0]/60">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -221,6 +247,15 @@ function TacheRow({ tache, returnTo }: { tache: TacheNode; returnTo: string }) {
             {tache.photosCount}
           </span>
         )}
+        {/* V12bis PR9 §6 — modifier la tâche. */}
+        <Link
+          href={`/marches/${marcheId}/sous-lots/${sousLotId}/taches/${tache.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+          title="Modifier la tâche"
+          aria-label="Modifier la tâche"
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2} />
+        </Link>
         <DeleteTacheButton id={tache.id} title={tache.title} />
       </div>
     </li>
