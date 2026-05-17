@@ -4,14 +4,17 @@ import {
   marchesTravaux,
   marcheLotAffectations,
   lots,
+  levels,
+  rooms,
   supplierContacts,
 } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { createTacheAction } from '@/app/(dashboard)/marches/actions';
+import { TacheLotLocationFieldset } from '@/components/tache-lot-location-fieldset';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +55,51 @@ export default async function NewTachePage({
     .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
     .where(eq(marcheLotAffectations.marcheId, sousLot.marcheId))
     .orderBy(asc(lots.name));
+
+  // V12bis umbrella §7 — niveaux + pièces des lots affectés au marché
+  // (pour selects NIVEAU/PIECES filtrés dans le form).
+  const lotIds = affectations.map((a) => a.lotId);
+  const levelsRows =
+    lotIds.length > 0
+      ? await db
+          .select({
+            lotId: levels.lotId,
+            id: levels.id,
+            name: levels.name,
+            sortOrder: levels.sortOrder,
+          })
+          .from(levels)
+          .where(inArray(levels.lotId, lotIds))
+          .orderBy(asc(levels.lotId), asc(levels.sortOrder), asc(levels.name))
+      : [];
+  const levelIds = levelsRows.map((l) => l.id);
+  const roomsRows =
+    levelIds.length > 0
+      ? await db
+          .select({
+            id: rooms.id,
+            name: rooms.name,
+            levelId: rooms.levelId,
+            sortOrder: rooms.sortOrder,
+          })
+          .from(rooms)
+          .where(inArray(rooms.levelId, levelIds))
+          .orderBy(asc(rooms.sortOrder), asc(rooms.name))
+      : [];
+  const roomsByLevel = new Map<string, { id: string; name: string }[]>();
+  for (const r of roomsRows) {
+    const list = roomsByLevel.get(r.levelId) ?? [];
+    list.push({ id: r.id, name: r.name });
+    roomsByLevel.set(r.levelId, list);
+  }
+  const levelsByLot = new Map<string, { id: string; name: string; rooms: { id: string; name: string }[] }[]>();
+  for (const lvl of levelsRows) {
+    const list = levelsByLot.get(lvl.lotId) ?? [];
+    list.push({ id: lvl.id, name: lvl.name, rooms: roomsByLevel.get(lvl.id) ?? [] });
+    levelsByLot.set(lvl.lotId, list);
+  }
+  const lotsStructure = lotIds.map((id) => ({ lotId: id, levels: levelsByLot.get(id) ?? [] }));
+  const lotOptions = affectations.map((a) => ({ id: a.lotId, name: a.lotName }));
 
   // Fetch supplier contacts pour dropdown contact
   const contacts = sousLot.supplierId
@@ -128,44 +176,22 @@ export default async function NewTachePage({
           </div>
         </div>
 
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Emplacement</label>
-          <input
-            name="locationDescription"
-            className="input mt-1"
-            placeholder="Lot 1 · RDC · Salle de bain"
-            autoComplete="off"
-          />
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Texte libre — décrivez précisément où dans le bien.
-          </p>
-        </div>
+        {/* V12bis umbrella §7 — LOT RATTACHE en haut, puis NIVEAU+PIECE filtrés (live). */}
+        <TacheLotLocationFieldset
+          lotOptions={lotOptions}
+          lotsStructure={lotsStructure}
+          required
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Lot rattaché *</label>
-            <select name="lotId" required className="input mt-1">
-              {affectations.length === 0 ? (
-                <option value="">— Aucun lot affecté au marché —</option>
-              ) : (
-                affectations.map((a) => (
-                  <option key={a.lotId} value={a.lotId}>
-                    {a.lotName}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Statut initial</label>
-            <select name="status" defaultValue="a_faire" className="input mt-1">
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">Statut initial</label>
+          <select name="status" defaultValue="a_faire" className="input mt-1">
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

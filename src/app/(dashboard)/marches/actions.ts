@@ -415,6 +415,11 @@ const tacheCreateSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().optional().or(z.literal('')),
   locationDescription: z.string().optional().or(z.literal('')),
+  // V12bis umbrella §7 — FK pièce (niveau via JOIN rooms→levels) remplace
+  // l'ancien champ libre `locationDescription`. Optionnel.
+  roomId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
   supplierContactId: z
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
@@ -436,6 +441,7 @@ export async function createTacheAction(formData: FormData): Promise<void> {
     title: formData.get('title'),
     description: formData.get('description'),
     locationDescription: formData.get('locationDescription'),
+    roomId: formData.get('roomId'),
     supplierContactId: formData.get('supplierContactId'),
     status: formData.get('status') ?? 'a_faire',
     dueDate: formData.get('dueDate'),
@@ -451,6 +457,7 @@ export async function createTacheAction(formData: FormData): Promise<void> {
     title: data.title,
     description: data.description || null,
     locationDescription: data.locationDescription || null,
+    roomId: data.roomId || null,
     supplierContactId: data.supplierContactId || null,
     status: data.status,
     dueDate: data.dueDate || null,
@@ -469,6 +476,7 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
     title: formData.get('title'),
     description: formData.get('description'),
     locationDescription: formData.get('locationDescription'),
+    roomId: formData.get('roomId'),
     supplierContactId: formData.get('supplierContactId'),
     status: formData.get('status') ?? 'a_faire',
     dueDate: formData.get('dueDate'),
@@ -485,6 +493,8 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
       title: data.title,
       description: data.description || null,
       locationDescription: data.locationDescription || null,
+      // V12bis umbrella §7 — FK pièce ajoutée (NIVEAU + PIECES filtrés côté UI).
+      roomId: data.roomId || null,
       supplierContactId: data.supplierContactId || null,
       status: data.status,
       // V12bis PR9 §6 — dueDate était omis du UPDATE (orphelin) ; corrigé pour
