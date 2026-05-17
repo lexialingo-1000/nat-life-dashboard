@@ -19,7 +19,6 @@ export default async function SocietesPage() {
       formeJuridique: c.formeJuridique,
       siren: c.siren,
       nafCode: c.nafCode,
-      address: c.address,
       isActive: (c as { isActive?: boolean }).isActive ?? true,
     }));
   } catch (e) {

@@ -252,24 +252,29 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Location
           </div>
-          <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
-            <span className="display-serif">{customerLabel}</span>
-            <span className={STATUS_BADGE[status]}>{STATUS_LABELS[status]}</span>
-          </h1>
-          <p className="mt-1.5 text-[13px] text-zinc-500">
+          <h1 className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[32px] font-normal leading-tight text-zinc-900">
             <Link
               href={`/biens/properties/${loc.propertyId}`}
-              className="uppercase tracking-[0.04em] hover:text-blue-700"
+              className="display-serif uppercase tracking-[0.02em] hover:text-blue-700"
             >
               {loc.propertyName}
             </Link>
-            {' · '}
-            <Link href={`/biens/lots/${loc.lotId}`} className="hover:text-blue-700">
+            <span className="text-zinc-300">·</span>
+            <Link
+              href={`/biens/lots/${loc.lotId}`}
+              className="display-serif hover:text-blue-700"
+            >
               {loc.lotName}
             </Link>
-            {' · '}
-            {formatDate(loc.dateDebut)}
-            {loc.dateFin ? ` → ${formatDate(loc.dateFin)}` : ' → en cours'}
+            <span className="text-zinc-300">·</span>
+            <span className="display-serif text-zinc-700">
+              {formatDate(loc.dateDebut)}
+              {loc.dateFin ? ` → ${formatDate(loc.dateFin)}` : ' → en cours'}
+            </span>
+            <span className={STATUS_BADGE[status]}>{STATUS_LABELS[status]}</span>
+          </h1>
+          <p className="mt-1.5 text-[14px] text-zinc-600">
+            Locataire&nbsp;: <span className="font-medium text-zinc-800">{customerLabel}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">

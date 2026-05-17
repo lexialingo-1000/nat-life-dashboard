@@ -296,15 +296,16 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const facturesTab = (
+  const comptaTab = (
     <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Aucune facture pour l'instant. La synchronisation Pennylane (ventes FKA) arrivera en
-        V1.5 après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
-        septembre 2026).
+      <SectionTitle>Factures de location (quittances)</SectionTitle>
+      <p className="mt-3 text-sm text-zinc-500">
+        Aucune quittance pour l'instant. La génération automatique des quittances et la
+        synchronisation Pennylane (ventes FKA) arriveront en V1.5 après l'entrée en vigueur
+        de la réforme facturation électronique (1<sup>er</sup> septembre 2026).
       </p>
       <p className="mt-3 text-[12px] text-zinc-400">
-        En attendant, les factures émises peuvent être archivées dans l'onglet « Documents »
+        En attendant, les quittances émises peuvent être archivées dans l'onglet « Documents »
         avec le type « Autre ».
       </p>
     </div>
@@ -320,7 +321,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       content: locationsTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'factures', label: 'Factures', content: facturesTab },
+    { id: 'compta', label: 'Compta', content: comptaTab },
   ];
 
   return (

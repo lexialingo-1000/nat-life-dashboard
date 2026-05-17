@@ -13,7 +13,6 @@ export type SocieteRow = {
   formeJuridique: string | null;
   siren: string | null;
   nafCode: string | null;
-  address: string | null;
   isActive: boolean;
 };
 
@@ -89,14 +88,6 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
         {(getValue() as string | null) ?? '—'}
       </span>
     ),
-  },
-  {
-    accessorKey: 'address',
-    header: 'Siège',
-    cell: ({ getValue }) => {
-      const v = getValue() as string | null;
-      return <span className="text-[12px] text-zinc-500">{v?.split(',')[0] ?? '—'}</span>;
-    },
   },
 ];
 
