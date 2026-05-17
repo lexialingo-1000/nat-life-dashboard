@@ -12,8 +12,9 @@ import {
   suppliers,
   supplierContacts,
   documentTypes,
+  companyAccountingDocuments,
 } from '@/db/schema';
-import { eq, asc, and, inArray } from 'drizzle-orm';
+import { eq, asc, and, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
@@ -173,6 +174,38 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     : [];
   const marcheTypeLabel = marcheTypeRow[0]?.label ?? null;
 
+  // V12bis umbrella §5 — Onglet COMPTA du marché (retours Natacha dashboard-13).
+  // Liste devis + commandes + factures liés à ce marché via FK marcheId.
+  const marcheAccountingDocs = await db
+    .select({
+      id: companyAccountingDocuments.id,
+      kind: companyAccountingDocuments.kind,
+      name: companyAccountingDocuments.name,
+      documentDate: companyAccountingDocuments.documentDate,
+      amountHt: companyAccountingDocuments.amountHt,
+      amountTtc: companyAccountingDocuments.amountTtc,
+      companyId: companies.id,
+      companyName: companies.name,
+      supplierId: suppliers.id,
+      supplierCompanyName: suppliers.companyName,
+      supplierFirstName: suppliers.firstName,
+      supplierLastName: suppliers.lastName,
+    })
+    .from(companyAccountingDocuments)
+    .innerJoin(companies, eq(companies.id, companyAccountingDocuments.companyId))
+    .innerJoin(suppliers, eq(suppliers.id, companyAccountingDocuments.supplierId))
+    .where(eq(companyAccountingDocuments.marcheId, marche.id))
+    .orderBy(desc(companyAccountingDocuments.documentDate));
+
+  const marcheComptaTotalHt = marcheAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
+    0
+  );
+  const marcheComptaTotalTtc = marcheAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountTtc ? Number(d.amountTtc) : 0),
+    0
+  );
+
   const marcheTreeNode: MarcheNode = {
     id: marche.id,
     supplierName:
@@ -326,10 +359,106 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
   const totalTaches = marcheTreeNode.sousLots.reduce((acc, sl) => acc + sl.taches.length, 0);
 
+  const KIND_LABEL: Record<string, string> = {
+    devis: 'Devis',
+    commande: 'Commande',
+    facture: 'Facture',
+  };
+  const KIND_BADGE: Record<string, string> = {
+    devis: 'bg-zinc-100 text-zinc-700',
+    commande: 'bg-blue-100 text-blue-700',
+    facture: 'bg-emerald-100 text-emerald-700',
+  };
+
+  // V12bis umbrella §5 — onglet COMPTA fiche marché.
+  const comptaTab = (
+    <div className="card p-6 space-y-4">
+      {marcheAccountingDocs.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Aucun devis / commande / facture rattaché à ce marché. Les documents compta se
+          saisissent depuis la fiche société (onglet Compta) en sélectionnant ce marché.
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-zinc-500">
+              {marcheAccountingDocs.length} document{marcheAccountingDocs.length > 1 ? 's' : ''} compta
+              {' '}lié{marcheAccountingDocs.length > 1 ? 's' : ''} à ce marché.
+            </p>
+            <div className="flex flex-col items-end gap-0.5 font-mono text-[12px] tabular-nums text-zinc-700">
+              <span>Total HT : {marcheComptaTotalHt.toLocaleString('fr-FR')} €</span>
+              <span className="font-medium text-zinc-900">
+                Total TTC : {marcheComptaTotalTtc.toLocaleString('fr-FR')} €
+              </span>
+            </div>
+          </div>
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Société</th>
+                <th>Fournisseur</th>
+                <th>Date document</th>
+                <th>Document</th>
+                <th className="text-right">HT</th>
+                <th className="text-right">TTC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {marcheAccountingDocs.map((d) => {
+                const supplierLabel =
+                  d.supplierCompanyName ??
+                  `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
+                  'Fournisseur';
+                return (
+                  <tr key={d.id}>
+                    <td>
+                      <span
+                        className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${
+                          KIND_BADGE[d.kind] ?? ''
+                        }`}
+                      >
+                        {KIND_LABEL[d.kind] ?? d.kind}
+                      </span>
+                    </td>
+                    <td>
+                      <Link href={`/societes/${d.companyId}`} className="link-cell-soft text-[12px]">
+                        {d.companyName}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link
+                        href={`/fournisseurs/${d.supplierId}`}
+                        className="link-cell-soft text-[12px]"
+                      >
+                        {supplierLabel}
+                      </Link>
+                    </td>
+                    <td className="font-mono text-[12px] tabular-nums text-zinc-700">
+                      {d.documentDate ?? '—'}
+                    </td>
+                    <td className="text-[13px] text-zinc-900">{d.name}</td>
+                    <td className="text-right font-mono tabular-nums text-zinc-500">
+                      {d.amountHt ? `${Number(d.amountHt).toLocaleString('fr-FR')} €` : '—'}
+                    </td>
+                    <td className="text-right font-mono tabular-nums font-medium">
+                      {d.amountTtc ? `${Number(d.amountTtc).toLocaleString('fr-FR')} €` : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'suivi', label: 'Suivi', count: totalTaches, content: suiviTab },
+    { id: 'compta', label: 'Compta', count: marcheAccountingDocs.length || undefined, content: comptaTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 
