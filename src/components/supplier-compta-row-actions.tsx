@@ -72,8 +72,8 @@ export function SupplierComptaRowActions({
   return (
     <div className="flex items-center justify-end gap-1">
       <Link
-        href={`/societes/${companyId}?tab=compta`}
-        title="Voir / modifier sur la fiche société"
+        href={`/societes/${companyId}/compta/${documentId}/edit`}
+        title="Modifier le document compta"
         className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
       >
         <Pencil className="h-4 w-4" />

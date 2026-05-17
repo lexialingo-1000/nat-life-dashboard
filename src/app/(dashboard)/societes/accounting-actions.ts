@@ -80,6 +80,61 @@ export async function deleteAccountingDocAction(formData: FormData): Promise<voi
   revalidatePath(`/societes/${companyId}`);
 }
 
+// V12bis umbrella §2 — modifier un devis/commande/facture (retours Natacha
+// dashboard-13). Pas de remplacement de PJ ici (delete + re-upload manuel via
+// row actions). Champs editables : kind, name, supplierId, marcheId, date,
+// amounts HT/TTC, notes.
+const updateSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  supplierId: z.string().uuid(),
+  marcheId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
+  kind: z.enum(KIND_VALUES),
+  name: z.string().min(1).max(255),
+  documentDate: z.string().optional().or(z.literal('')),
+  amountHt: moneyField,
+  amountTtc: moneyField,
+  notes: z.string().optional().or(z.literal('')),
+});
+
+export async function updateAccountingDocAction(formData: FormData): Promise<void> {
+  const parsed = updateSchema.safeParse({
+    id: formData.get('id'),
+    companyId: formData.get('companyId'),
+    supplierId: formData.get('supplierId'),
+    marcheId: formData.get('marcheId'),
+    kind: formData.get('kind'),
+    name: formData.get('name'),
+    documentDate: formData.get('documentDate'),
+    amountHt: formData.get('amountHt'),
+    amountTtc: formData.get('amountTtc'),
+    notes: formData.get('notes'),
+  });
+  if (!parsed.success) {
+    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+  }
+  const data = parsed.data;
+  await db
+    .update(companyAccountingDocuments)
+    .set({
+      supplierId: data.supplierId,
+      marcheId: data.marcheId ?? null,
+      kind: data.kind,
+      name: data.name,
+      documentDate: data.documentDate || null,
+      amountHt: toNumericString(data.amountHt ?? null),
+      amountTtc: toNumericString(data.amountTtc ?? null),
+      notes: data.notes || null,
+    })
+    .where(eq(companyAccountingDocuments.id, data.id));
+  revalidatePath(`/societes/${data.companyId}`);
+  revalidatePath(`/fournisseurs/${data.supplierId}`);
+  if (data.marcheId) revalidatePath(`/marches/${data.marcheId}`);
+  redirect(`/societes/${data.companyId}?tab=compta`);
+}
+
 export async function getAccountingDocUrlAction(
   formData: FormData
 ): Promise<{ url: string } | { error: string }> {

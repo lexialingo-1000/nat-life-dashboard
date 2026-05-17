@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Download, Loader2, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
+import Link from 'next/link';
+import { Download, Loader2, Pencil, Plus, Trash2, Upload, UploadCloud } from 'lucide-react';
 import { DataTable } from './data-table';
 import { EntityCombobox, type ComboboxOption } from './entity-combobox';
 import { MarcheInlineCreator } from './marche-inline-creator';
@@ -293,9 +294,17 @@ export function AccountingDocumentsManager({
         header: '',
         enableSorting: false,
         enableColumnFilter: false,
-        size: 80,
+        size: 110,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-1">
+            {/* V12bis umbrella §2 — modifier le doc compta. */}
+            <Link
+              href={`/societes/${companyId}/compta/${row.original.id}/edit`}
+              title="Modifier"
+              className="rounded p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
+            >
+              <Pencil className="h-4 w-4" />
+            </Link>
             <button
               type="button"
               onClick={() => handleDownload(row.original.storageKey)}
