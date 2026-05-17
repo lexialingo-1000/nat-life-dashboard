@@ -226,6 +226,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       storageKey: companyAccountingDocuments.storageKey,
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
+      amountTtc: companyAccountingDocuments.amountTtc,
       uploadedAt: companyAccountingDocuments.uploadedAt,
       supplierId: companyAccountingDocuments.supplierId,
       supplierCompanyName: suppliers.companyName,
@@ -247,6 +248,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     storageKey: d.storageKey,
     documentDate: d.documentDate,
     amountHt: d.amountHt,
+    amountTtc: d.amountTtc,
     uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
     supplierLabel:
       d.supplierCompanyName ?? `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ?? 'Fournisseur',
@@ -300,6 +302,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         storageKey: d.storageKey,
         documentDate: d.documentDate,
         amountHt: d.amountHt,
+        amountTtc: d.amountTtc,
         uploadedAt: d.uploadedAt,
         supplierLabel: d.supplierLabel,
         marcheLabel: d.marcheLabel,

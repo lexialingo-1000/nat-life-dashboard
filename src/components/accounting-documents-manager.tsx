@@ -35,6 +35,8 @@ interface AccountingRow {
   storageKey: string;
   documentDate: string | null;
   amountHt: string | null;
+  // V12bis PR10 §2+§3 — TTC ajouté en plus de HT (retours Natacha dashboard-13).
+  amountTtc: string | null;
   uploadedAt: string;
 }
 
@@ -256,8 +258,19 @@ export function AccountingDocumentsManager({
         header: 'HT',
         enableColumnFilter: false,
         cell: ({ row }) => (
-          <span className="tabular-nums text-[13px]">
+          <span className="tabular-nums text-[13px] text-zinc-500">
             {row.original.amountHt ? `${Number(row.original.amountHt).toLocaleString('fr-FR')} €` : '—'}
+          </span>
+        ),
+      },
+      // V12bis PR10 §2+§3 — colonne TTC ajoutée (retours Natacha dashboard-13).
+      {
+        accessorKey: 'amountTtc',
+        header: 'TTC',
+        enableColumnFilter: false,
+        cell: ({ row }) => (
+          <span className="tabular-nums text-[13px] font-medium">
+            {row.original.amountTtc ? `${Number(row.original.amountTtc).toLocaleString('fr-FR')} €` : '—'}
           </span>
         ),
       },

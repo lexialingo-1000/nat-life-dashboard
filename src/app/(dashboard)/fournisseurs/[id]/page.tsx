@@ -340,6 +340,11 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
     0
   );
+  // V12bis PR10 §3 — total TTC ajouté (retours Natacha dashboard-13).
+  const totalTtc = supplierAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountTtc ? Number(d.amountTtc) : 0),
+    0
+  );
 
   const facturesTab = (
     <div className="card p-6 space-y-4">
@@ -355,9 +360,12 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
               {supplierAccountingDocs.length} document{supplierAccountingDocs.length > 1 ? 's' : ''} compta
               · agrégés depuis toutes les sociétés.
             </p>
-            <span className="font-mono text-[13px] tabular-nums text-zinc-700">
-              Total HT : {totalHt.toLocaleString('fr-FR')} €
-            </span>
+            <div className="flex flex-col items-end gap-0.5 font-mono text-[12px] tabular-nums text-zinc-700">
+              <span>Total HT : {totalHt.toLocaleString('fr-FR')} €</span>
+              <span className="font-medium text-zinc-900">
+                Total TTC : {totalTtc.toLocaleString('fr-FR')} €
+              </span>
+            </div>
           </div>
           <table className="table-base">
             <thead>
@@ -368,6 +376,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
                 <th>Date document</th>
                 <th>Document</th>
                 <th className="text-right">HT</th>
+                <th className="text-right">TTC</th>
               </tr>
             </thead>
             <tbody>
@@ -396,8 +405,11 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
                     {d.documentDate ?? '—'}
                   </td>
                   <td className="text-[13px] text-zinc-900">{d.name}</td>
-                  <td className="text-right font-mono tabular-nums">
+                  <td className="text-right font-mono tabular-nums text-zinc-500">
                     {d.amountHt ? `${Number(d.amountHt).toLocaleString('fr-FR')} €` : '—'}
+                  </td>
+                  <td className="text-right font-mono tabular-nums font-medium">
+                    {d.amountTtc ? `${Number(d.amountTtc).toLocaleString('fr-FR')} €` : '—'}
                   </td>
                 </tr>
               ))}
