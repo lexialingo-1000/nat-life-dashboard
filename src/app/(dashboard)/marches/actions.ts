@@ -434,7 +434,17 @@ const tacheUpdateSchema = tacheCreateSchema.extend({
   id: z.string().uuid(),
 });
 
-export async function createTacheAction(formData: FormData): Promise<void> {
+// V1.10 §9 — useFormState pattern : retourne {status, message} en cas d'erreur
+// (Zod ou DB), throw redirect en cas de succès. Évite le digest opaque Next.js
+// quand le throw nu était capturé par l'error boundary.
+export type CreateTacheState =
+  | { status: 'idle' }
+  | { status: 'error'; message: string };
+
+export async function createTacheAction(
+  _prev: CreateTacheState,
+  formData: FormData
+): Promise<CreateTacheState> {
   const parsed = tacheCreateSchema.safeParse({
     marcheSousLotId: formData.get('marcheSousLotId'),
     lotId: formData.get('lotId'),
@@ -447,21 +457,39 @@ export async function createTacheAction(formData: FormData): Promise<void> {
     dueDate: formData.get('dueDate'),
   });
   if (!parsed.success) {
-    throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
+    const message = parsed.error.errors
+      .map((e) => `${e.path.join('.') || 'champ'} : ${e.message}`)
+      .join(' · ');
+    console.error('[createTacheAction] validation error:', message);
+    return { status: 'error', message };
   }
   const data = parsed.data;
 
-  await db.insert(marcheTaches).values({
-    marcheSousLotId: data.marcheSousLotId,
-    lotId: data.lotId,
-    title: data.title,
-    description: data.description || null,
-    locationDescription: data.locationDescription || null,
-    roomId: data.roomId || null,
-    supplierContactId: data.supplierContactId || null,
-    status: data.status,
-    dueDate: data.dueDate || null,
-  });
+  try {
+    await db.insert(marcheTaches).values({
+      marcheSousLotId: data.marcheSousLotId,
+      lotId: data.lotId,
+      title: data.title,
+      description: data.description || null,
+      locationDescription: data.locationDescription || null,
+      roomId: data.roomId || null,
+      supplierContactId: data.supplierContactId || null,
+      status: data.status,
+      dueDate: data.dueDate || null,
+    });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[createTacheAction] DB insert error:', { code, detail });
+    let message = `Erreur création tâche : ${detail}`;
+    if (code === '23503') {
+      message =
+        'Impossible de créer la tâche : référence invalide (lot, sous-lot, pièce ou contact). Rafraîchis la page et réessaie.';
+    } else if (code === '23502') {
+      message = 'Impossible de créer la tâche : un champ obligatoire est vide.';
+    }
+    return { status: 'error', message };
+  }
 
   const returnTo = formData.get('returnTo');
   revalidatePath('/biens');
