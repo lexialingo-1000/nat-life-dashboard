@@ -393,21 +393,67 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       'Fournisseur',
   }));
 
-  const comptaTab =
-    marcheAccountingDocs.length === 0 ? (
-      <div className="card p-6 space-y-4">
-        <p className="text-sm text-zinc-500">
-          Aucun devis / commande / facture rattaché à ce marché. Les documents compta se
-          saisissent depuis la fiche société (onglet Compta) en sélectionnant ce marché.
-        </p>
-      </div>
-    ) : (
-      <MarcheComptaTable
-        rows={marcheComptaRows}
-        totalHt={marcheComptaTotalHt}
-        totalTtc={marcheComptaTotalTtc}
-      />
-    );
+  // V1.10 ext — options pour bouton "+ Nouveau" inline sur onglet compta marché.
+  const companyOptionsList = await db
+    .select({ id: companies.id, name: companies.name })
+    .from(companies)
+    .where(eq(companies.isActive, true))
+    .orderBy(asc(companies.name));
+  const companyOpts = companyOptionsList.map((c) => ({
+    id: c.id,
+    label: c.name,
+    slug: slugify(c.name),
+  }));
+
+  const supplierOptionsList = await db
+    .select({
+      id: suppliers.id,
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+    })
+    .from(suppliers)
+    .where(eq(suppliers.isActive, true))
+    .orderBy(asc(suppliers.companyName));
+  const supplierOpts = supplierOptionsList.map((s) => ({
+    id: s.id,
+    label:
+      (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) ||
+      'Fournisseur',
+  }));
+
+  // Devis/commandes déjà liés à ce marché (pour parent dropdowns)
+  const devisOptsForMarche = marcheAccountingDocs
+    .filter((d) => d.kind === 'devis')
+    .map((d) => ({
+      id: d.id,
+      label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
+      companyId: d.companyId,
+      supplierId: d.supplierId,
+    }));
+  const commandeOptsForMarche = marcheAccountingDocs
+    .filter((d) => d.kind === 'commande')
+    .map((d) => ({
+      id: d.id,
+      label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
+      companyId: d.companyId,
+      supplierId: d.supplierId,
+    }));
+
+  const comptaTab = (
+    <MarcheComptaTable
+      rows={marcheComptaRows}
+      totalHt={marcheComptaTotalHt}
+      totalTtc={marcheComptaTotalTtc}
+      marcheId={marche.id}
+      marcheDefaultSupplierId={marche.supplierId ?? null}
+      marcheDefaultCompanyId={marche.companyId ?? null}
+      companies={companyOpts}
+      suppliers={supplierOpts}
+      devisOptions={devisOptsForMarche}
+      commandeOptions={commandeOptsForMarche}
+    />
+  );
 
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
