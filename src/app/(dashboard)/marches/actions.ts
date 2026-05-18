@@ -413,8 +413,16 @@ const tacheCreateSchema = z.object({
   marcheSousLotId: z.string().uuid(),
   lotId: z.string().uuid(),
   title: z.string().min(1).max(255),
-  description: z.string().optional().or(z.literal('')),
-  locationDescription: z.string().optional().or(z.literal('')),
+  // V1.10 hotfix — preprocess null (FormData.get retourne null si champ absent du form).
+  // Pré-existant : z.string().optional().or(z.literal('')) rejetait null → "Invalid input".
+  description: z
+    .preprocess((v) => (v == null ? '' : v), z.string())
+    .optional(),
+  // V12bis umbrella §7 — locationDescription remplacé par roomId dans le form.
+  // Le schema le garde pour compat ancienne UI / API, mais accepte null/absent.
+  locationDescription: z
+    .preprocess((v) => (v == null ? '' : v), z.string())
+    .optional(),
   // V12bis umbrella §7 — FK pièce (niveau via JOIN rooms→levels) remplace
   // l'ancien champ libre `locationDescription`. Optionnel.
   roomId: z
