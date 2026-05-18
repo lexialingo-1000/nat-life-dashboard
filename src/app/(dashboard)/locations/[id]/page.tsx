@@ -252,17 +252,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Location
           </div>
+          {/* V1.10 §6 — retrait du <Link>propertyName</Link> redondant (lotName contient déjà le nom du bien, ex "Cabassols R+1"). */}
           <h1 className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[32px] font-normal leading-tight text-zinc-900">
             <Link
-              href={`/biens/properties/${loc.propertyId}`}
-              className="display-serif uppercase tracking-[0.02em] hover:text-blue-700"
-            >
-              {loc.propertyName}
-            </Link>
-            <span className="text-zinc-300">·</span>
-            <Link
               href={`/biens/lots/${loc.lotId}`}
-              className="display-serif hover:text-blue-700"
+              className="display-serif uppercase tracking-[0.02em] hover:text-blue-700"
             >
               {loc.lotName}
             </Link>

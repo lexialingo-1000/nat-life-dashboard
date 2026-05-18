@@ -4,24 +4,42 @@ import {
   companies,
   suppliers,
   marchesTravaux,
+  marcheLotAffectations,
+  lots,
   properties,
 } from '@/db/schema';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
-import { updateAccountingDocAction } from '@/app/(dashboard)/societes/accounting-actions';
+import { slugify } from '@/lib/storage/minio';
+import { ComptaEditForm, type MarcheOpt, type ParentDocOpt } from './compta-edit-form';
 
 export const dynamic = 'force-dynamic';
 
-const KIND_OPTIONS = [
-  { value: 'devis', label: 'Devis' },
-  { value: 'commande', label: 'Commande' },
-  { value: 'facture', label: 'Facture' },
-];
+type Kind = 'devis' | 'commande' | 'facture';
 
-// V12bis umbrella §2 — modifier un devis/commande/facture (retours Natacha dashboard-13).
+const KIND_LABEL: Record<Kind, string> = {
+  devis: 'Devis',
+  commande: 'Commande',
+  facture: 'Facture',
+};
+
+// V1.10 §3 — construit label marché avec description + lots affectés si dispo.
+// Format : "{propertyName} {lotsLabel}: {description}" sinon "{name} — {propertyName}".
+function buildMarcheLabel(
+  name: string,
+  propertyName: string,
+  description: string | null,
+  lotNames: string[]
+): string {
+  if (description && description.trim().length > 0) {
+    const lotsLabel = lotNames.length > 0 ? ` ${lotNames.join(', ')}` : '';
+    return `${propertyName}${lotsLabel}: ${description}`;
+  }
+  return `${name} — ${propertyName}`;
+}
+
+// V12bis umbrella §2 + V1.10 retours dashboard-14 (replace PJ, filtre marché live, dropdowns parents)
 export default async function EditAccountingDocPage({
   params,
 }: {
@@ -45,10 +63,13 @@ export default async function EditAccountingDocPage({
     .from(companies)
     .where(eq(companies.id, params.id))
     .limit(1);
-  const companyName = companyRow[0]?.name ?? 'Société';
+  const company = companyRow[0];
+  if (!company) notFound();
+  const companyName = company.name;
+  const companySlug = slugify(companyName);
 
   // Fournisseurs actifs
-  const supplierList = await db
+  const supplierRows = await db
     .select({
       id: suppliers.id,
       companyName: suppliers.companyName,
@@ -58,17 +79,96 @@ export default async function EditAccountingDocPage({
     .from(suppliers)
     .where(eq(suppliers.isActive, true))
     .orderBy(asc(suppliers.companyName), asc(suppliers.lastName));
+  const supplierList = supplierRows.map((s) => ({
+    id: s.id,
+    label:
+      (s.companyName ??
+        `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
+  }));
 
-  // Marchés (toutes sociétés — pattern cohérent avec V12bis PR9 §2)
-  const marcheList = await db
+  // V1.10 §3 — Marchés enrichis (description + property + lots affectés)
+  const marcheRows = await db
     .select({
       id: marchesTravaux.id,
       name: marchesTravaux.name,
+      description: marchesTravaux.description,
+      supplierId: marchesTravaux.supplierId,
       propertyName: properties.name,
     })
     .from(marchesTravaux)
     .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
     .orderBy(asc(marchesTravaux.name));
+
+  // Lots affectés par marché (1 query agrégée)
+  const marcheIds = marcheRows.map((m) => m.id);
+  const lotAffectations =
+    marcheIds.length > 0
+      ? await db
+          .select({
+            marcheId: marcheLotAffectations.marcheId,
+            lotName: lots.name,
+          })
+          .from(marcheLotAffectations)
+          .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
+          .where(inArray(marcheLotAffectations.marcheId, marcheIds))
+          .orderBy(asc(lots.name))
+      : [];
+  const lotsByMarche = new Map<string, string[]>();
+  for (const a of lotAffectations) {
+    const list = lotsByMarche.get(a.marcheId) ?? [];
+    list.push(a.lotName);
+    lotsByMarche.set(a.marcheId, list);
+  }
+  const marcheList: MarcheOpt[] = marcheRows.map((m) => ({
+    id: m.id,
+    label: buildMarcheLabel(
+      m.name,
+      m.propertyName,
+      m.description,
+      lotsByMarche.get(m.id) ?? []
+    ),
+    supplierId: m.supplierId,
+  }));
+
+  // V1.10 §4 §5 — devis / commandes de la même société (hors doc courant)
+  const parentDocs = await db
+    .select({
+      id: companyAccountingDocuments.id,
+      kind: companyAccountingDocuments.kind,
+      name: companyAccountingDocuments.name,
+      documentDate: companyAccountingDocuments.documentDate,
+      supplierId: companyAccountingDocuments.supplierId,
+      marcheId: companyAccountingDocuments.marcheId,
+    })
+    .from(companyAccountingDocuments)
+    .where(
+      and(
+        eq(companyAccountingDocuments.companyId, params.id),
+        ne(companyAccountingDocuments.id, params.docId)
+      )
+    );
+
+  const formatParent = (p: { kind: Kind | string; name: string; documentDate: string | null }) =>
+    `${KIND_LABEL[p.kind as Kind] ?? p.kind} · ${p.name}${
+      p.documentDate ? ` · ${p.documentDate}` : ''
+    }`;
+
+  const devisOptions: ParentDocOpt[] = parentDocs
+    .filter((p) => p.kind === 'devis')
+    .map((p) => ({
+      id: p.id,
+      label: formatParent(p),
+      supplierId: p.supplierId,
+      marcheId: p.marcheId,
+    }));
+  const commandeOptions: ParentDocOpt[] = parentDocs
+    .filter((p) => p.kind === 'commande')
+    .map((p) => ({
+      id: p.id,
+      label: formatParent(p),
+      supplierId: p.supplierId,
+      marcheId: p.marcheId,
+    }));
 
   const returnTo = `/societes/${params.id}?tab=compta`;
 
@@ -86,125 +186,30 @@ export default async function EditAccountingDocPage({
         </h1>
       </header>
 
-      <form action={updateAccountingDocAction} className="card space-y-5 p-6" autoComplete="off">
-        <input type="hidden" name="id" value={d.id} />
-        <input type="hidden" name="companyId" value={d.companyId} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Type *</label>
-            <select name="kind" defaultValue={d.kind} required className="input mt-1">
-              {KIND_OPTIONS.map((k) => (
-                <option key={k.value} value={k.value}>
-                  {k.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Date document</label>
-            <input
-              type="date"
-              name="documentDate"
-              defaultValue={d.documentDate ?? ''}
-              className="input mt-1"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Nom *</label>
-          <input
-            name="name"
-            defaultValue={d.name}
-            required
-            className="input mt-1"
-            autoComplete="off"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Fournisseur *</label>
-            <select name="supplierId" defaultValue={d.supplierId} required className="input mt-1">
-              {supplierList.map((s) => {
-                const label =
-                  s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? '—';
-                return (
-                  <option key={s.id} value={s.id}>
-                    {label}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Marché (optionnel)</label>
-            <select name="marcheId" defaultValue={d.marcheId ?? ''} className="input mt-1">
-              <option value="">— Aucun marché —</option>
-              {marcheList.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} — {m.propertyName}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Montant HT (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="amountHt"
-              defaultValue={d.amountHt ?? ''}
-              className="input tnum mt-1"
-            />
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Montant TTC (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="amountTtc"
-              defaultValue={d.amountTtc ?? ''}
-              className="input tnum mt-1"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Notes</label>
-          <textarea
-            name="notes"
-            rows={3}
-            defaultValue={d.notes ?? ''}
-            className="input mt-1"
-            autoComplete="off"
-            data-form-type="other"
-            data-lpignore="true"
-            data-1p-ignore="true"
-          />
-        </div>
-
-        <p className="rounded-md border border-zinc-200 bg-zinc-50 p-3 text-[11px] text-zinc-500">
-          La pièce jointe MinIO n&apos;est pas modifiable depuis ce formulaire. Pour la remplacer,
-          supprime le document et ré-uploade-le depuis l&apos;onglet Compta.
-        </p>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <Link href={returnTo} className="btn-secondary">
-            Annuler
-          </Link>
-          <button type="submit" className="btn-primary">
-            <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Enregistrer
-          </button>
-        </div>
-      </form>
+      <ComptaEditForm
+        doc={{
+          id: d.id,
+          companyId: d.companyId,
+          companySlug,
+          supplierId: d.supplierId,
+          marcheId: d.marcheId,
+          kind: d.kind as Kind,
+          name: d.name,
+          storageKey: d.storageKey,
+          originalFilename: d.originalFilename,
+          documentDate: d.documentDate,
+          amountHt: d.amountHt,
+          amountTtc: d.amountTtc,
+          parentDevisId: d.parentDevisId,
+          parentCommandeId: d.parentCommandeId,
+          notes: d.notes,
+        }}
+        suppliers={supplierList}
+        marches={marcheList}
+        devisOptions={devisOptions}
+        commandeOptions={commandeOptions}
+        returnTo={returnTo}
+      />
     </div>
   );
 }

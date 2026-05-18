@@ -32,6 +32,7 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
+import { MarcheComptaTable, type MarcheComptaRow } from '@/components/marche-compta-table';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -174,13 +175,16 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     : [];
   const marcheTypeLabel = marcheTypeRow[0]?.label ?? null;
 
-  // V12bis umbrella §5 — Onglet COMPTA du marché (retours Natacha dashboard-13).
-  // Liste devis + commandes + factures liés à ce marché via FK marcheId.
+  // V12bis umbrella §5 + V1.10 §7 §8 — Onglet COMPTA du marché.
+  // Liste devis + commandes + factures liés à ce marché via FK marcheId,
+  // avec actions inline (Modifier/Télécharger/Supprimer) + nom de fichier original.
   const marcheAccountingDocs = await db
     .select({
       id: companyAccountingDocuments.id,
       kind: companyAccountingDocuments.kind,
       name: companyAccountingDocuments.name,
+      originalFilename: companyAccountingDocuments.originalFilename,
+      storageKey: companyAccountingDocuments.storageKey,
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
       amountTtc: companyAccountingDocuments.amountTtc,
@@ -370,89 +374,40 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     facture: 'bg-emerald-100 text-emerald-700',
   };
 
-  // V12bis umbrella §5 — onglet COMPTA fiche marché.
-  const comptaTab = (
-    <div className="card p-6 space-y-4">
-      {marcheAccountingDocs.length === 0 ? (
+  // V12bis umbrella §5 + V1.10 §7 §8 — onglet COMPTA fiche marché avec actions inline.
+  const marcheComptaRows: MarcheComptaRow[] = marcheAccountingDocs.map((d) => ({
+    id: d.id,
+    kind: d.kind as MarcheComptaRow['kind'],
+    name: d.name,
+    originalFilename: d.originalFilename,
+    storageKey: d.storageKey,
+    documentDate: d.documentDate,
+    amountHt: d.amountHt,
+    amountTtc: d.amountTtc,
+    companyId: d.companyId,
+    companyName: d.companyName,
+    supplierId: d.supplierId,
+    supplierLabel:
+      d.supplierCompanyName ??
+      `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
+      'Fournisseur',
+  }));
+
+  const comptaTab =
+    marcheAccountingDocs.length === 0 ? (
+      <div className="card p-6 space-y-4">
         <p className="text-sm text-zinc-500">
           Aucun devis / commande / facture rattaché à ce marché. Les documents compta se
           saisissent depuis la fiche société (onglet Compta) en sélectionnant ce marché.
         </p>
-      ) : (
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] text-zinc-500">
-              {marcheAccountingDocs.length} document{marcheAccountingDocs.length > 1 ? 's' : ''} compta
-              {' '}lié{marcheAccountingDocs.length > 1 ? 's' : ''} à ce marché.
-            </p>
-            <div className="flex flex-col items-end gap-0.5 font-mono text-[12px] tabular-nums text-zinc-700">
-              <span>Total HT : {marcheComptaTotalHt.toLocaleString('fr-FR')} €</span>
-              <span className="font-medium text-zinc-900">
-                Total TTC : {marcheComptaTotalTtc.toLocaleString('fr-FR')} €
-              </span>
-            </div>
-          </div>
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Société</th>
-                <th>Fournisseur</th>
-                <th>Date document</th>
-                <th>Document</th>
-                <th className="text-right">HT</th>
-                <th className="text-right">TTC</th>
-              </tr>
-            </thead>
-            <tbody>
-              {marcheAccountingDocs.map((d) => {
-                const supplierLabel =
-                  d.supplierCompanyName ??
-                  `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
-                  'Fournisseur';
-                return (
-                  <tr key={d.id}>
-                    <td>
-                      <span
-                        className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${
-                          KIND_BADGE[d.kind] ?? ''
-                        }`}
-                      >
-                        {KIND_LABEL[d.kind] ?? d.kind}
-                      </span>
-                    </td>
-                    <td>
-                      <Link href={`/societes/${d.companyId}`} className="link-cell-soft text-[12px]">
-                        {d.companyName}
-                      </Link>
-                    </td>
-                    <td>
-                      <Link
-                        href={`/fournisseurs/${d.supplierId}`}
-                        className="link-cell-soft text-[12px]"
-                      >
-                        {supplierLabel}
-                      </Link>
-                    </td>
-                    <td className="font-mono text-[12px] tabular-nums text-zinc-700">
-                      {d.documentDate ?? '—'}
-                    </td>
-                    <td className="text-[13px] text-zinc-900">{d.name}</td>
-                    <td className="text-right font-mono tabular-nums text-zinc-500">
-                      {d.amountHt ? `${Number(d.amountHt).toLocaleString('fr-FR')} €` : '—'}
-                    </td>
-                    <td className="text-right font-mono tabular-nums font-medium">
-                      {d.amountTtc ? `${Number(d.amountTtc).toLocaleString('fr-FR')} €` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </>
-      )}
-    </div>
-  );
+      </div>
+    ) : (
+      <MarcheComptaTable
+        rows={marcheComptaRows}
+        totalHt={marcheComptaTotalHt}
+        totalTtc={marcheComptaTotalTtc}
+      />
+    );
 
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },

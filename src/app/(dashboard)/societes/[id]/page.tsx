@@ -8,8 +8,9 @@ import {
   companyAccountingDocuments,
   suppliers,
   marchesTravaux,
+  marcheLotAffectations,
 } from '@/db/schema';
-import { eq, sql, asc, and, desc } from 'drizzle-orm';
+import { eq, sql, asc, and, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
@@ -219,11 +220,13 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   // V1.9 PR #4 — Onglet Compta (devis/commande/facture). Stockage doc seul,
   // pas de logique métier (V1.5 post-réforme PA).
+  // V1.10 — +originalFilename, +parentDevisId/CommandeId pour relations inter-docs.
   const accountingDocs = await db
     .select({
       id: companyAccountingDocuments.id,
       kind: companyAccountingDocuments.kind,
       name: companyAccountingDocuments.name,
+      originalFilename: companyAccountingDocuments.originalFilename,
       storageKey: companyAccountingDocuments.storageKey,
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
@@ -235,6 +238,9 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       supplierLastName: suppliers.lastName,
       marcheId: companyAccountingDocuments.marcheId,
       marcheName: marchesTravaux.name,
+      marcheDescription: marchesTravaux.description,
+      parentDevisId: companyAccountingDocuments.parentDevisId,
+      parentCommandeId: companyAccountingDocuments.parentCommandeId,
     })
     .from(companyAccountingDocuments)
     .innerJoin(suppliers, eq(companyAccountingDocuments.supplierId, suppliers.id))
@@ -242,10 +248,38 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     .where(eq(companyAccountingDocuments.companyId, company.id))
     .orderBy(desc(companyAccountingDocuments.documentDate));
 
+  // V1.10 §4 §5 — résolution labels des parents (devis et commandes liés).
+  const parentIds = new Set<string>();
+  for (const d of accountingDocs) {
+    if (d.parentDevisId) parentIds.add(d.parentDevisId);
+    if (d.parentCommandeId) parentIds.add(d.parentCommandeId);
+  }
+  const parentRows =
+    parentIds.size > 0
+      ? await db
+          .select({
+            id: companyAccountingDocuments.id,
+            kind: companyAccountingDocuments.kind,
+            name: companyAccountingDocuments.name,
+            documentDate: companyAccountingDocuments.documentDate,
+          })
+          .from(companyAccountingDocuments)
+          .where(inArray(companyAccountingDocuments.id, Array.from(parentIds)))
+      : [];
+  const parentById = new Map(parentRows.map((p) => [p.id, p]));
+  const formatParentLabel = (id: string | null): string | null => {
+    if (!id) return null;
+    const p = parentById.get(id);
+    if (!p) return null;
+    const kindLabel = p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
+  };
+
   const accountingRows = accountingDocs.map((d) => ({
     id: d.id,
     kind: d.kind as AccountingDocKind,
     name: d.name,
+    originalFilename: d.originalFilename ?? null,
     storageKey: d.storageKey,
     documentDate: d.documentDate,
     amountHt: d.amountHt,
@@ -254,7 +288,27 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     supplierLabel:
       d.supplierCompanyName ?? `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ?? 'Fournisseur',
     marcheLabel: d.marcheName ?? null,
+    parentDevisLabel: formatParentLabel(d.parentDevisId),
+    parentCommandeLabel: formatParentLabel(d.parentCommandeId),
   }));
+
+  // V1.10 §4 §5 — devis et commandes existants (pour dropdowns parents du form upload)
+  const devisOpts = accountingRows
+    .filter((r) => r.kind === 'devis')
+    .map((r) => ({
+      id: r.id,
+      label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
+      supplierId: accountingDocs.find((d) => d.id === r.id)?.supplierId ?? '',
+      marcheId: accountingDocs.find((d) => d.id === r.id)?.marcheId ?? null,
+    }));
+  const commandeOpts = accountingRows
+    .filter((r) => r.kind === 'commande')
+    .map((r) => ({
+      id: r.id,
+      label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
+      supplierId: accountingDocs.find((d) => d.id === r.id)?.supplierId ?? '',
+      marcheId: accountingDocs.find((d) => d.id === r.id)?.marcheId ?? null,
+    }));
 
   // Fournisseurs actifs + marchés liés à cette société (via property→company)
   const supplierOptions = await db
@@ -277,10 +331,12 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
   // fournisseur est fait côté client dans <AccountingDocumentsManager>. Permet
   // de saisir une facture FKA pour un marché exécuté sur VALROSE (flux
   // inter-société courant).
+  // V1.10 §3 — +description + lots affectés pour label enrichi.
   const marcheOptions = await db
     .select({
       id: marchesTravaux.id,
       name: marchesTravaux.name,
+      description: marchesTravaux.description,
       supplierId: marchesTravaux.supplierId,
       propertyName: properties.name,
     })
@@ -288,11 +344,31 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
     .orderBy(asc(marchesTravaux.name));
 
-  const marcheOpts = marcheOptions.map((m) => ({
-    id: m.id,
-    label: `${m.name} — ${m.propertyName}`,
-    supplierId: m.supplierId,
-  }));
+  const marcheIdsAll = marcheOptions.map((m) => m.id);
+  const marcheLotRows =
+    marcheIdsAll.length > 0
+      ? await db
+          .select({ marcheId: marcheLotAffectations.marcheId, lotName: lots.name })
+          .from(marcheLotAffectations)
+          .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
+          .where(inArray(marcheLotAffectations.marcheId, marcheIdsAll))
+          .orderBy(asc(lots.name))
+      : [];
+  const lotsByMarche = new Map<string, string[]>();
+  for (const a of marcheLotRows) {
+    const list = lotsByMarche.get(a.marcheId) ?? [];
+    list.push(a.lotName);
+    lotsByMarche.set(a.marcheId, list);
+  }
+
+  const marcheOpts = marcheOptions.map((m) => {
+    const lotsLabel = (lotsByMarche.get(m.id) ?? []).join(', ');
+    const label =
+      m.description && m.description.trim().length > 0
+        ? `${m.propertyName}${lotsLabel ? ` ${lotsLabel}` : ''}: ${m.description}`
+        : `${m.name} — ${m.propertyName}`;
+    return { id: m.id, label, supplierId: m.supplierId };
+  });
 
   // V12bis umbrella §2 — properties de cette société pour création marché à la volée.
   const propertyOptions = await db
@@ -308,6 +384,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       .map((d) => ({
         id: d.id,
         name: d.name,
+        originalFilename: d.originalFilename,
         storageKey: d.storageKey,
         documentDate: d.documentDate,
         amountHt: d.amountHt,
@@ -315,6 +392,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         uploadedAt: d.uploadedAt,
         supplierLabel: d.supplierLabel,
         marcheLabel: d.marcheLabel,
+        parentDevisLabel: d.parentDevisLabel,
+        parentCommandeLabel: d.parentCommandeLabel,
       }));
     return (
       <div className="card p-6">
@@ -331,6 +410,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           createSupplierAction={createSupplierInlineAction}
           createMarcheAction={createMarcheInlineAction}
           properties={propertyOpts}
+          devisOptions={devisOpts}
+          commandeOptions={commandeOpts}
         />
       </div>
     );

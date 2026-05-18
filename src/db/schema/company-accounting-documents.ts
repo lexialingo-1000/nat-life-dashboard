@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, date, numeric, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, numeric, pgEnum, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { suppliers } from './suppliers';
 import { marchesTravaux } from './marches';
@@ -33,9 +33,21 @@ export const companyAccountingDocuments = pgTable('company_accounting_documents'
   kind: accountingDocKindEnum('kind').notNull(),
   name: text('name').notNull(),
   storageKey: text('storage_key').notNull(),
+  // V1.10 §8 — nom du fichier original capturé à l'upload.
+  originalFilename: text('original_filename'),
   documentDate: date('document_date'),
   amountHt: numeric('amount_ht', { precision: 14, scale: 2 }),
   amountTtc: numeric('amount_ttc', { precision: 14, scale: 2 }),
+  // V1.10 §4 — lien optionnel commande/facture → devis source.
+  parentDevisId: uuid('parent_devis_id').references(
+    (): AnyPgColumn => companyAccountingDocuments.id,
+    { onDelete: 'set null' }
+  ),
+  // V1.10 §5 — lien optionnel facture → commande source.
+  parentCommandeId: uuid('parent_commande_id').references(
+    (): AnyPgColumn => companyAccountingDocuments.id,
+    { onDelete: 'set null' }
+  ),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),

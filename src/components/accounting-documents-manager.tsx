@@ -34,11 +34,16 @@ interface AccountingRow {
   supplierLabel: string;
   marcheLabel: string | null;
   name: string;
+  // V1.10 §8 — nom de fichier original. Fallback `name` si null (rows pré-migration).
+  originalFilename: string | null;
   storageKey: string;
   documentDate: string | null;
   amountHt: string | null;
   // V12bis PR10 §2+§3 — TTC ajouté en plus de HT (retours Natacha dashboard-13).
   amountTtc: string | null;
+  // V1.10 §4 §5 — liens parents (labels pour badge colonne "Lié à").
+  parentDevisLabel: string | null;
+  parentCommandeLabel: string | null;
   uploadedAt: string;
 }
 
@@ -51,6 +56,14 @@ interface MarcheOption {
   id: string;
   label: string;
   supplierId: string;
+}
+
+// V1.10 §4 §5 — devis/commandes existants pour les dropdowns parents.
+export interface ParentAccountingDocOption {
+  id: string;
+  label: string;
+  supplierId: string;
+  marcheId: string | null;
 }
 
 type InlineCreateResult = { id: string; label: string } | { error: string };
@@ -76,6 +89,9 @@ interface Props {
   createMarcheAction?: (formData: FormData) => Promise<InlineCreateResult>;
   /** Propriétés (biens) de la société courante, pour le dialog "Créer marché à la volée". */
   properties?: PropertyOption[];
+  // V1.10 §4 §5 — devis et commandes disponibles comme parents (la société courante).
+  devisOptions?: ParentAccountingDocOption[];
+  commandeOptions?: ParentAccountingDocOption[];
 }
 
 export function AccountingDocumentsManager({
@@ -91,6 +107,8 @@ export function AccountingDocumentsManager({
   createSupplierAction,
   createMarcheAction,
   properties = [],
+  devisOptions = [],
+  commandeOptions = [],
 }: Props) {
   // V12bis umbrella §2 — marchés en state pour pouvoir ajouter ceux créés inline.
   const [marches, setMarches] = useState<MarcheOption[]>(initialMarches);
@@ -104,9 +122,28 @@ export function AccountingDocumentsManager({
   const [amountHt, setAmountHt] = useState('');
   const [amountTtc, setAmountTtc] = useState('');
   const [notes, setNotes] = useState('');
+  // V1.10 §4 §5 — liens parents (commande→devis, facture→devis/commande)
+  const [parentDevisId, setParentDevisId] = useState('');
+  const [parentCommandeId, setParentCommandeId] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingTransition, startTransition] = useTransition();
+
+  // Filtre parents par fournisseur+marché sélectionnés (et exclut le doc lui-même).
+  const visibleDevis = useMemo(
+    () =>
+      devisOptions
+        .filter((d) => !supplierId || d.supplierId === supplierId)
+        .filter((d) => !marcheId || !d.marcheId || d.marcheId === marcheId),
+    [devisOptions, supplierId, marcheId]
+  );
+  const visibleCommandes = useMemo(
+    () =>
+      commandeOptions
+        .filter((c) => !supplierId || c.supplierId === supplierId)
+        .filter((c) => !marcheId || !c.marcheId || c.marcheId === marcheId),
+    [commandeOptions, supplierId, marcheId]
+  );
 
   // V12bis PR9 §2 — fix Natacha "Je n'ai plus la liste des marchés".
   // Avant : filter strict marches.supplier_id === supplierId → liste vide si
@@ -130,6 +167,8 @@ export function AccountingDocumentsManager({
     setAmountHt('');
     setAmountTtc('');
     setNotes('');
+    setParentDevisId('');
+    setParentCommandeId('');
     setError(null);
     setUploading(false);
   };
@@ -177,9 +216,14 @@ export function AccountingDocumentsManager({
       fd.set('kind', kind);
       fd.set('name', docName.trim());
       fd.set('storageKey', storageKey);
+      // V1.10 §8 — nom de fichier original.
+      fd.set('originalFilename', file.name);
       if (documentDate) fd.set('documentDate', documentDate);
       if (amountHt) fd.set('amountHt', amountHt);
       if (amountTtc) fd.set('amountTtc', amountTtc);
+      // V1.10 §4 §5 — liens parents (server-side enforce nullification selon kind).
+      if (parentDevisId) fd.set('parentDevisId', parentDevisId);
+      if (parentCommandeId) fd.set('parentCommandeId', parentCommandeId);
       if (notes) fd.set('notes', notes);
       await uploadAction(fd);
 
@@ -257,17 +301,50 @@ export function AccountingDocumentsManager({
       {
         accessorKey: 'name',
         header: 'Document',
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => handleDownload(row.original.storageKey)}
-            disabled={pendingTransition}
-            className="link-cell text-left disabled:opacity-50"
-          >
-            {row.original.name}
-          </button>
-        ),
+        cell: ({ row }) => {
+          // V1.10 §8 — affiche le nom de fichier original quand disponible
+          // (rows pré-migration : fallback sur le titre saisi `name`).
+          const display = row.original.originalFilename ?? row.original.name;
+          return (
+            <button
+              type="button"
+              onClick={() => handleDownload(row.original.storageKey)}
+              disabled={pendingTransition}
+              className="link-cell text-left disabled:opacity-50"
+              title={row.original.name}
+            >
+              {display}
+            </button>
+          );
+        },
       },
+      // V1.10 §4 §5 — colonne "Lié à" (visible seulement pour commande/facture).
+      ...(kind !== 'devis'
+        ? [
+            {
+              id: 'parents',
+              header: 'Lié à',
+              enableSorting: false,
+              enableColumnFilter: false,
+              cell: ({ row }: { row: { original: AccountingRow } }) => {
+                const badges: string[] = [];
+                if (row.original.parentDevisLabel)
+                  badges.push(`→ ${row.original.parentDevisLabel}`);
+                if (row.original.parentCommandeLabel)
+                  badges.push(`→ ${row.original.parentCommandeLabel}`);
+                if (badges.length === 0)
+                  return <span className="text-zinc-300">—</span>;
+                return (
+                  <div className="flex flex-col gap-0.5 text-[11px] text-zinc-600">
+                    {badges.map((b, i) => (
+                      <span key={i}>{b}</span>
+                    ))}
+                  </div>
+                );
+              },
+            } as ColumnDef<AccountingRow>,
+          ]
+        : []),
       {
         accessorKey: 'amountHt',
         header: 'HT',
@@ -327,7 +404,7 @@ export function AccountingDocumentsManager({
         ),
       },
     ],
-    [pendingTransition]
+    [pendingTransition, kind, companyId]
   );
 
   return (
@@ -444,6 +521,56 @@ export function AccountingDocumentsManager({
               <input type="number" step="0.01" min="0" value={amountTtc} onChange={(e) => setAmountTtc(e.target.value)} className="input mt-1 tabular-nums" />
             </div>
           </div>
+
+          {/* V1.10 §4 §5 — liens parents conditionnels par kind */}
+          {kind !== 'devis' && (
+            <div>
+              <label className="block text-[12px] font-medium text-zinc-700">
+                Devis lié (optionnel)
+              </label>
+              <select
+                value={parentDevisId}
+                onChange={(e) => setParentDevisId(e.target.value)}
+                className="input mt-1"
+              >
+                <option value="">— Aucun devis lié —</option>
+                {visibleDevis.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              {visibleDevis.length === 0 && (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Aucun devis disponible pour ce fournisseur.
+                </p>
+              )}
+            </div>
+          )}
+          {kind === 'facture' && (
+            <div>
+              <label className="block text-[12px] font-medium text-zinc-700">
+                Commande liée (optionnel)
+              </label>
+              <select
+                value={parentCommandeId}
+                onChange={(e) => setParentCommandeId(e.target.value)}
+                className="input mt-1"
+              >
+                <option value="">— Aucune commande liée —</option>
+                {visibleCommandes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              {visibleCommandes.length === 0 && (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Aucune commande disponible pour ce fournisseur.
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-[12px] font-medium text-zinc-700">Notes</label>
