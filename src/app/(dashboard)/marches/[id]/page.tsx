@@ -70,6 +70,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       dateDebutReel: marchesTravaux.dateDebutReel,
       dateFinReelle: marchesTravaux.dateFinReelle,
       status: marchesTravaux.status,
+      // V1.11 R1 — isActive pour afficher le badge "Inactif" dans le header.
+      isActive: marchesTravaux.isActive,
       notes: marchesTravaux.notes,
       marcheTypeId: marchesTravaux.marcheTypeId,
       propertyId: properties.id,
@@ -481,17 +483,33 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
               {marche.propertyName}
             </Link>
           </div>
+          {/* V1.11 R2 — H1 = description du marché (fallback type de travaux,
+              puis fournisseur si ni l'un ni l'autre n'est renseigné). Avant V1.11
+              le titre montrait le nom du fournisseur, redondant avec breadcrumb. */}
           <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
-            <span className="display-serif">{supplierLabel}</span>
+            <span className="display-serif">
+              {marche.description ?? marcheTypeLabel ?? supplierLabel}
+            </span>
+            {marcheTypeLabel && marche.description && (
+              <span className="ml-3 inline-flex items-center rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 align-middle text-[12px] font-medium uppercase tracking-[0.06em] text-zinc-700">
+                {marcheTypeLabel}
+              </span>
+            )}
+            {!marche.isActive && (
+              <span className="ml-3 inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 align-middle text-[12px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+                Inactif
+              </span>
+            )}
           </h1>
+          {/* V1.11 R3 — subtitle = uniquement le fournisseur (avant : `fournisseur · bien`,
+              le bien était redondant avec breadcrumb). */}
           <p className="mt-1.5 text-[13px] text-zinc-500">
             <Link
               href={`/fournisseurs/${marche.supplierId}`}
               className="font-medium hover:underline"
             >
               {supplierLabel}
-            </Link>{' '}
-            · {marche.propertyName}
+            </Link>
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {affectedLots.length === 0 ? (
