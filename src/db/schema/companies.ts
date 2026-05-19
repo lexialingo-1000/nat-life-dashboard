@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, jsonb, timestamp, varchar, boolean, date } from 'drizzle-orm/pg-core';
-import { companyTypeEnum, formeJuridiqueEnum, documentCategoryEnum } from './enums';
+import { companyTypeEnum, formeJuridiqueEnum, documentCategoryEnum, tvaFrequencyEnum } from './enums';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -14,6 +14,8 @@ export const companies = pgTable('companies', {
   nafCode: varchar('naf_code', { length: 10 }),
   // V12bis PR5 A1 — numéro TVA intracom
   tvaIntracom: varchar('tva_intracom', { length: 20 }),
+  // V1.11 R8 — fréquence TVA (cf. enum). Null = info non renseignée.
+  tvaFrequency: tvaFrequencyEnum('tva_frequency'),
   isActive: boolean('is_active').notNull().default(true),
   settings: jsonb('settings').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

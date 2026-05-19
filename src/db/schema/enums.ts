@@ -41,16 +41,11 @@ export const propertyTypeEnum = pgEnum('property_type', [
 
 // V1.9 : split 'loue_ou_vacant' en 'loue' + 'vacant' (Natacha — statuts distincts).
 // Migration SQL : drizzle/migrations/0015_property_statut_split.sql.
-// V12bis PR9 §4 : ajout 'en_portefeuille' + 'en_cours_de_vente' (retours dashboard-13).
-// 'loue' et 'vacant' restent dans l'enum (legacy, plus exposées) — backfill auto en
-// 'en_portefeuille' lors de la migration 0023. Drop complet reporté à V1.10.
 export const propertyStatutEnum = pgEnum('property_statut', [
   'en_cours_acquisition',
-  'en_portefeuille',
-  'en_cours_de_vente',
-  'vendu',
   'loue',
   'vacant',
+  'vendu',
 ]);
 
 export const lotStatusEnum = pgEnum('lot_status', [
@@ -126,4 +121,13 @@ export const supplierTypeEnum = pgEnum('supplier_type', [
   'diagnostic',
   'assurance',
   'autre',
+]);
+
+// V1.11 R8 — fréquence TVA des sociétés.
+// NULL = info pas renseignée ; 'non_assujettie' = explicite ; sinon fréquence.
+export const tvaFrequencyEnum = pgEnum('tva_frequency', [
+  'non_assujettie',
+  'mensuelle',
+  'trimestrielle',
+  'annuelle',
 ]);

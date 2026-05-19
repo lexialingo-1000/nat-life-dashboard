@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, date, integer, numeric, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, integer, numeric, primaryKey, boolean } from 'drizzle-orm/pg-core';
 import { marcheStatusEnum, documentCategoryEnum } from './enums';
 import { properties, lots } from './properties';
 import { suppliers } from './suppliers';
@@ -26,6 +26,9 @@ export const marchesTravaux = pgTable('marches_travaux', {
   dateDebutReel: date('date_debut_reel'),
   dateFinReelle: date('date_fin_reelle'),
   status: marcheStatusEnum('status').notNull().default('devis_recu'),
+  // V1.11 R1 — ETAT du marché. Default ACTIF à la création.
+  // Liste filtre WHERE is_active = true par défaut, toggle "Afficher inactifs".
+  isActive: boolean('is_active').notNull().default(true),
   storagePath: text('storage_path'),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
