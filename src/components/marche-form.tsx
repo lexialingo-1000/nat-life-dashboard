@@ -40,6 +40,8 @@ export interface MarcheFormValues {
   dateDebutPrevu?: string | null;
   dateFinPrevu?: string | null;
   status?: string;
+  // V1.11 R1 — ETAT du marché (ACTIF/INACTIF). Présent uniquement en mode édition.
+  isActive?: boolean;
   notes?: string | null;
   lotIds?: string[];
 }
@@ -216,6 +218,28 @@ export function MarcheForm({
             data-1p-ignore="true"
           />
         </div>
+
+        {/* V1.11 R1 — ETAT du marché. Toggle visible uniquement en mode édition.
+            À la création, la valeur est forcée par défaut à true côté DB. */}
+        {defaultValues.id && (
+          <div className="col-span-2">
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-zinc-200 bg-[#fbf8f0] p-3">
+              <input
+                type="checkbox"
+                name="isActive"
+                defaultChecked={defaultValues.isActive ?? true}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              <div>
+                <div className="text-sm font-medium">Marché actif</div>
+                <p className="text-[11px] text-zinc-500">
+                  Décocher pour archiver le marché. Les marchés inactifs sont masqués par défaut
+                  dans la liste (toggle « Afficher inactifs » pour les revoir).
+                </p>
+              </div>
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">

@@ -31,6 +31,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
       dateDebutPrevu: marchesTravaux.dateDebutPrevu,
       dateFinPrevu: marchesTravaux.dateFinPrevu,
       status: marchesTravaux.status,
+      isActive: marchesTravaux.isActive,
       notes: marchesTravaux.notes,
       marcheTypeId: marchesTravaux.marcheTypeId,
       propertyName: properties.name,
@@ -103,6 +104,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
           dateDebutPrevu: marche.dateDebutPrevu,
           dateFinPrevu: marche.dateFinPrevu,
           status: marche.status,
+          isActive: marche.isActive,
           notes: marche.notes,
           lotIds: affectations.map((a) => a.lotId),
         }}

@@ -42,6 +42,8 @@ const marcheBaseSchema = z.object({
   dateDebutPrevu: z.string().optional().or(z.literal('')),
   dateFinPrevu: z.string().optional().or(z.literal('')),
   status: z.enum(marcheStatusValues).default('devis_recu'),
+  // V1.11 R1 — ETAT du marché (ACTIF/INACTIF). Default true à la création.
+  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()).default(true),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -187,6 +189,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
     dateDebutPrevu: formData.get('dateDebutPrevu'),
     dateFinPrevu: formData.get('dateFinPrevu'),
     status: formData.get('status') ?? 'devis_recu',
+    isActive: formData.get('isActive') ?? false,
     notes: formData.get('notes'),
   });
 
@@ -213,6 +216,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
       dateDebutPrevu: data.dateDebutPrevu || null,
       dateFinPrevu: data.dateFinPrevu || null,
       status: data.status,
+      isActive: data.isActive,
       notes: data.notes || null,
       updatedAt: new Date(),
     })
