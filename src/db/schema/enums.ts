@@ -41,10 +41,15 @@ export const propertyTypeEnum = pgEnum('property_type', [
 
 // V1.9 : split 'loue_ou_vacant' en 'loue' + 'vacant' (Natacha — statuts distincts).
 // Migration SQL : drizzle/migrations/0015_property_statut_split.sql.
+// V1.11 hotfix : ajout 'en_portefeuille' + 'en_cours_de_vente' (déjà présents en
+// prod DB, ajoutés manuellement précédemment ; le schéma canonique était en
+// retard et bloquait le build Coolify). Aligne TS sur la réalité prod.
 export const propertyStatutEnum = pgEnum('property_statut', [
   'en_cours_acquisition',
+  'en_portefeuille',
   'loue',
   'vacant',
+  'en_cours_de_vente',
   'vendu',
 ]);
 
