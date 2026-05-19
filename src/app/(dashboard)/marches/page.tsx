@@ -8,7 +8,7 @@ import {
   companies,
   suppliers,
 } from '@/db/schema';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { MarchesTable, type MarcheRow } from './marches-table';
@@ -19,12 +19,16 @@ export const dynamic = 'force-dynamic';
 export default async function MarchesPage({
   searchParams,
 }: {
-  searchParams: { supplierId?: string };
+  searchParams: { supplierId?: string; showInactive?: string };
 }) {
   const activeSupplierId = searchParams.supplierId ?? undefined;
+  // V1.11 R5 — par défaut, n'affiche que les marchés ACTIFS. Toggle URL
+  // ?showInactive=true pour les voir aussi.
+  const showInactive = searchParams.showInactive === 'true';
 
   let rows: MarcheRow[] = [];
   let supplierList: { id: string; label: string }[] = [];
+  let inactiveCount = 0;
   let dbError: string | null = null;
   try {
     const rawSuppliers = await db
@@ -36,12 +40,26 @@ export default async function MarchesPage({
       label: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim(),
     }));
 
+    // V1.11 R5 — compte les inactifs pour afficher le toggle "Afficher inactifs (N)".
+    const inactiveCountRows = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(marchesTravaux)
+      .where(eq(marchesTravaux.isActive, false));
+    inactiveCount = inactiveCountRows[0]?.n ?? 0;
+
+    const conditions = [];
+    if (!showInactive) conditions.push(eq(marchesTravaux.isActive, true));
+    if (activeSupplierId) conditions.push(eq(marchesTravaux.supplierId, activeSupplierId));
+
     const base = db
       .select({
         id: marchesTravaux.id,
         name: marchesTravaux.name,
+        // V1.11 R7 — description exposée pour la 2ᵉ colonne de la liste.
+        description: marchesTravaux.description,
         amountHt: marchesTravaux.amountHt,
         status: marchesTravaux.status,
+        isActive: marchesTravaux.isActive,
         supplierId: suppliers.id,
         supplierCompanyName: suppliers.companyName,
         supplierFirstName: suppliers.firstName,
@@ -63,9 +81,7 @@ export default async function MarchesPage({
       .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
       .leftJoin(marcheTypes, eq(marchesTravaux.marcheTypeId, marcheTypes.id));
 
-    const filtered = activeSupplierId
-      ? base.where(eq(marchesTravaux.supplierId, activeSupplierId))
-      : base;
+    const filtered = conditions.length > 0 ? base.where(and(...conditions)) : base;
     const rawRows = await filtered.orderBy(asc(marchesTravaux.name));
     rows = rawRows.map((r) => ({
       id: r.id,
@@ -79,12 +95,23 @@ export default async function MarchesPage({
       propertyId: r.propertyId,
       propertyName: r.propertyName,
       lotsConcernes: r.lotsConcernes,
+      description: r.description,
       amountHt: r.amountHt,
       status: r.status,
+      isActive: r.isActive,
     }));
   } catch (e) {
     dbError = e instanceof Error ? e.message : 'Erreur inconnue';
   }
+
+  // Préserve les autres searchParams quand on toggle le filtre actif/inactif.
+  const toggleHref = (() => {
+    const params = new URLSearchParams();
+    if (activeSupplierId) params.set('supplierId', activeSupplierId);
+    if (!showInactive) params.set('showInactive', 'true');
+    const qs = params.toString();
+    return qs ? `/marches?${qs}` : '/marches';
+  })();
 
   return (
     <div className="space-y-8">
@@ -108,31 +135,48 @@ export default async function MarchesPage({
       </header>
 
       {!dbError && supplierList.length > 0 && (
-        <form method="get" className="flex items-center gap-3">
-          <label className="text-[12px] font-medium uppercase tracking-[0.12em] text-zinc-500">
-            Fournisseur
-          </label>
-          <select
-            name="supplierId"
-            defaultValue={activeSupplierId ?? ''}
-            className="input w-56 text-[13px]"
-          >
-            <option value="">Tous les fournisseurs</option>
-            {supplierList.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="btn-secondary text-[12px]">
-            Filtrer
-          </button>
-          {activeSupplierId && (
-            <Link href="/marches" className="text-[12px] text-zinc-400 hover:text-zinc-700">
-              Réinitialiser
+        <div className="flex flex-wrap items-center gap-3">
+          <form method="get" className="flex items-center gap-3">
+            <label className="text-[12px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+              Fournisseur
+            </label>
+            <select
+              name="supplierId"
+              defaultValue={activeSupplierId ?? ''}
+              className="input w-56 text-[13px]"
+            >
+              <option value="">Tous les fournisseurs</option>
+              {supplierList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            {showInactive && <input type="hidden" name="showInactive" value="true" />}
+            <button type="submit" className="btn-secondary text-[12px]">
+              Filtrer
+            </button>
+            {(activeSupplierId || showInactive) && (
+              <Link href="/marches" className="text-[12px] text-zinc-400 hover:text-zinc-700">
+                Réinitialiser
+              </Link>
+            )}
+          </form>
+
+          {/* V1.11 R5 — toggle "Afficher inactifs (N)". Caché si 0 inactif. */}
+          {inactiveCount > 0 && (
+            <Link
+              href={toggleHref}
+              className={`ml-auto inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-medium transition ${
+                showInactive
+                  ? 'border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
+              }`}
+            >
+              {showInactive ? 'Masquer les inactifs' : `Afficher les inactifs (${inactiveCount})`}
             </Link>
           )}
-        </form>
+        </div>
       )}
 
       {dbError && (
