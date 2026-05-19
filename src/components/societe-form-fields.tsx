@@ -16,6 +16,9 @@ const FORME_OPTIONS = [
   { value: 'autre', label: 'Autre' },
 ];
 
+// V1.11 R8 — enum 4 valeurs. NULL côté DB = info non renseignée.
+export type TvaFrequency = 'non_assujettie' | 'mensuelle' | 'trimestrielle' | 'annuelle';
+
 export interface SocieteFormValues {
   name?: string;
   siren?: string | null;
@@ -25,6 +28,8 @@ export interface SocieteFormValues {
   activitePrincipale?: string | null;
   nafCode?: string | null;
   tvaIntracom?: string | null;
+  // V1.11 R8 — fréquence TVA. Null = info non renseignée ; 'non_assujettie' = explicite.
+  tvaFrequency?: TvaFrequency | null;
   isActive?: boolean;
 }
 
@@ -53,6 +58,17 @@ export function SocieteFormFields({
   );
   const [nafCode, setNafCode] = useState(defaultValues.nafCode ?? '');
   const [tvaIntracom, setTvaIntracom] = useState(defaultValues.tvaIntracom ?? '');
+  // V1.11 R8 — checkbox pilote l'affichage du select fréquence. La valeur DB
+  // est l'enum complet (1 colonne) ; "Assujettie" coché = mensuelle/trim/annuelle ;
+  // décoché = non_assujettie.
+  const initialAssujettie =
+    defaultValues.tvaFrequency != null && defaultValues.tvaFrequency !== 'non_assujettie';
+  const [isAssujettieTva, setIsAssujettieTva] = useState(initialAssujettie);
+  const [tvaFrequency, setTvaFrequency] = useState<TvaFrequency | ''>(
+    defaultValues.tvaFrequency && defaultValues.tvaFrequency !== 'non_assujettie'
+      ? defaultValues.tvaFrequency
+      : ''
+  );
   const [isActive, setIsActive] = useState(defaultValues.isActive ?? true);
 
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -211,6 +227,45 @@ export function SocieteFormFields({
           />
           <p className="mt-1 text-[11px] text-zinc-500">Format FR + 11 chiffres. Optionnel.</p>
         </div>
+      </div>
+
+      {/* V1.11 R8 — Assujettie à la TVA + fréquence (placé juste après N° TVA intracom). */}
+      <div className="rounded-md border border-zinc-200 bg-[#fbf8f0] p-3">
+        <label className="flex cursor-pointer items-start gap-2.5">
+          <input
+            type="checkbox"
+            checked={isAssujettieTva}
+            onChange={(e) => {
+              setIsAssujettieTva(e.target.checked);
+              if (!e.target.checked) setTvaFrequency('');
+            }}
+            className="mt-0.5 h-4 w-4 rounded border-zinc-300"
+          />
+          <div className="flex-1">
+            <div className="text-sm font-medium">Assujettie à la TVA</div>
+            <p className="text-[11px] text-zinc-500">
+              Si coché, choisissez la fréquence de déclaration.
+            </p>
+          </div>
+        </label>
+        {isAssujettieTva && (
+          <div className="mt-3">
+            <label className="block text-sm font-medium">Fréquence TVA *</label>
+            <select
+              name="tvaFrequency"
+              value={tvaFrequency}
+              onChange={(e) => setTvaFrequency(e.target.value as TvaFrequency | '')}
+              required
+              className="input mt-1"
+            >
+              <option value="">— Choisir —</option>
+              <option value="mensuelle">TVA mensuelle</option>
+              <option value="trimestrielle">TVA trimestrielle</option>
+              <option value="annuelle">TVA annuelle</option>
+            </select>
+          </div>
+        )}
+        {!isAssujettieTva && <input type="hidden" name="tvaFrequency" value="non_assujettie" />}
       </div>
 
       {showActiveToggle && (

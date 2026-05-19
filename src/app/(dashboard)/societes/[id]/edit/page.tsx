@@ -38,6 +38,10 @@ export default async function EditSocietePage({ params }: { params: { id: string
             activitePrincipale: company.activitePrincipale,
             nafCode: company.nafCode,
             tvaIntracom: (company as { tvaIntracom?: string | null }).tvaIntracom ?? '',
+            // V1.11 R8 — fréquence TVA depuis l'enum DB.
+            tvaFrequency:
+              (company as { tvaFrequency?: 'non_assujettie' | 'mensuelle' | 'trimestrielle' | 'annuelle' | null })
+                .tvaFrequency ?? null,
             isActive: (company as { isActive?: boolean }).isActive ?? true,
           }}
           enableSirenLookup

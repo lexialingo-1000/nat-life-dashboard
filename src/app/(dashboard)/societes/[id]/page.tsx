@@ -139,6 +139,18 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           <Row label="N° TVA intracom">
             <span className="font-mono tnum">{(company as any).tvaIntracom ?? '—'}</span>
           </Row>
+          {/* V1.11 R8 — affichage fréquence TVA. */}
+          <Row label="TVA">
+            {(() => {
+              const f = (company as { tvaFrequency?: string | null }).tvaFrequency ?? null;
+              if (f === 'mensuelle') return 'TVA mensuelle';
+              if (f === 'trimestrielle') return 'TVA trimestrielle';
+              if (f === 'annuelle') return 'TVA annuelle';
+              if (f === 'non_assujettie')
+                return <span className="text-zinc-500">Non assujettie</span>;
+              return <span className="text-zinc-400">—</span>;
+            })()}
+          </Row>
         </dl>
       </div>
       <div className="card p-5">

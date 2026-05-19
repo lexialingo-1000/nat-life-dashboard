@@ -39,6 +39,12 @@ const createSchema = z.object({
     .regex(/^[A-Z0-9 ]*$/i, 'Format invalide')
     .optional()
     .or(z.literal('')),
+  // V1.11 R8 — fréquence TVA. UI envoie 'non_assujettie' si checkbox décochée,
+  // ou une des 3 fréquences si cochée. Empty string = info non renseignée (legacy).
+  tvaFrequency: z
+    .enum(['non_assujettie', 'mensuelle', 'trimestrielle', 'annuelle'])
+    .optional()
+    .or(z.literal('')),
 });
 
 export async function lookupSirenAction(formData: FormData) {
@@ -87,13 +93,23 @@ export async function createSocieteAction(formData: FormData) {
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
     tvaIntracom: formData.get('tvaIntracom'),
+    tvaFrequency: formData.get('tvaFrequency'),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }
 
-  const { siren, address, activitePrincipale, nafCode, tvaIntracom, formeJuridique, ...rest } = parsed.data;
+  const {
+    siren,
+    address,
+    activitePrincipale,
+    nafCode,
+    tvaIntracom,
+    tvaFrequency,
+    formeJuridique,
+    ...rest
+  } = parsed.data;
 
   await db.insert(companies).values({
     ...rest,
@@ -103,6 +119,7 @@ export async function createSocieteAction(formData: FormData) {
     activitePrincipale: activitePrincipale || null,
     nafCode: nafCode || null,
     tvaIntracom: tvaIntracom || null,
+    tvaFrequency: tvaFrequency || null,
   });
 
   revalidatePath('/societes');
@@ -128,6 +145,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
     tvaIntracom: formData.get('tvaIntracom'),
+    tvaFrequency: formData.get('tvaFrequency'),
     isActive: formData.get('isActive'),
   });
 
@@ -135,8 +153,18 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
 
-  const { id, siren, address, activitePrincipale, nafCode, tvaIntracom, formeJuridique, isActive, ...rest } =
-    parsed.data;
+  const {
+    id,
+    siren,
+    address,
+    activitePrincipale,
+    nafCode,
+    tvaIntracom,
+    tvaFrequency,
+    formeJuridique,
+    isActive,
+    ...rest
+  } = parsed.data;
 
   await db
     .update(companies)
@@ -148,6 +176,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
       activitePrincipale: activitePrincipale || null,
       nafCode: nafCode || null,
       tvaIntracom: tvaIntracom || null,
+      tvaFrequency: tvaFrequency || null,
       isActive,
       updatedAt: new Date(),
     })
