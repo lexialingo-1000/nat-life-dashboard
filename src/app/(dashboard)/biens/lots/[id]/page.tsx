@@ -12,6 +12,7 @@ import {
   locations,
   customers,
   documentTypes,
+  documentCategories,
 } from '@/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -170,6 +171,9 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   let lotPhotoTypeId: string | null = null;
   let lotPlans: any[] = [];
   let lotPlanType: any | null = null;
+  // V1.11 R9 — map dynamique des labels de catégorie depuis `document_categories`.
+  // Permet aux renames admin de propager aux listes de documents.
+  let docCategoriesMap: Record<string, string> = {};
   if (lot) {
     lotDocs = await db
       .select({
@@ -201,6 +205,13 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
     lotPhotoTypeId = lotDocTypes.find((t) => t.code === 'photo')?.id ?? null;
     lotPlanType = lotDocTypes.find((t) => t.code === 'plan') ?? null;
+
+    // V1.11 R9 — fetch labels live des catégories de documents.
+    const cats = await db
+      .select({ code: documentCategories.code, label: documentCategories.label })
+      .from(documentCategories);
+    docCategoriesMap = Object.fromEntries(cats.map((c) => [c.code, c.label]));
+
     lotPlans = await db
       .select({
         id: lotDocuments.id,
@@ -402,6 +413,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         uploadAction={uploadLotDocumentAction}
         deleteAction={deleteLotDocumentAction}
         getUrlAction={getLotDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );
@@ -429,6 +441,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           uploadAction={uploadLotDocumentAction}
           deleteAction={deleteLotDocumentAction}
           getUrlAction={getLotDocumentUrlAction}
+          categoriesMap={docCategoriesMap}
         />
       ) : (
         <p className="text-[13px] text-zinc-500">

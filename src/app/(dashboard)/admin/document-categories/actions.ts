@@ -80,6 +80,13 @@ export async function updateDocumentCategoryAction(formData: FormData): Promise<
     .where(eq(documentCategories.id, parsed.data.id));
 
   revalidatePath('/admin/document-categories');
+  // V1.11 R9 — propage la mise à jour du label aux listes documents partout.
+  revalidatePath('/biens', 'layout');
+  revalidatePath('/societes', 'layout');
+  revalidatePath('/fournisseurs', 'layout');
+  revalidatePath('/clients', 'layout');
+  revalidatePath('/marches', 'layout');
+  revalidatePath('/locations', 'layout');
   redirect('/admin/document-categories');
 }
 
@@ -92,6 +99,14 @@ export async function reorderDocumentCategoriesAction(orderedIds: string[]): Pro
       .where(eq(documentCategories.id, orderedIds[i]));
   }
   revalidatePath('/admin/document-categories');
+  // V1.11 R9 — propage les renames/toggles aux listes documents dans toutes les
+  // fiches (les labels y sont rendus dynamiques depuis cette table).
+  revalidatePath('/biens', 'layout');
+  revalidatePath('/societes', 'layout');
+  revalidatePath('/fournisseurs', 'layout');
+  revalidatePath('/clients', 'layout');
+  revalidatePath('/marches', 'layout');
+  revalidatePath('/locations', 'layout');
 }
 
 export async function toggleDocumentCategoryActiveAction(formData: FormData): Promise<void> {
@@ -111,6 +126,14 @@ export async function toggleDocumentCategoryActiveAction(formData: FormData): Pr
     .where(eq(documentCategories.id, id));
 
   revalidatePath('/admin/document-categories');
+  // V1.11 R9 — propage les renames/toggles aux listes documents dans toutes les
+  // fiches (les labels y sont rendus dynamiques depuis cette table).
+  revalidatePath('/biens', 'layout');
+  revalidatePath('/societes', 'layout');
+  revalidatePath('/fournisseurs', 'layout');
+  revalidatePath('/clients', 'layout');
+  revalidatePath('/marches', 'layout');
+  revalidatePath('/locations', 'layout');
 }
 
 export async function deleteDocumentCategoryAction(formData: FormData): Promise<void> {

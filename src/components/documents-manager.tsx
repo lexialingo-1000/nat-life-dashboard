@@ -25,7 +25,10 @@ type DocumentCategory =
   | 'courant'
   | 'location';
 
-const CATEGORY_LABELS: Record<DocumentCategory, string> = {
+// V1.11 R9 — labels rendus dynamiques via prop `categoriesMap` fourni par chaque
+// callsite (fetché depuis la table `document_categories`). Le fallback ci-dessous
+// sert quand la page n'a pas pré-fetché la map (callsites pas encore migrés).
+const FALLBACK_CATEGORY_LABELS: Record<DocumentCategory, string> = {
   notaire: 'Notaire',
   banque: 'Banque',
   juridique: 'Juridique',
@@ -90,6 +93,9 @@ interface Props {
   uploadAction: ServerAction;
   deleteAction: ServerAction;
   getUrlAction: ServerAction<{ url: string } | { error: string }>;
+  /** V1.11 R9 — map dynamique label par code, lue depuis `document_categories`.
+   * Si fournie, override le fallback hardcodé pour refléter les renames admin. */
+  categoriesMap?: Partial<Record<DocumentCategory, string>>;
 }
 
 function expirationLabel(expiresAt: string | null) {
@@ -112,7 +118,11 @@ export function DocumentsManager({
   uploadAction,
   deleteAction,
   getUrlAction,
+  categoriesMap,
 }: Props) {
+  // V1.11 R9 — résolution label : map dynamique (renames admin) puis fallback.
+  const labelFor = (code: DocumentCategory): string =>
+    categoriesMap?.[code] ?? FALLBACK_CATEGORY_LABELS[code];
   const [showForm, setShowForm] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [typeId, setTypeId] = useState('');
@@ -296,7 +306,7 @@ export function DocumentsManager({
         cell: ({ row }) =>
           row.original.category ? (
             <span className={CATEGORY_BADGE[row.original.category]}>
-              {CATEGORY_LABELS[row.original.category]}
+              {labelFor(row.original.category)}
             </span>
           ) : (
             <span className="text-[12px] text-zinc-400">—</span>
@@ -304,7 +314,7 @@ export function DocumentsManager({
         filterFn: (row, _id, value) => {
           const v = row.original.category;
           if (!v) return false;
-          return CATEGORY_LABELS[v].toLowerCase().startsWith(String(value).toLowerCase());
+          return labelFor(v).toLowerCase().startsWith(String(value).toLowerCase());
         },
       },
       {
@@ -491,7 +501,7 @@ export function DocumentsManager({
                 return orderedKeys.map((key) => (
                   <optgroup
                     key={key}
-                    label={key === '__none__' ? 'Sans catégorie' : CATEGORY_LABELS[key]}
+                    label={key === '__none__' ? 'Sans catégorie' : labelFor(key)}
                   >
                     {grouped.get(key)!.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -514,7 +524,7 @@ export function DocumentsManager({
               <option value="">— Sans catégorie —</option>
               {CATEGORY_ORDER.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
+                  {labelFor(c)}
                 </option>
               ))}
             </select>
