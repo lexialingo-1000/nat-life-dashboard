@@ -429,21 +429,21 @@ await test('R11 compta onglet : filtre Type matche label visible (Devis/Commande
 // R12 — Fiche edit document : champ Catégorie en read-only display (héritée du type)
 // ===========================================================================
 await test('R12 edit doc : champ Catégorie remplacé par read-only display', async () => {
-  // Trouver un doc existant via une fiche fournisseur.
-  await page.goto(`${URL_BASE}/fournisseurs`, { waitUntil: 'networkidle' });
-  const supLink = await page.$('main table tbody tr a[href^="/fournisseurs/"]');
-  if (!supLink) skip('aucun fournisseur');
+  // Cible spécifique : CANAL DE PROVENCE qui a au moins 1 doc (YTEST).
+  await page.goto(`${URL_BASE}/fournisseurs`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const supLink = page.locator('main a:has-text("CANAL DE PROVENCE")').first();
+  if (!(await supLink.count())) skip('CANAL DE PROVENCE introuvable');
   const supHref = await supLink.getAttribute('href');
-  await page.goto(`${URL_BASE}${supHref}`, { waitUntil: 'networkidle' });
+  await page.goto(`${URL_BASE}${supHref}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const docsTab = page.locator('main button:has-text("Documents")').first();
   if (!(await docsTab.count())) skip('onglet Documents absent');
   await docsTab.click();
-  await page.waitForTimeout(400);
-  // Trouver le bouton "Modifier" (icône Pencil) du 1er doc
-  const editLink = await page.$('main a[href^="/documents/edit/supplier/"]');
-  if (!editLink) skip('aucun doc à éditer');
+  await page.waitForTimeout(600);
+  const editLink = page.locator('main a[href^="/documents/edit/supplier/"]').first();
+  if (!(await editLink.count())) skip('aucun doc à éditer');
   const editHref = await editLink.getAttribute('href');
-  await page.goto(`${URL_BASE}${editHref}`, { waitUntil: 'networkidle' });
+  console.log(`   editHref = ${editHref}`);
+  await page.goto(`${URL_BASE}${editHref}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r12_edit_doc.png`, fullPage: true });
 
   // V1.12 R1 : aucun <select name="category"> dans le form.
@@ -510,53 +510,204 @@ await test('R14 widget : section "Documents requis manquants" rend sans erreur',
 // ===========================================================================
 // R15 — Suppression fournisseur avec marchés : message custom FK
 // ===========================================================================
-await test('R15 deleteSupplierAction FK : message custom si fournisseur a marchés', async () => {
-  await page.goto(`${URL_BASE}/fournisseurs`, { waitUntil: 'networkidle' });
-  // Trouver un fournisseur AVEC des marchés (col Contacts > 0 pas garanti = marchés ;
-  // on tente CANAL DE PROVENCE en priorité).
-  const targets = ['CANAL DE PROVENCE', 'MARC BAILLY', 'SUDALU', 'MENUISERIES'];
-  let foundLink = null;
-  let foundLabel = null;
-  for (const label of targets) {
-    const link = await page.$(`main a:has-text("${label}")`);
-    if (link) {
-      foundLink = link;
-      foundLabel = label;
-      break;
-    }
-  }
-  if (!foundLink) skip('aucun fournisseur cible trouvé pour test FK');
-  // Ouvrir la fiche pour avoir accès au bouton Supprimer
-  const href = await foundLink.getAttribute('href');
-  await page.goto(`${URL_BASE}${href}`, { waitUntil: 'networkidle' });
-  const delBtn = page.locator('main button:has-text("Supprimer")').first();
+// Test : ouvre modal delete sur CANAL DE PROVENCE (a 2 marchés), tape nom,
+// clique "Supprimer définitivement", assert message custom "Impossible de
+// supprimer car présent dans : ..." apparaît dans la modale (sans digest générique).
+// PAS d'actual delete : la modale reste ouverte avec l'erreur affichée.
+await test('R15 deleteSupplierAction FK : message custom dans modale (CANAL DE PROVENCE)', async () => {
+  await page.goto(`${URL_BASE}/fournisseurs`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const supLink = page.locator('main a:has-text("CANAL DE PROVENCE")').first();
+  if (!(await supLink.count())) skip('CANAL DE PROVENCE introuvable');
+  const href = await supLink.getAttribute('href');
+  await page.goto(`${URL_BASE}${href}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+  // Cliquer "Supprimer" (en haut à droite de la fiche, pas dans la liste docs)
+  const delBtn = page.locator('main header button:has-text("Supprimer"), main button:has-text("Supprimer"):not(:has-text("document"))').first();
   if (!(await delBtn.count())) skip('bouton Supprimer absent');
   await delBtn.click();
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r15_modal.png`, fullPage: true });
-  // Taper la confirmation phrase
-  const input = page.locator('input[placeholder*="confirmer"], input[type="text"]').last();
-  if (!(await input.count())) skip('input confirmation absent');
-  await input.fill(foundLabel);
-  await page.waitForTimeout(200);
-  // Cliquer "Supprimer définitivement"
-  const confirmBtn = page.locator('button:has-text("définitivement"), button:has-text("Supprimer définitivement")').first();
-  if (!(await confirmBtn.count())) skip('bouton confirmation absent');
-  await confirmBtn.click();
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r15_after.png`, fullPage: true });
+  await page.waitForTimeout(500);
 
-  // Vérif message custom : doit contenir "Impossible de supprimer" ou "présent dans"
-  // ET le digest générique "An error occurred" NE doit PAS être présent.
-  const bodyText = await page.textContent('body');
-  if (bodyText?.includes('An error occurred in the Server Components render')) {
-    throw new Error('digest générique encore visible — R4 non appliqué');
+  // Modale ouverte : input avec placeholder = nom du fournisseur
+  const modalInput = page.getByPlaceholder('CANAL DE PROVENCE').first();
+  if (!(await modalInput.count())) skip('input confirmation absent (placeholder)');
+  await modalInput.fill('CANAL DE PROVENCE');
+  await page.waitForTimeout(200);
+
+  // Cliquer "Supprimer définitivement"
+  const confirmBtn = page.getByRole('button', { name: /Supprimer d[ée]finitivement/i }).first();
+  if (!(await confirmBtn.count())) throw new Error('bouton "Supprimer définitivement" absent');
+  await confirmBtn.click();
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r15_fk_msg.png`, fullPage: true });
+
+  // Vérif : la modale doit afficher "Impossible de supprimer" (alert role).
+  // ET le digest générique NE doit PAS être présent.
+  const bodyText = (await page.textContent('body')) ?? '';
+  if (bodyText.includes('An error occurred in the Server Components render')) {
+    throw new Error('digest générique encore visible — R4 non appliqué côté serveur');
   }
-  const hasCustomMsg = bodyText?.includes('Impossible de supprimer') || bodyText?.includes('présent dans');
-  if (!hasCustomMsg) {
-    console.log('   Note : fournisseur peut-être sans enfants FK → suppression réussie. OK.');
+  const alertMsg = await page.locator('[role="alert"]').first().textContent().catch(() => '');
+  console.log(`   alert msg: "${alertMsg?.slice(0, 150)}…"`);
+  if (!alertMsg || !/Impossible de supprimer|pr[ée]sent dans/i.test(alertMsg)) {
+    // Peut-être que CANAL DE PROVENCE a été deleted entre temps (improbable) ;
+    // dans ce cas la page redirige vers /fournisseurs sans erreur.
+    if (page.url().includes('/fournisseurs') && !page.url().includes('/fournisseurs/')) {
+      throw new Error('CANAL DE PROVENCE supprimé sans message FK — R4 non testable');
+    }
+    throw new Error('message custom FK introuvable dans la modale');
+  }
+  console.log('   Message custom FK affiché OK');
+
+  // Fermer la modale (Annuler) pour ne pas laisser état modifié
+  const cancelBtn = page.getByRole('button', { name: /Annuler/i }).first();
+  if (await cancelBtn.count()) await cancelBtn.click();
+});
+
+// ===========================================================================
+// R16 — Upload doc : form sans champ Catégorie + insert DB OK
+// ===========================================================================
+// Submit réel sur une fiche fournisseur. Cible CANAL DE PROVENCE.
+// Crée un doc test "SMOKE V112 TEST", vérifie qu'il apparaît dans la liste.
+// (Cleanup automatique via R17 et R18 qui éditent/suppriment ce doc.)
+let smokeTestDocName = `SMOKE V112 ${Date.now()}`;
+let smokeTestSupplierHref = null;
+
+await test('R16 upload doc : form sans champ Catégorie + insert DB OK', async () => {
+  await page.goto(`${URL_BASE}/fournisseurs`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const supLink = page.locator('main a:has-text("CANAL DE PROVENCE")').first();
+  if (!(await supLink.count())) skip('CANAL DE PROVENCE introuvable');
+  smokeTestSupplierHref = await supLink.getAttribute('href');
+  await page.goto(`${URL_BASE}${smokeTestSupplierHref}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const docsTab = page.locator('main button:has-text("Documents")').first();
+  if (!(await docsTab.count())) skip('onglet Documents absent');
+  await docsTab.click();
+  await page.waitForTimeout(500);
+
+  // Cliquer "Ajouter un document"
+  const addBtn = page.locator('main button:has-text("Ajouter un document")').first();
+  if (!(await addBtn.count())) skip('bouton Ajouter absent');
+  await addBtn.click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r16_form.png`, fullPage: true });
+
+  // V1.12 R1 : le form upload ne doit PAS contenir un <select name="category">
+  const categorySelect = page.locator('form select').filter({ has: page.locator('option:has-text("notaire"), option:has-text("Notaire")') });
+  if ((await categorySelect.count()) > 0) {
+    throw new Error('Le <select Catégorie> est toujours dans le form upload — R1 non appliqué');
+  }
+  console.log('   Form upload n\'a pas de <select name="category"> — R1 OK');
+
+  // Sélectionner le 1er type disponible
+  const typeSelect = page.locator('form select').first();
+  await typeSelect.selectOption({ index: 1 }); // skip "— Choisir —"
+  await page.waitForTimeout(200);
+
+  // Fichier : créer un buffer fictif
+  const fileInput = page.locator('form input[type="file"]').first();
+  await fileInput.setInputFiles({
+    name: 'smoke-v112-test.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Smoke V1.12 test content'),
+  });
+  await page.waitForTimeout(200);
+
+  // Nom du doc
+  const nameInput = page.locator('form input[name=""], form input[required]:not([type="file"])').first();
+  // Fallback selector : input avec placeholder KBis
+  const nameInputAlt = page.locator('form input[placeholder*="KBis"]').first();
+  const inputToUse = (await nameInputAlt.count()) ? nameInputAlt : nameInput;
+  await inputToUse.fill(smokeTestDocName);
+  await page.waitForTimeout(200);
+
+  // Submit "Uploader"
+  const submitBtn = page.locator('form button:has-text("Uploader")').first();
+  if (!(await submitBtn.count())) throw new Error('bouton Uploader absent');
+  await submitBtn.click();
+
+  // Attendre que le form se ferme + le doc apparaisse dans la table
+  await page.waitForTimeout(3500);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r16_after.png`, fullPage: true });
+
+  const docRow = page.locator(`main table tbody tr:has-text("${smokeTestDocName}")`).first();
+  if (!(await docRow.count())) {
+    // Récupérer message d'erreur si présent
+    const errMsg = await page.locator('form p:has-text("erreur"), form p.text-red-800').first().textContent().catch(() => '');
+    throw new Error(`doc "${smokeTestDocName}" pas apparu dans liste après upload. err="${errMsg}"`);
+  }
+  console.log(`   Doc "${smokeTestDocName}" uploadé + apparait dans la liste — R1 submit OK`);
+});
+
+// ===========================================================================
+// R17 — Edit doc : submit save sans champ Catégorie
+// ===========================================================================
+await test('R17 edit doc : submit save (form sans champ Catégorie) persist', async () => {
+  if (!smokeTestSupplierHref) skip('R16 a skip — pas de doc test à éditer');
+  await page.goto(`${URL_BASE}${smokeTestSupplierHref}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const docsTab = page.locator('main button:has-text("Documents")').first();
+  await docsTab.click();
+  await page.waitForTimeout(500);
+
+  // Trouver le doc test + cliquer son icône Modifier
+  const editLink = page.locator(`main table tbody tr:has-text("${smokeTestDocName}") a[href^="/documents/edit/supplier/"]`).first();
+  if (!(await editLink.count())) skip('icône Modifier introuvable sur doc test');
+  await editLink.click();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r17_edit_form.png`, fullPage: true });
+
+  // V1.12 R1 : pas de <select name="category">
+  if ((await page.locator('form select[name="category"]').count()) > 0) {
+    throw new Error('<select name="category"> présent dans edit form — R1 non appliqué');
+  }
+
+  // Modifier la note
+  const notesField = page.locator('form textarea[name="notes"]').first();
+  if (!(await notesField.count())) skip('textarea notes absent');
+  const newNote = `Edit smoke V1.12 ${Date.now()}`;
+  await notesField.fill(newNote);
+
+  // Submit "Enregistrer"
+  const saveBtn = page.locator('form button:has-text("Enregistrer")').first();
+  if (!(await saveBtn.count())) throw new Error('bouton Enregistrer absent');
+  await saveBtn.click();
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v112_r17_after_save.png`, fullPage: true });
+
+  // Vérif : redirect vers fiche fournisseur (URL contient /fournisseurs/)
+  if (!page.url().includes('/fournisseurs/')) {
+    throw new Error(`pas de redirect post-save. URL = ${page.url()}`);
+  }
+  console.log('   Edit doc save sans champ Catégorie OK — R1 submit edit OK');
+});
+
+// ===========================================================================
+// R18 — Cleanup : supprimer le doc test créé par R16/R17
+// ===========================================================================
+await test('R18 cleanup : delete doc smoke test', async () => {
+  if (!smokeTestSupplierHref) skip('R16 a skip — rien à cleanup');
+  await page.goto(`${URL_BASE}${smokeTestSupplierHref}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const docsTab = page.locator('main button:has-text("Documents")').first();
+  await docsTab.click();
+  await page.waitForTimeout(500);
+
+  // Trouver le doc test + cliquer le bouton trash (rouge)
+  const docRow = page.locator(`main table tbody tr:has-text("${smokeTestDocName}")`).first();
+  if (!(await docRow.count())) {
+    console.log('   Doc déjà supprimé (probablement)');
+    return;
+  }
+  const trashBtn = docRow.locator('button[title="Supprimer"], button:has(svg.lucide-trash-2)').first();
+  if (!(await trashBtn.count())) skip('bouton trash absent');
+
+  // confirm() native dialog (DocumentsManager utilise window.confirm)
+  page.on('dialog', async (d) => d.accept());
+  await trashBtn.click();
+  await page.waitForTimeout(2000);
+
+  const stillExists = page.locator(`main table tbody tr:has-text("${smokeTestDocName}")`);
+  if ((await stillExists.count()) > 0) {
+    console.log(`   ⚠ Doc "${smokeTestDocName}" pas supprimé — cleanup partiel`);
   } else {
-    console.log('   Message custom FK affiché : OK');
+    console.log(`   Doc "${smokeTestDocName}" supprimé — cleanup OK`);
   }
 });
 
