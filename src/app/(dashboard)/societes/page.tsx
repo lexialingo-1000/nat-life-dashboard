@@ -19,6 +19,8 @@ export default async function SocietesPage() {
       formeJuridique: c.formeJuridique,
       siren: c.siren,
       nafCode: c.nafCode,
+      // V1.12 hotfix — `address` requis par SocieteRow (présent côté canonical, manquait dans mirror).
+      address: c.address,
       isActive: (c as { isActive?: boolean }).isActive ?? true,
     }));
   } catch (e) {
