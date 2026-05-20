@@ -1,8 +1,9 @@
 'use server';
 
 import { db } from '@/db/client';
-import { companies, companyDocuments } from '@/db/schema';
+import { companies, companyDocuments, properties, companyAccountingDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { lookupBySiren, normalizeSirenOrSiret } from '@/lib/recherche-entreprises';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
@@ -62,21 +63,33 @@ export async function lookupSirenAction(formData: FormData) {
   }
 }
 
-export async function deleteSocieteAction(formData: FormData): Promise<void> {
+export async function deleteSocieteAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
+  if (!id) return { error: 'ID manquant' };
+
+  // V1.12 R4 — pré-flight FK : compte biens immobiliers + docs compta liés.
+  const propertiesRows = await db
+    .select({ id: properties.id, displayName: properties.name })
+    .from(properties)
+    .where(eq(properties.companyId, id));
+  const acctRows = await db
+    .select({ id: companyAccountingDocuments.id, displayName: companyAccountingDocuments.name })
+    .from(companyAccountingDocuments)
+    .where(eq(companyAccountingDocuments.companyId, id));
+
+  const summary = fkPreflightSummary([
+    { label: 'biens immobiliers', rows: propertiesRows },
+    { label: 'documents compta', rows: acctRows },
+  ]);
+  if (summary) return { error: summary };
 
   try {
     await db.delete(companies).where(eq(companies.id, id));
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-    // FK properties.company_id ON DELETE RESTRICT : message lisible si la société détient des biens.
-    if (/foreign key|violates|propert/i.test(msg)) {
-      throw new Error(
-        'Suppression impossible : cette société détient des biens immobiliers. Supprime ou réassigne les biens d\'abord.'
-      );
-    }
-    throw new Error(`Suppression impossible : ${msg}`);
+    return { error: `Suppression impossible : ${msg}` };
   }
 
   revalidatePath('/societes');
@@ -195,7 +208,7 @@ const companyDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
+  // V1.12 R1+R2 — col legacy `category` retirée. Catégorie héritée de document_types.
 });
 
 export async function uploadCompanyDocumentAction(formData: FormData): Promise<void> {
@@ -212,7 +225,6 @@ export async function uploadCompanyDocumentAction(formData: FormData): Promise<v
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
-    category: data.category || null,
   });
   revalidatePath(`/societes/${data.companyId}`);
 }

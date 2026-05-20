@@ -1,8 +1,9 @@
 'use server';
 
 import { db } from '@/db/client';
-import { customers, customerDocuments } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { customers, customerDocuments, locations } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
+import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
@@ -144,21 +145,30 @@ export async function createCustomerInlineAction(formData: FormData): Promise<
   return { id: inserted[0].id, label: displayName };
 }
 
-export async function deleteCustomerAction(formData: FormData): Promise<void> {
+export async function deleteCustomerAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
+  if (!id) return { error: 'ID manquant' };
+
+  // V1.12 R4 — pré-flight FK : compte locations liées + récupère 5 labels.
+  // displayName via SQL : lot.id + date_debut pour distinguer si pas de nom propre.
+  const locationsRows = await db
+    .select({
+      id: locations.id,
+      displayName: sql<string>`COALESCE(${locations.dateDebut}::text, 'Sans date') || ' (' || ${locations.id}::text || ')'`,
+    })
+    .from(locations)
+    .where(eq(locations.customerId, id));
+
+  const summary = fkPreflightSummary([{ label: 'locations', rows: locationsRows }]);
+  if (summary) return { error: summary };
 
   try {
     await db.delete(customers).where(eq(customers.id, id));
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-    // FK locations.customer_id ON DELETE RESTRICT : message lisible si le client a des baux.
-    if (/foreign key|violates|location/i.test(msg)) {
-      throw new Error(
-        'Suppression impossible : ce client a des locations rattachées. Supprime ou réassigne les locations d\'abord.'
-      );
-    }
-    throw new Error(`Suppression impossible : ${msg}`);
+    return { error: `Suppression impossible : ${msg}` };
   }
 
   revalidatePath('/clients');
@@ -190,7 +200,7 @@ const customerDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
+  // V1.12 R1+R2 — col legacy `category` retirée. Catégorie héritée de document_types.
 });
 
 export async function uploadCustomerDocumentAction(formData: FormData): Promise<void> {
@@ -207,7 +217,6 @@ export async function uploadCustomerDocumentAction(formData: FormData): Promise<
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
-    category: data.category || null,
   });
   revalidatePath(`/clients/${data.customerId}`);
 }

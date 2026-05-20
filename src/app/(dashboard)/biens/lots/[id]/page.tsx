@@ -186,7 +186,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         expiresAt: lotDocuments.expiresAt,
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
-      category: lotDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
@@ -222,7 +223,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         expiresAt: lotDocuments.expiresAt,
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
-        category: lotDocuments.category,
+        // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+        category: documentTypes.category,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))

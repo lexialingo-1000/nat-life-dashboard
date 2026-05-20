@@ -27,6 +27,8 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
   const baseSelect = {
     typeLabel: documentTypes.label,
     hasExpiration: documentTypes.hasExpiration,
+    // V1.12 R1 — catégorie héritée du type (col legacy `category` doc retirée).
+    category: documentTypes.category,
   };
   switch (scope) {
     case 'company': {
@@ -39,7 +41,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: companyDocuments.documentDate,
           expiresAt: companyDocuments.expiresAt,
           notes: companyDocuments.notes,
-          category: companyDocuments.category,
           ...baseSelect,
         })
         .from(companyDocuments)
@@ -58,7 +59,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: supplierDocuments.documentDate,
           expiresAt: supplierDocuments.expiresAt,
           notes: supplierDocuments.notes,
-          category: supplierDocuments.category,
           ...baseSelect,
         })
         .from(supplierDocuments)
@@ -77,7 +77,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: customerDocuments.documentDate,
           expiresAt: customerDocuments.expiresAt,
           notes: customerDocuments.notes,
-          category: customerDocuments.category,
           ...baseSelect,
         })
         .from(customerDocuments)
@@ -96,7 +95,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: propertyDocuments.documentDate,
           expiresAt: propertyDocuments.expiresAt,
           notes: propertyDocuments.notes,
-          category: propertyDocuments.category,
           ...baseSelect,
         })
         .from(propertyDocuments)
@@ -115,7 +113,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: lotDocuments.documentDate,
           expiresAt: lotDocuments.expiresAt,
           notes: lotDocuments.notes,
-          category: lotDocuments.category,
           ...baseSelect,
         })
         .from(lotDocuments)
@@ -134,7 +131,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: marcheDocuments.documentDate,
           expiresAt: marcheDocuments.expiresAt,
           notes: marcheDocuments.notes,
-          category: marcheDocuments.category,
           ...baseSelect,
         })
         .from(marcheDocuments)
@@ -153,7 +149,6 @@ async function fetchDoc(scope: DocumentScope, docId: string) {
           documentDate: locationDocuments.documentDate,
           expiresAt: locationDocuments.expiresAt,
           notes: locationDocuments.notes,
-          category: locationDocuments.category,
           ...baseSelect,
         })
         .from(locationDocuments)
@@ -273,23 +268,22 @@ export default async function EditDocumentPage({
           )}
         </div>
 
+        {/* V1.12 R1 — bloc <select Catégorie> retiré. La catégorie est désormais
+            paramétrée UNE SEULE FOIS sur le TYPE de document via la page admin
+            « Paramètres → Types de documents ». Affichée ici en read-only. */}
         <div>
-          <label className="block text-[12px] font-medium text-zinc-700">Catégorie</label>
-          <select
-            name="category"
-            defaultValue={doc.category ?? ''}
-            className="input mt-1"
-          >
-            <option value="">— Sans catégorie —</option>
-            <option value="notaire">Notaire</option>
-            <option value="banque">Banque</option>
-            <option value="juridique">Juridique</option>
-            <option value="comptabilite">Comptabilité</option>
-            <option value="courant">Courant</option>
-            <option value="location">Location</option>
-          </select>
+          <label className="block text-[12px] font-medium text-zinc-700">
+            Catégorie (héritée du type)
+          </label>
+          <p className="mt-1 text-[13px] text-zinc-700">
+            {doc.category ? (
+              <span className="font-medium">{doc.category}</span>
+            ) : (
+              <span className="text-zinc-400">— Sans catégorie configurée —</span>
+            )}
+          </p>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Indépendante du type. Permet de filtrer les listes de documents.
+            Pour changer la catégorie, modifie-la sur le type de document depuis Paramètres.
           </p>
         </div>
 

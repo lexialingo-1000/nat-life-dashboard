@@ -1,8 +1,9 @@
 'use server';
 
 import { db } from '@/db/client';
-import { suppliers, supplierContacts, supplierDocuments, supplierTypes } from '@/db/schema';
+import { suppliers, supplierContacts, supplierDocuments, marchesTravaux, companyAccountingDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
@@ -33,57 +34,8 @@ const supplierSchema = z.object({
       'autre',
     ])
     .default('autre'),
-  // V12bis PR9 §3 — FK vers supplier_types (table paramétrable). Optionnel pour
-  // compat ascendante : si fourni → on lookup le code et on dérive le `type`
-  // enum legacy (fallback 'autre' si code custom hors enum).
-  typeId: z.string().uuid().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
 });
-
-const LEGACY_TYPE_CODES = new Set([
-  'notaire',
-  'banque',
-  'juridique',
-  'comptabilite',
-  'architecte',
-  'entrepreneur',
-  'syndic',
-  'diagnostic',
-  'assurance',
-  'autre',
-]);
-
-type LegacySupplierTypeEnum =
-  | 'notaire'
-  | 'banque'
-  | 'juridique'
-  | 'comptabilite'
-  | 'architecte'
-  | 'entrepreneur'
-  | 'syndic'
-  | 'diagnostic'
-  | 'assurance'
-  | 'autre';
-
-/**
- * Résout un `typeId` (FK supplier_types) en : (typeId, legacy enum value).
- * Si typeId vide → garde les valeurs actuelles du fournisseur (no-op).
- * Si code custom (hors enum) → legacy = 'autre', typeId = id.
- */
-async function resolveSupplierType(
-  typeId: string | undefined
-): Promise<{ typeId: string | null; type: LegacySupplierTypeEnum } | null> {
-  if (!typeId) return null;
-  const rows = await db
-    .select({ id: supplierTypes.id, code: supplierTypes.code })
-    .from(supplierTypes)
-    .where(eq(supplierTypes.id, typeId))
-    .limit(1);
-  if (rows.length === 0) return null;
-  const code = rows[0].code;
-  const legacy = LEGACY_TYPE_CODES.has(code) ? (code as LegacySupplierTypeEnum) : 'autre';
-  return { typeId: rows[0].id, type: legacy };
-}
 
 const supplierUpdateSchema = supplierSchema.extend({
   id: z.string().uuid(),
@@ -101,7 +53,6 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     email: formData.get('email'),
     invoicingType: formData.get('invoicingType') ?? 'manual_upload',
     type: formData.get('type') ?? 'autre',
-    typeId: formData.get('typeId') ?? '',
     notes: formData.get('notes'),
     isActive: formData.get('isActive'),
   });
@@ -109,8 +60,6 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
   const data = parsed.data;
-  // V12bis PR9 §3 — résolution typeId → (legacy enum + FK), update les deux.
-  const resolved = await resolveSupplierType(data.typeId || undefined);
   await db
     .update(suppliers)
     .set({
@@ -121,8 +70,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       invoicingType: data.invoicingType,
-      type: resolved ? resolved.type : data.type,
-      typeId: resolved ? resolved.typeId : null,
+      type: data.type,
       notes: data.notes || null,
       isActive: data.isActive,
       updatedAt: new Date(),
@@ -143,8 +91,6 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
   const displayName =
     data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim() || 'fournisseur';
 
-  const resolved = await resolveSupplierType(data.typeId || undefined);
-
   const inserted = await db
     .insert(suppliers)
     .values({
@@ -156,8 +102,6 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
       phone: data.phone || null,
       email: data.email || null,
       notes: data.notes || null,
-      type: resolved ? resolved.type : data.type,
-      typeId: resolved ? resolved.typeId : null,
       storagePath: buildStoragePrefix('suppliers', displayName),
     })
     .returning({ id: suppliers.id });
@@ -210,8 +154,6 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
     return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
   }
 
-  const resolved = await resolveSupplierType(data.typeId || undefined);
-
   const inserted = await db
     .insert(suppliers)
     .values({
@@ -223,8 +165,6 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
       phone: data.phone || null,
       email: data.email || null,
       notes: data.notes || null,
-      type: resolved ? resolved.type : data.type,
-      typeId: resolved ? resolved.typeId : null,
       storagePath: buildStoragePrefix('suppliers', displayName),
     })
     .returning({ id: suppliers.id });
@@ -242,21 +182,35 @@ const contactSchema = z.object({
   function: z.string().optional().or(z.literal('')),
 });
 
-export async function deleteSupplierAction(formData: FormData): Promise<void> {
+export async function deleteSupplierAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
+  if (!id) return { error: 'ID manquant' };
+
+  // V1.12 R4 — pré-flight FK : compte les child rows + récupère 5 noms par table
+  // pour afficher un message custom dans la modale au lieu du digest générique
+  // Next.js prod (qui masque les `throw new Error`).
+  const marchesRows = await db
+    .select({ id: marchesTravaux.id, displayName: marchesTravaux.name })
+    .from(marchesTravaux)
+    .where(eq(marchesTravaux.supplierId, id));
+  const acctRows = await db
+    .select({ id: companyAccountingDocuments.id, displayName: companyAccountingDocuments.name })
+    .from(companyAccountingDocuments)
+    .where(eq(companyAccountingDocuments.supplierId, id));
+
+  const summary = fkPreflightSummary([
+    { label: 'marchés de travaux', rows: marchesRows },
+    { label: 'documents compta', rows: acctRows },
+  ]);
+  if (summary) return { error: summary };
 
   try {
     await db.delete(suppliers).where(eq(suppliers.id, id));
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-    // FK marches_travaux.supplier_id ON DELETE RESTRICT : message lisible si le fournisseur a des marchés.
-    if (/foreign key|violates|marche/i.test(msg)) {
-      throw new Error(
-        'Suppression impossible : ce fournisseur a des marchés rattachés. Supprime ou réassigne les marchés d\'abord.'
-      );
-    }
-    throw new Error(`Suppression impossible : ${msg}`);
+    return { error: `Suppression impossible : ${msg}` };
   }
 
   revalidatePath('/fournisseurs');
@@ -315,7 +269,7 @@ const supplierDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
+  // V1.12 R1+R2 — col legacy `category` retirée. Catégorie héritée de document_types.
 });
 
 export async function uploadSupplierDocumentAction(formData: FormData): Promise<void> {
@@ -332,7 +286,6 @@ export async function uploadSupplierDocumentAction(formData: FormData): Promise<
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
-    category: data.category || null,
   });
   revalidatePath(`/fournisseurs/${data.supplierId}`);
   revalidatePath('/fournisseurs');

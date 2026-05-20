@@ -79,7 +79,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       expiresAt: customerDocuments.expiresAt,
       documentDate: customerDocuments.documentDate,
       uploadedAt: customerDocuments.uploadedAt,
-      category: customerDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(customerDocuments)
     .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))
@@ -296,16 +297,15 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const comptaTab = (
+  const facturesTab = (
     <div className="card p-6">
-      <SectionTitle>Factures de location (quittances)</SectionTitle>
-      <p className="mt-3 text-sm text-zinc-500">
-        Aucune quittance pour l'instant. La génération automatique des quittances et la
-        synchronisation Pennylane (ventes FKA) arriveront en V1.5 après l'entrée en vigueur
-        de la réforme facturation électronique (1<sup>er</sup> septembre 2026).
+      <p className="text-sm text-zinc-500">
+        Aucune facture pour l'instant. La synchronisation Pennylane (ventes FKA) arrivera en
+        V1.5 après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
+        septembre 2026).
       </p>
       <p className="mt-3 text-[12px] text-zinc-400">
-        En attendant, les quittances émises peuvent être archivées dans l'onglet « Documents »
+        En attendant, les factures émises peuvent être archivées dans l'onglet « Documents »
         avec le type « Autre ».
       </p>
     </div>
@@ -321,7 +321,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       content: locationsTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'compta', label: 'Compta', content: comptaTab },
+    { id: 'factures', label: 'Factures', content: facturesTab },
   ];
 
   return (

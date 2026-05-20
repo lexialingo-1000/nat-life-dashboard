@@ -1,8 +1,9 @@
 'use server';
 
 import { db } from '@/db/client';
-import { properties, propertyDocuments } from '@/db/schema';
+import { properties, propertyDocuments, lots, marchesTravaux } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -120,10 +121,36 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
   redirect(`/biens/properties/${id}`);
 }
 
-export async function deletePropertyAction(formData: FormData): Promise<void> {
+export async function deletePropertyAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
-  await db.delete(properties).where(eq(properties.id, id));
+  if (!id) return { error: 'ID manquant' };
+
+  // V1.12 R4 — pré-flight FK : compte lots + marchés rattachés.
+  // property_documents ON DELETE CASCADE (vérifié schema).
+  const lotsRows = await db
+    .select({ id: lots.id, displayName: lots.name })
+    .from(lots)
+    .where(eq(lots.propertyId, id));
+  const marchesRows = await db
+    .select({ id: marchesTravaux.id, displayName: marchesTravaux.name })
+    .from(marchesTravaux)
+    .where(eq(marchesTravaux.propertyId, id));
+
+  const summary = fkPreflightSummary([
+    { label: 'lots', rows: lotsRows },
+    { label: 'marchés de travaux', rows: marchesRows },
+  ]);
+  if (summary) return { error: summary };
+
+  try {
+    await db.delete(properties).where(eq(properties.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    return { error: `Suppression impossible : ${msg}` };
+  }
+
   revalidatePath('/biens');
   redirect('/biens');
 }
@@ -136,7 +163,7 @@ const propertyDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
+  // V1.12 R1+R2 — col legacy `category` retirée. Catégorie héritée de document_types.
 });
 
 export async function uploadPropertyDocumentAction(formData: FormData): Promise<void> {
@@ -153,7 +180,6 @@ export async function uploadPropertyDocumentAction(formData: FormData): Promise<
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
-    category: data.category || null,
   });
   revalidatePath(`/biens/properties/${data.propertyId}`);
 }

@@ -117,7 +117,8 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       expiresAt: locationDocuments.expiresAt,
       documentDate: locationDocuments.documentDate,
       uploadedAt: locationDocuments.uploadedAt,
-      category: locationDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(locationDocuments)
     .innerJoin(documentTypes, eq(locationDocuments.typeId, documentTypes.id))

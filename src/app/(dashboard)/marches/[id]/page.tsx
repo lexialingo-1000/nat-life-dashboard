@@ -119,7 +119,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       expiresAt: marcheDocuments.expiresAt,
       documentDate: marcheDocuments.documentDate,
       uploadedAt: marcheDocuments.uploadedAt,
-      category: marcheDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(marcheDocuments)
     .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))

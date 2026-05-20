@@ -239,9 +239,11 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
   redirect(`/marches/${id}`);
 }
 
-export async function deleteMarcheAction(formData: FormData): Promise<void> {
+export async function deleteMarcheAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
-  if (!id) throw new Error('ID manquant');
+  if (!id) return { error: 'ID manquant' };
 
   const rows = await db
     .select({ propertyId: marchesTravaux.propertyId })
@@ -249,7 +251,15 @@ export async function deleteMarcheAction(formData: FormData): Promise<void> {
     .where(eq(marchesTravaux.id, id))
     .limit(1);
 
-  await db.delete(marchesTravaux).where(eq(marchesTravaux.id, id));
+  // V1.12 R4 — try/catch + return { error } pour surfacer dans la modale.
+  // Pas de pré-flight FK : sous-lots/docs/affectations sont ON DELETE CASCADE.
+  // company_accounting_documents.marche_id est ON DELETE SET NULL.
+  try {
+    await db.delete(marchesTravaux).where(eq(marchesTravaux.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    return { error: `Suppression impossible : ${msg}` };
+  }
 
   if (rows[0]?.propertyId) {
     revalidatePath(`/biens/properties/${rows[0].propertyId}`);
@@ -266,7 +276,7 @@ const marcheDocumentSchema = z.object({
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  category: z.enum(['notaire','banque','juridique','comptabilite','courant','location']).optional().or(z.literal('')),
+  // V1.12 R1+R2 — col legacy `category` retirée. Catégorie héritée de document_types.
 });
 
 export async function uploadMarcheDocumentAction(formData: FormData): Promise<void> {
@@ -283,7 +293,6 @@ export async function uploadMarcheDocumentAction(formData: FormData): Promise<vo
     documentDate: data.documentDate || null,
     expiresAt: data.expiresAt || null,
     notes: data.notes || null,
-    category: data.category || null,
   });
   revalidatePath(`/marches/${data.marcheId}`);
 }
@@ -333,12 +342,21 @@ export async function createSousLotAction(formData: FormData): Promise<void> {
   revalidatePath(`/marches/${marcheId}`);
 }
 
-export async function deleteSousLotAction(formData: FormData): Promise<void> {
+export async function deleteSousLotAction(
+  formData: FormData
+): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   const marcheId = String(formData.get('marcheId') ?? '');
-  if (!id) throw new Error('ID manquant');
+  if (!id) return { error: 'ID manquant' };
 
-  await db.delete(marcheSousLots).where(eq(marcheSousLots.id, id));
+  // V1.12 R4 — try/catch + return { error }. Marche_taches sont ON DELETE CASCADE,
+  // pas de FK bloquant attendu mais on couvre le digest générique prod.
+  try {
+    await db.delete(marcheSousLots).where(eq(marcheSousLots.id, id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+    return { error: `Suppression impossible : ${msg}` };
+  }
   revalidatePath(`/marches/${marcheId}`);
 }
 

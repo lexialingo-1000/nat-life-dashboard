@@ -303,7 +303,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       expiresAt: propertyDocuments.expiresAt,
       documentDate: propertyDocuments.documentDate,
       uploadedAt: propertyDocuments.uploadedAt,
-      category: propertyDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
@@ -594,20 +595,19 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{property.name}</span>
-            {property.statut && (() => {
-              // V12bis PR9 §4 — 4 statuts Natacha (dashboard-13).
-              const map: Record<string, { label: string; cls: string }> = {
-                en_cours_acquisition: { label: "En cours d'acquisition", cls: 'badge-blue' },
-                en_portefeuille: { label: 'En portefeuille', cls: 'badge-emerald' },
-                en_cours_de_vente: { label: 'En cours de vente', cls: 'badge-amber' },
-                vendu: { label: 'Vendu', cls: 'badge-neutral' },
-                // Legacy fallback (migration 0023 backfill → en_portefeuille, mais ceinture/bretelles)
-                loue: { label: 'En portefeuille', cls: 'badge-emerald' },
-                vacant: { label: 'En portefeuille', cls: 'badge-emerald' },
-              };
-              const m = map[property.statut] ?? { label: property.statut, cls: 'badge-neutral' };
-              return <span className={m.cls}>{m.label}</span>;
-            })()}
+            {property.statut && (
+              <span className={
+                property.statut === 'vendu' ? 'badge-neutral' :
+                property.statut === 'en_cours_acquisition' ? 'badge-blue' :
+                property.statut === 'vacant' ? 'badge-amber' :
+                'badge-emerald'
+              }>
+                {property.statut === 'en_cours_acquisition' ? 'Acquisition' :
+                 property.statut === 'vendu' ? 'Vendu' :
+                 property.statut === 'vacant' ? 'Vacant' :
+                 'Loué'}
+              </span>
+            )}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
             {property.type} · {property.address ?? 'adresse à compléter'}

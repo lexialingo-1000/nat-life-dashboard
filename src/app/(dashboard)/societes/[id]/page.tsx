@@ -92,7 +92,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       expiresAt: companyDocuments.expiresAt,
       documentDate: companyDocuments.documentDate,
       uploadedAt: companyDocuments.uploadedAt,
-      category: companyDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(companyDocuments)
     .innerJoin(documentTypes, eq(companyDocuments.typeId, documentTypes.id))

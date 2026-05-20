@@ -71,7 +71,8 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       expiresAt: supplierDocuments.expiresAt,
       documentDate: supplierDocuments.documentDate,
       uploadedAt: supplierDocuments.uploadedAt,
-      category: supplierDocuments.category,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
     })
     .from(supplierDocuments)
     .innerJoin(documentTypes, eq(supplierDocuments.typeId, documentTypes.id))

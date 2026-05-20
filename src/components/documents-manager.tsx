@@ -129,7 +129,6 @@ export function DocumentsManager({
   const [docName, setDocName] = useState('');
   const [documentDate, setDocumentDate] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
-  const [category, setCategory] = useState<DocumentCategory | ''>('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -137,13 +136,10 @@ export function DocumentsManager({
 
   const selectedType = availableTypes.find((t) => t.id === typeId);
 
-  // V11 §U3 — pré-remplissage automatique de la catégorie : si le type sélectionné
-  // a une catégorie par défaut configurée côté admin, on l'applique tant que
-  // l'utilisateur n'a pas explicitement choisi autre chose. Reste éditable.
+  // V1.12 R1 — handleTypeChange simplifié. La catégorie n'est plus stockée
+  // côté document (col legacy retirée) ; héritée du type uniquement.
   const handleTypeChange = (newTypeId: string) => {
     setTypeId(newTypeId);
-    const t = availableTypes.find((x) => x.id === newTypeId);
-    if (t?.category && !category) setCategory(t.category);
   };
 
   const reset = () => {
@@ -152,7 +148,6 @@ export function DocumentsManager({
     setDocName('');
     setDocumentDate('');
     setExpiresAt('');
-    setCategory('');
     setShowForm(false);
     setError(null);
   };
@@ -240,7 +235,7 @@ export function DocumentsManager({
       fd.set('storageKey', storageKey);
       if (documentDate) fd.set('documentDate', documentDate);
       if (expiresAt) fd.set('expiresAt', expiresAt);
-      if (category) fd.set('category', category);
+      // V1.12 R1 — `category` retiré : héritée du type côté serveur via JOIN.
 
       await uploadAction(fd);
       reset();
@@ -513,24 +508,16 @@ export function DocumentsManager({
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-zinc-700">Catégorie</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as DocumentCategory | '')}
-              className="input mt-1"
-            >
-              <option value="">— Sans catégorie —</option>
-              {CATEGORY_ORDER.map((c) => (
-                <option key={c} value={c}>
-                  {labelFor(c)}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-[11px] text-zinc-500">
-              Pré-remplie selon le type sélectionné si configuré, modifiable.
-            </p>
-          </div>
+          {/* V1.12 R1 — <select Catégorie> retiré du form upload. La catégorie
+              est désormais paramétrée UNE SEULE FOIS sur le type de document
+              côté admin (Paramètres → Types de documents). Affichage read-only
+              de la catégorie héritée du type sélectionné. */}
+          {selectedType?.category && (
+            <div className="rounded-md border border-zinc-100 bg-[#fbf8f0] px-3 py-2 text-[12px] text-zinc-600">
+              Catégorie héritée du type :{' '}
+              <span className="font-medium text-zinc-800">{labelFor(selectedType.category)}</span>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-zinc-700">Fichier *</label>
