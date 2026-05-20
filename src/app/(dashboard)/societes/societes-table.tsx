@@ -13,6 +13,7 @@ export type SocieteRow = {
   formeJuridique: string | null;
   siren: string | null;
   nafCode: string | null;
+  address: string | null;
   isActive: boolean;
 };
 
@@ -89,11 +90,20 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
       </span>
     ),
   },
+  {
+    accessorKey: 'address',
+    header: 'Siège',
+    cell: ({ getValue }) => {
+      const v = getValue() as string | null;
+      return <span className="text-[12px] text-zinc-500">{v?.split(',')[0] ?? '—'}</span>;
+    },
+  },
 ];
 
 interface Props {
   rows: SocieteRow[];
-  deleteAction?: (formData: FormData) => Promise<void>;
+  // V1.12 R4 — peut retourner { error } pour surfacer FK violation côté UI.
+  deleteAction?: (formData: FormData) => Promise<void | { error: string }>;
 }
 
 export function SocietesTable({ rows, deleteAction }: Props) {

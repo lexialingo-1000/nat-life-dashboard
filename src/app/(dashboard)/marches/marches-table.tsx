@@ -37,7 +37,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface Props {
   rows: MarcheRow[];
-  deleteAction: (formData: FormData) => Promise<void>;
+  // V1.12 R4 — peut retourner { error } pour surfacer FK violation côté UI.
+  deleteAction: (formData: FormData) => Promise<void | { error: string }>;
 }
 
 export function MarchesTable({ rows, deleteAction }: Props) {

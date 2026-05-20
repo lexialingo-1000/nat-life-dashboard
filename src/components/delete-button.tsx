@@ -4,8 +4,10 @@ import { useState, useTransition } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
 
 interface DeleteButtonProps {
-  /** Server action that takes FormData and deletes the resource. */
-  action: (formData: FormData) => Promise<void>;
+  /** Server action that takes FormData and deletes the resource.
+   *  V1.12 R4 — peut retourner `{ error }` au lieu de throw (FK violations
+   *  prod sont masquées par le digest générique Next.js sinon). */
+  action: (formData: FormData) => Promise<void | { error: string }>;
   /** Hidden id passed to the action. */
   id: string;
   /** Label shown on the button (button variant) or as tooltip (icon variant). */
@@ -56,7 +58,18 @@ export function DeleteButton({
         if (extraFields) {
           for (const [k, v] of Object.entries(extraFields)) fd.set(k, v);
         }
-        await action(fd);
+        // V1.12 R4 — si action retourne `{ error }` (pré-flight FK), l'afficher
+        // dans la modale au lieu d'attendre un throw masqué par le digest prod.
+        const result = await action(fd);
+        if (
+          result &&
+          typeof result === 'object' &&
+          'error' in result &&
+          typeof (result as { error?: unknown }).error === 'string'
+        ) {
+          setError((result as { error: string }).error);
+          return;
+        }
       } catch (err) {
         // Next.js redirect() throws NEXT_REDIRECT — let it propagate so navigation happens.
         if (err && typeof err === 'object' && 'digest' in err && typeof (err as { digest?: unknown }).digest === 'string' && (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
