@@ -326,6 +326,106 @@ await test('R9 fiche lot Documents : colonne Catégorie présente + cellule affi
 });
 
 // ===========================================================================
+// R10 — DocumentsManager input "Filtrer" par colonne (follow-up dashboard-15)
+// ===========================================================================
+await test('R10 docs onglet : input "Filtrer" filtre les rows par Type', async () => {
+  // Réutilise un lot avec ≥ 1 doc (sinon skip).
+  await page.goto(`${URL_BASE}/biens`, { waitUntil: 'networkidle' });
+  const propLink = await page.$('main table tbody tr a[href^="/biens/properties/"]');
+  if (!propLink) skip('aucun bien');
+  const propHref = await propLink.getAttribute('href');
+  await page.goto(`${URL_BASE}${propHref}`, { waitUntil: 'networkidle' });
+  const bienTab = page.locator('main button:has-text("Bien")').first();
+  if (await bienTab.count()) {
+    await bienTab.click();
+    await page.waitForTimeout(300);
+  }
+  await page.evaluate(() => {
+    document.querySelectorAll('details').forEach((d) => (d.open = true));
+  });
+  const lotLink = await page.$('main a[href^="/biens/lots/"]');
+  if (!lotLink) skip('aucun lot');
+  const lotHref = await lotLink.getAttribute('href');
+  await page.goto(`${URL_BASE}${lotHref}`, { waitUntil: 'networkidle' });
+  const docsTab = page.locator('main button:has-text("Documents")').first();
+  if (!(await docsTab.count())) skip('onglet Documents absent');
+  await docsTab.click();
+  await page.waitForTimeout(400);
+
+  // V1.11 — input "Filtrer" doit apparaître sous chaque header (sauf Actions).
+  // DataTable rend le filter input dans le même <th> que le bouton header.
+  const filterInputs = page.locator('main table thead th input[placeholder="Filtrer"]');
+  const inputsCount = await filterInputs.count();
+  if (inputsCount === 0)
+    throw new Error('aucun input "Filtrer" rendu — enableFilters peut-être resté false');
+  console.log(`   ${inputsCount} input(s) "Filtrer" dans header`);
+
+  // Compter rows initiales
+  const rowsBefore = await page.locator('main table tbody tr').count();
+  if (rowsBefore < 1) skip('aucun doc à filtrer');
+
+  // Lire le texte de la première cellule "Type" pour avoir un filtre garanti match.
+  const firstTypeCell = await page.locator('main table tbody tr').first().locator('td').nth(0).innerText();
+  const filterValue = firstTypeCell.trim().slice(0, 3); // premiers 3 chars
+  if (!filterValue) skip('cellule Type vide');
+  console.log(`   Test filtre Type avec "${filterValue}" (rows initial=${rowsBefore})`);
+
+  // Cibler 1er input filtre (col Type)
+  await filterInputs.first().fill(filterValue);
+  await page.waitForTimeout(300);
+  const rowsAfter = await page.locator('main table tbody tr').count();
+  console.log(`   Après filtre : ${rowsAfter} rows`);
+  if (rowsAfter < 1) throw new Error('filtre a cassé toutes les rows (devrait matcher au moins celle source)');
+  // Reset
+  await filterInputs.first().fill('');
+  await page.waitForTimeout(200);
+  const rowsReset = await page.locator('main table tbody tr').count();
+  if (rowsReset !== rowsBefore) throw new Error(`reset filtre ne restaure pas : ${rowsReset} vs ${rowsBefore}`);
+});
+
+// ===========================================================================
+// R11 — AccountingDocumentsManager input "Filtrer" Type (follow-up dashboard-15)
+// ===========================================================================
+await test('R11 compta onglet : filtre Type matche label visible (Devis/Commande/Facture)', async () => {
+  await page.goto(`${URL_BASE}/societes`, { waitUntil: 'networkidle' });
+  const link = await page.$('main table tbody tr a[href^="/societes/"]');
+  if (!link) skip('aucune société');
+  const href = await link.getAttribute('href');
+  await page.goto(`${URL_BASE}${href}`, { waitUntil: 'networkidle' });
+  const comptaTab = page.locator('main button:has-text("Compta")').first();
+  if (!(await comptaTab.count())) skip('onglet Compta absent');
+  await comptaTab.click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${ARTIFACTS}/${TS}_v111_r11_compta.png`, fullPage: true });
+
+  const filterInputs = page.locator('main table thead th input[placeholder="Filtrer"]');
+  const inputsCount = await filterInputs.count();
+  if (inputsCount === 0) skip('aucun input filtre rendu (probablement table vide)');
+  console.log(`   ${inputsCount} input(s) "Filtrer" sur table Compta`);
+
+  const rowsBefore = await page.locator('main table tbody tr').count();
+  if (rowsBefore < 1) skip('aucun doc compta à filtrer');
+
+  // Filtre col Type avec "Fact" : filterFn V1.11 matche label visible "Facture" pas slug "facture".
+  await filterInputs.first().fill('Fact');
+  await page.waitForTimeout(300);
+  const rowsAfter = await page.locator('main table tbody tr').count();
+  console.log(`   Filtre "Fact" : ${rowsAfter} / ${rowsBefore} rows`);
+  // Sanity : si rowsBefore avait des kind != facture, rowsAfter < rowsBefore.
+  // Si tous étaient déjà facture, rowsAfter == rowsBefore. Les 2 sont valides.
+  // Au moins, le filtre ne doit pas casser toutes les rows.
+  if (rowsAfter < 1 && rowsBefore > 0) {
+    // Possible cas où aucun facture exist en prod. Tester avec "Devis" en fallback.
+    await filterInputs.first().fill('Devis');
+    await page.waitForTimeout(300);
+    const rowsDevis = await page.locator('main table tbody tr').count();
+    if (rowsDevis < 1) throw new Error('filtre Devis/Facture casse toutes les rows');
+  }
+  await filterInputs.first().fill('');
+  await page.waitForTimeout(200);
+});
+
+// ===========================================================================
 // Console errors (filtré bruits connus)
 // ===========================================================================
 await test('console errors filtered', async () => {
