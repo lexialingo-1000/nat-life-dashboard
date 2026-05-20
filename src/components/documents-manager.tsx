@@ -444,7 +444,6 @@ export function DocumentsManager({
         <DataTable
           columns={columns}
           data={sortedDocuments}
-          enableFilters={false}
           striped={false}
           emptyMessage="Aucun document pour l'instant. Glisse-dépose un fichier ici ou utilise le bouton ci-dessous."
         />

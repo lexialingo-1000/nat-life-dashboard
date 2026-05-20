@@ -427,6 +427,11 @@ export function AccountingDocumentsManager({
             {KIND_LABEL[row.original.kind] ?? row.original.kind}
           </span>
         ),
+        // V1.11 — filtre user-friendly : matche le label visible (Devis/Commande/Facture).
+        filterFn: (row, _id, value) => {
+          const label = KIND_LABEL[row.original.kind] ?? row.original.kind;
+          return label.toLowerCase().includes(String(value).toLowerCase());
+        },
       },
     ];
 
@@ -1036,7 +1041,6 @@ export function AccountingDocumentsManager({
         <DataTable
           columns={columns}
           data={filteredRows}
-          enableFilters={false}
           emptyMessage="Aucun document compta."
         />
       )}
