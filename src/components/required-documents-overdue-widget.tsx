@@ -70,6 +70,10 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND dt.is_active = true
         AND dt.is_required = true
         AND dt.scope = 'supplier'
+        -- V1.12 R3 — filtre par type fournisseur (validé client) :
+        --   dt.supplier_type_id NULL = s'applique à tous les fournisseurs
+        --   sinon = uniquement aux fournisseurs ayant ce type
+        AND (dt.supplier_type_id IS NULL OR dt.supplier_type_id = s.type_id)
         AND NOT EXISTS (
           SELECT 1 FROM ${supplierDocuments} sd
           WHERE sd.supplier_id = s.id AND sd.type_id = dt.id
