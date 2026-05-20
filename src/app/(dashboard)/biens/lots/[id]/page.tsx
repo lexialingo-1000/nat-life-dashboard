@@ -22,6 +22,7 @@ import { Tabs, type TabItem } from '@/components/tabs';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
+import { NotesCard } from '@/components/notes-card';
 import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { DeleteButton } from '@/components/delete-button';
@@ -265,13 +266,16 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   const totalRooms = lotLevels.reduce((acc, lv) => acc + lv.rooms.length, 0);
 
   const overviewTab = (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Kpi
-        label="Surface Carrez"
-        value={lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'}
-      />
-      <Kpi label="Niveaux" value={lotLevels.length} />
-      <Kpi label="Pièces" value={totalRooms} />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Kpi
+          label="Surface Carrez"
+          value={lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'}
+        />
+        <Kpi label="Niveaux" value={lotLevels.length} />
+        <Kpi label="Pièces" value={totalRooms} />
+      </div>
+      <NotesCard notes={lot.notes} />
     </div>
   );
 
@@ -302,12 +306,6 @@ export default async function LotDetailPage({ params }: { params: { id: string }
             {lot.companyName}
           </Link>
         </Row>
-        {lot.notes && (
-          <div className="col-span-2">
-            <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Notes</dt>
-            <dd className="mt-1 whitespace-pre-wrap text-zinc-700">{lot.notes}</dd>
-          </div>
-        )}
       </dl>
     </div>
   );
