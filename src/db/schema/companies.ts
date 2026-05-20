@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, jsonb, timestamp, varchar, boolean, date } from 'drizzle-orm/pg-core';
-import { companyTypeEnum, formeJuridiqueEnum, documentCategoryEnum, tvaFrequencyEnum } from './enums';
+import { companyTypeEnum, formeJuridiqueEnum, tvaFrequencyEnum } from './enums';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -34,7 +34,6 @@ export const companyDocuments = pgTable('company_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
-  category: documentCategoryEnum('category'),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),

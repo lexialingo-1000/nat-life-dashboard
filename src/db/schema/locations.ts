@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, date, numeric } from 'drizzle-orm/pg-core';
-import { locationTypeEnum, locationPeriodiciteEnum, documentCategoryEnum } from './enums';
+import { locationTypeEnum, locationPeriodiciteEnum } from './enums';
 import { lots } from './properties';
 import { customers } from './customers';
 import { documentTypes } from './document-types';
@@ -40,7 +40,7 @@ export const locationDocuments = pgTable('location_documents', {
   storageKey: text('storage_key').notNull(),
   documentDate: date('document_date'),
   expiresAt: date('expires_at'),
-  category: documentCategoryEnum('category'),
+  // V1.12 R1+R2 — col legacy `category` retirée. Source unique = document_types.category.
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
