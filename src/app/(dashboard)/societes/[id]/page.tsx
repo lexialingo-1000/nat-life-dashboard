@@ -25,7 +25,11 @@ import {
 } from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
-import { AccountingDocumentsManager, type AccountingDocKind } from '@/components/accounting-documents-manager';
+import {
+  AccountingDocumentsManager,
+  type AccountingDocKind,
+  type AccountingRow,
+} from '@/components/accounting-documents-manager';
 import {
   uploadAccountingDocAction,
   deleteAccountingDocAction,
@@ -287,7 +291,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
   };
 
-  const accountingRows = accountingDocs.map((d) => ({
+  const accountingRows: AccountingRow[] = accountingDocs.map((d) => ({
     id: d.id,
     kind: d.kind as AccountingDocKind,
     name: d.name,
@@ -297,12 +301,25 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     amountHt: d.amountHt,
     amountTtc: d.amountTtc,
     uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+    companyId: company.id,
+    companyName: company.name,
+    supplierId: d.supplierId,
     supplierLabel:
       d.supplierCompanyName ?? `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ?? 'Fournisseur',
+    marcheId: d.marcheId ?? null,
     marcheLabel: d.marcheName ?? null,
     parentDevisLabel: formatParentLabel(d.parentDevisId),
     parentCommandeLabel: formatParentLabel(d.parentCommandeId),
   }));
+
+  const accountingTotalHt = accountingRows.reduce(
+    (acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0),
+    0
+  );
+  const accountingTotalTtc = accountingRows.reduce(
+    (acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0),
+    0
+  );
 
   // V1.10 §4 §5 — devis et commandes existants (pour dropdowns parents du form upload)
   const devisOpts = accountingRows
@@ -310,16 +327,18 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     .map((r) => ({
       id: r.id,
       label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
-      supplierId: accountingDocs.find((d) => d.id === r.id)?.supplierId ?? '',
-      marcheId: accountingDocs.find((d) => d.id === r.id)?.marcheId ?? null,
+      supplierId: r.supplierId,
+      marcheId: r.marcheId,
+      companyId: r.companyId,
     }));
   const commandeOpts = accountingRows
     .filter((r) => r.kind === 'commande')
     .map((r) => ({
       id: r.id,
       label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
-      supplierId: accountingDocs.find((d) => d.id === r.id)?.supplierId ?? '',
-      marcheId: accountingDocs.find((d) => d.id === r.id)?.marcheId ?? null,
+      supplierId: r.supplierId,
+      marcheId: r.marcheId,
+      companyId: r.companyId,
     }));
 
   // Fournisseurs actifs + marchés liés à cette société (via property→company)
@@ -382,6 +401,20 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     return { id: m.id, label, supplierId: m.supplierId };
   });
 
+  // V1.10 — companies list pour le composant unifié (toutes sociétés actives,
+  // utilisé pour le dropdown filtre + scope=marche/supplier qui peuvent
+  // référencer une autre société émettrice).
+  const companyOptionsAll = await db
+    .select({ id: companies.id, name: companies.name })
+    .from(companies)
+    .where(eq(companies.isActive, true))
+    .orderBy(asc(companies.name));
+  const companyOpts = companyOptionsAll.map((c) => ({
+    id: c.id,
+    label: c.name,
+    slug: slugify(c.name),
+  }));
+
   // V12bis umbrella §2 — properties de cette société pour création marché à la volée.
   const propertyOptions = await db
     .select({ id: properties.id, name: properties.name })
@@ -390,50 +423,28 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     .orderBy(asc(properties.name));
   const propertyOpts = propertyOptions.map((p) => ({ id: p.id, label: p.name }));
 
-  const renderAccountingSection = (kind: AccountingDocKind) => {
-    const docs = accountingRows
-      .filter((d) => d.kind === kind)
-      .map((d) => ({
-        id: d.id,
-        name: d.name,
-        originalFilename: d.originalFilename,
-        storageKey: d.storageKey,
-        documentDate: d.documentDate,
-        amountHt: d.amountHt,
-        amountTtc: d.amountTtc,
-        uploadedAt: d.uploadedAt,
-        supplierLabel: d.supplierLabel,
-        marcheLabel: d.marcheLabel,
-        parentDevisLabel: d.parentDevisLabel,
-        parentCommandeLabel: d.parentCommandeLabel,
-      }));
-    return (
-      <div className="card p-6">
-        <AccountingDocumentsManager
-          kind={kind}
-          companyId={company.id}
-          companySlug={slugify(company.name)}
-          documents={docs}
-          suppliers={supplierOpts}
-          marches={marcheOpts}
-          uploadAction={uploadAccountingDocAction}
-          deleteAction={deleteAccountingDocAction}
-          getUrlAction={getAccountingDocUrlAction}
-          createSupplierAction={createSupplierInlineAction}
-          createMarcheAction={createMarcheInlineAction}
-          properties={propertyOpts}
-          devisOptions={devisOpts}
-          commandeOptions={commandeOpts}
-        />
-      </div>
-    );
-  };
-
   const comptaTab = (
-    <div className="space-y-6">
-      {renderAccountingSection('devis')}
-      {renderAccountingSection('commande')}
-      {renderAccountingSection('facture')}
+    <div className="card p-6">
+      <AccountingDocumentsManager
+        scope="company"
+        parentId={company.id}
+        parentLabel={company.name}
+        parentSlug={slugify(company.name)}
+        rows={accountingRows}
+        totalHt={accountingTotalHt}
+        totalTtc={accountingTotalTtc}
+        companies={companyOpts}
+        suppliers={supplierOpts}
+        marches={marcheOpts}
+        createSupplierAction={createSupplierInlineAction}
+        createMarcheAction={createMarcheInlineAction}
+        properties={propertyOpts}
+        devisOptions={devisOpts}
+        commandeOptions={commandeOpts}
+        uploadAction={uploadAccountingDocAction}
+        deleteAction={deleteAccountingDocAction}
+        getUrlAction={getAccountingDocUrlAction}
+      />
     </div>
   );
 

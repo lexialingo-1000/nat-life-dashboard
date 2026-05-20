@@ -32,7 +32,17 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
-import { MarcheComptaTable, type MarcheComptaRow } from '@/components/marche-compta-table';
+import {
+  AccountingDocumentsManager,
+  type AccountingDocKind,
+  type AccountingRow,
+} from '@/components/accounting-documents-manager';
+import {
+  uploadAccountingDocAction,
+  deleteAccountingDocAction,
+  getAccountingDocUrlAction,
+} from '../../societes/accounting-actions';
+import { createSupplierInlineAction } from '../../fournisseurs/actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -178,8 +188,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
   const marcheTypeLabel = marcheTypeRow[0]?.label ?? null;
 
   // V12bis umbrella §5 + V1.10 §7 §8 — Onglet COMPTA du marché.
-  // Liste devis + commandes + factures liés à ce marché via FK marcheId,
-  // avec actions inline (Modifier/Télécharger/Supprimer) + nom de fichier original.
+  // V1.10 refactor — utilise le composant compta unifié <AccountingDocumentsManager scope="marche">.
   const marcheAccountingDocs = await db
     .select({
       id: companyAccountingDocuments.id,
@@ -190,6 +199,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
       amountTtc: companyAccountingDocuments.amountTtc,
+      uploadedAt: companyAccountingDocuments.uploadedAt,
+      parentDevisId: companyAccountingDocuments.parentDevisId,
+      parentCommandeId: companyAccountingDocuments.parentCommandeId,
       companyId: companies.id,
       companyName: companies.name,
       supplierId: suppliers.id,
@@ -202,6 +214,34 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .innerJoin(suppliers, eq(suppliers.id, companyAccountingDocuments.supplierId))
     .where(eq(companyAccountingDocuments.marcheId, marche.id))
     .orderBy(desc(companyAccountingDocuments.documentDate));
+
+  // V1.10 §4 §5 — résolution labels parents (devis et commandes liés).
+  const marcheParentIds = new Set<string>();
+  for (const d of marcheAccountingDocs) {
+    if (d.parentDevisId) marcheParentIds.add(d.parentDevisId);
+    if (d.parentCommandeId) marcheParentIds.add(d.parentCommandeId);
+  }
+  const marcheParentRows =
+    marcheParentIds.size > 0
+      ? await db
+          .select({
+            id: companyAccountingDocuments.id,
+            kind: companyAccountingDocuments.kind,
+            name: companyAccountingDocuments.name,
+            documentDate: companyAccountingDocuments.documentDate,
+          })
+          .from(companyAccountingDocuments)
+          .where(inArray(companyAccountingDocuments.id, Array.from(marcheParentIds)))
+      : [];
+  const marcheParentById = new Map(marcheParentRows.map((p) => [p.id, p]));
+  const formatMarcheParentLabel = (id: string | null): string | null => {
+    if (!id) return null;
+    const p = marcheParentById.get(id);
+    if (!p) return null;
+    const kindLabel =
+      p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
+  };
 
   const marcheComptaTotalHt = marcheAccountingDocs.reduce(
     (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
@@ -365,27 +405,17 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
 
   const totalTaches = marcheTreeNode.sousLots.reduce((acc, sl) => acc + sl.taches.length, 0);
 
-  const KIND_LABEL: Record<string, string> = {
-    devis: 'Devis',
-    commande: 'Commande',
-    facture: 'Facture',
-  };
-  const KIND_BADGE: Record<string, string> = {
-    devis: 'bg-zinc-100 text-zinc-700',
-    commande: 'bg-blue-100 text-blue-700',
-    facture: 'bg-emerald-100 text-emerald-700',
-  };
-
-  // V12bis umbrella §5 + V1.10 §7 §8 — onglet COMPTA fiche marché avec actions inline.
-  const marcheComptaRows: MarcheComptaRow[] = marcheAccountingDocs.map((d) => ({
+  // V1.10 refactor — mapping AccountingRow pour le composant compta unifié.
+  const marcheAccountingRows: AccountingRow[] = marcheAccountingDocs.map((d) => ({
     id: d.id,
-    kind: d.kind as MarcheComptaRow['kind'],
+    kind: d.kind as AccountingDocKind,
     name: d.name,
-    originalFilename: d.originalFilename,
+    originalFilename: d.originalFilename ?? null,
     storageKey: d.storageKey,
     documentDate: d.documentDate,
     amountHt: d.amountHt,
     amountTtc: d.amountTtc,
+    uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
     companyId: d.companyId,
     companyName: d.companyName,
     supplierId: d.supplierId,
@@ -393,6 +423,10 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       d.supplierCompanyName ??
       `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
       'Fournisseur',
+    marcheId: marche.id,
+    marcheLabel: marche.description ?? marche.name,
+    parentDevisLabel: formatMarcheParentLabel(d.parentDevisId),
+    parentCommandeLabel: formatMarcheParentLabel(d.parentCommandeId),
   }));
 
   // V1.10 ext — options pour bouton "+ Nouveau" inline sur onglet compta marché.
@@ -432,6 +466,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
       companyId: d.companyId,
       supplierId: d.supplierId,
+      marcheId: marche.id as string | null,
     }));
   const commandeOptsForMarche = marcheAccountingDocs
     .filter((d) => d.kind === 'commande')
@@ -440,21 +475,42 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
       companyId: d.companyId,
       supplierId: d.supplierId,
+      marcheId: marche.id as string | null,
     }));
 
+  // Liste de marchés pour le composant unifié (on n'a besoin que de ce marché
+  // courant en scope=marche, le combobox marché est caché car parentId verrouillé).
+  const marcheOptsForUnified = [
+    {
+      id: marche.id,
+      label: marche.description ?? marche.name,
+      supplierId: marche.supplierId,
+      companyId: marche.companyId,
+    },
+  ];
+
   const comptaTab = (
-    <MarcheComptaTable
-      rows={marcheComptaRows}
-      totalHt={marcheComptaTotalHt}
-      totalTtc={marcheComptaTotalTtc}
-      marcheId={marche.id}
-      marcheDefaultSupplierId={marche.supplierId ?? null}
-      marcheDefaultCompanyId={marche.companyId ?? null}
-      companies={companyOpts}
-      suppliers={supplierOpts}
-      devisOptions={devisOptsForMarche}
-      commandeOptions={commandeOptsForMarche}
-    />
+    <div className="card p-6">
+      <AccountingDocumentsManager
+        scope="marche"
+        parentId={marche.id}
+        parentLabel={marche.description ?? marche.name}
+        marcheDefaultCompanyId={marche.companyId ?? undefined}
+        marcheDefaultSupplierId={marche.supplierId ?? undefined}
+        rows={marcheAccountingRows}
+        totalHt={marcheComptaTotalHt}
+        totalTtc={marcheComptaTotalTtc}
+        companies={companyOpts}
+        suppliers={supplierOpts}
+        marches={marcheOptsForUnified}
+        createSupplierAction={createSupplierInlineAction}
+        devisOptions={devisOptsForMarche}
+        commandeOptions={commandeOptsForMarche}
+        uploadAction={uploadAccountingDocAction}
+        deleteAction={deleteAccountingDocAction}
+        getUrlAction={getAccountingDocUrlAction}
+      />
+    </div>
   );
 
   const tabs: TabItem[] = [

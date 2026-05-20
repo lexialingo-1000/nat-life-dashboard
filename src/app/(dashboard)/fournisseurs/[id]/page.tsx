@@ -3,14 +3,13 @@ import {
   suppliers,
   supplierContacts,
   supplierDocuments,
-  supplierTypes,
   documentTypes,
   marchesTravaux,
   properties,
   companies,
   companyAccountingDocuments,
 } from '@/db/schema';
-import { eq, and, asc, desc } from 'drizzle-orm';
+import { eq, and, asc, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -31,11 +30,16 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
-import { SupplierComptaRowActions } from '@/components/supplier-compta-row-actions';
 import {
-  getAccountingDocUrlAction,
+  AccountingDocumentsManager,
+  type AccountingDocKind,
+  type AccountingRow,
+} from '@/components/accounting-documents-manager';
+import {
+  uploadAccountingDocAction,
   deleteAccountingDocAction,
-} from '@/app/(dashboard)/societes/accounting-actions';
+  getAccountingDocUrlAction,
+} from '../../societes/accounting-actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -51,21 +55,6 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   const supplierRow = await db.select().from(suppliers).where(eq(suppliers.id, params.id)).limit(1);
   if (supplierRow.length === 0) notFound();
   const s = supplierRow[0];
-
-  // V12bis PR9 §3 — affichage du type de fournisseur sur la fiche.
-  // Source : table supplier_types (typeId). Fallback : enum legacy `type`.
-  const typeRow = s.typeId
-    ? await db
-        .select({ label: supplierTypes.label })
-        .from(supplierTypes)
-        .where(eq(supplierTypes.id, s.typeId))
-        .limit(1)
-    : [];
-  const typeLabel =
-    typeRow[0]?.label ??
-    (s.type === 'autre'
-      ? null
-      : s.type.charAt(0).toUpperCase() + s.type.slice(1));
 
   const contacts = await db
     .select()
@@ -89,7 +78,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .where(eq(supplierDocuments.supplierId, s.id))
     .orderBy(asc(documentTypes.sortOrder));
 
-  const supplierDocTypes = await db
+  const supplierTypes = await db
     .select({
       id: documentTypes.id,
       label: documentTypes.label,
@@ -155,9 +144,6 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           <Row label="Prénom">{s.firstName ?? '—'}</Row>
           <Row label="Nom">{s.lastName ?? '—'}</Row>
           <Row label="Adresse">{s.address ?? '—'}</Row>
-          <Row label="Type">
-            {typeLabel ? <span className="badge-neutral">{typeLabel}</span> : '—'}
-          </Row>
         </dl>
       </div>
       <div className="card p-5">
@@ -300,7 +286,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
-        availableTypes={supplierDocTypes}
+        availableTypes={supplierTypes}
         uploadAction={uploadSupplierDocumentAction}
         deleteAction={deleteSupplierDocumentAction}
         getUrlAction={getSupplierDocumentUrlAction}
@@ -308,18 +294,22 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
-  // V12bis PR5 B2 — Compta agrégée : devis/commandes/factures de toutes les
-  // sociétés où ce fournisseur intervient.
+  // V12bis PR5 B2 + V1.10 refactor — Compta agrégée passée au composant compta
+  // unifié <AccountingDocumentsManager scope="supplier">. Devis / commandes /
+  // factures rattachés à ce fournisseur, toutes sociétés confondues.
   const supplierAccountingDocs = await db
     .select({
       id: companyAccountingDocuments.id,
       kind: companyAccountingDocuments.kind,
       name: companyAccountingDocuments.name,
+      originalFilename: companyAccountingDocuments.originalFilename,
       storageKey: companyAccountingDocuments.storageKey,
       documentDate: companyAccountingDocuments.documentDate,
       amountHt: companyAccountingDocuments.amountHt,
       amountTtc: companyAccountingDocuments.amountTtc,
       uploadedAt: companyAccountingDocuments.uploadedAt,
+      parentDevisId: companyAccountingDocuments.parentDevisId,
+      parentCommandeId: companyAccountingDocuments.parentCommandeId,
       companyId: companies.id,
       companyName: companies.name,
       marcheId: marchesTravaux.id,
@@ -331,109 +321,123 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .where(eq(companyAccountingDocuments.supplierId, s.id))
     .orderBy(desc(companyAccountingDocuments.documentDate), desc(companyAccountingDocuments.uploadedAt));
 
-  const KIND_LABEL: Record<string, string> = {
-    devis: 'Devis',
-    commande: 'Commande',
-    facture: 'Facture',
-  };
-  const KIND_BADGE: Record<string, string> = {
-    devis: 'bg-zinc-100 text-zinc-700',
-    commande: 'bg-blue-100 text-blue-700',
-    facture: 'bg-emerald-100 text-emerald-700',
+  // V1.10 §4 §5 — résolution labels parents.
+  const supplierParentIds = new Set<string>();
+  for (const d of supplierAccountingDocs) {
+    if (d.parentDevisId) supplierParentIds.add(d.parentDevisId);
+    if (d.parentCommandeId) supplierParentIds.add(d.parentCommandeId);
+  }
+  const supplierParentRows =
+    supplierParentIds.size > 0
+      ? await db
+          .select({
+            id: companyAccountingDocuments.id,
+            kind: companyAccountingDocuments.kind,
+            name: companyAccountingDocuments.name,
+            documentDate: companyAccountingDocuments.documentDate,
+          })
+          .from(companyAccountingDocuments)
+          .where(inArray(companyAccountingDocuments.id, Array.from(supplierParentIds)))
+      : [];
+  const supplierParentById = new Map(supplierParentRows.map((p) => [p.id, p]));
+  const formatSupplierParentLabel = (id: string | null): string | null => {
+    if (!id) return null;
+    const p = supplierParentById.get(id);
+    if (!p) return null;
+    const kindLabel =
+      p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
   };
 
-  const totalHt = supplierAccountingDocs.reduce(
-    (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
+  const supplierAccountingRows: AccountingRow[] = supplierAccountingDocs.map((d) => ({
+    id: d.id,
+    kind: d.kind as AccountingDocKind,
+    name: d.name,
+    originalFilename: d.originalFilename ?? null,
+    storageKey: d.storageKey,
+    documentDate: d.documentDate,
+    amountHt: d.amountHt,
+    amountTtc: d.amountTtc,
+    uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+    companyId: d.companyId,
+    companyName: d.companyName,
+    supplierId: s.id,
+    supplierLabel: displayName,
+    marcheId: d.marcheId ?? null,
+    marcheLabel: d.marcheName ?? null,
+    parentDevisLabel: formatSupplierParentLabel(d.parentDevisId),
+    parentCommandeLabel: formatSupplierParentLabel(d.parentCommandeId),
+  }));
+
+  const supplierComptaTotalHt = supplierAccountingRows.reduce(
+    (acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0),
     0
   );
-  // V12bis PR10 §3 — total TTC ajouté (retours Natacha dashboard-13).
-  const totalTtc = supplierAccountingDocs.reduce(
-    (acc, d) => acc + (d.amountTtc ? Number(d.amountTtc) : 0),
+  const supplierComptaTotalTtc = supplierAccountingRows.reduce(
+    (acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0),
     0
   );
+
+  // Companies + marches actifs pour le form upload (scope=supplier autorise
+  // l'utilisateur à choisir n'importe quelle société émettrice + n'importe
+  // quel marché).
+  const companiesForSupplier = await db
+    .select({ id: companies.id, name: companies.name })
+    .from(companies)
+    .where(eq(companies.isActive, true))
+    .orderBy(asc(companies.name));
+  const companyOpts = companiesForSupplier.map((c) => ({
+    id: c.id,
+    label: c.name,
+    slug: slugify(c.name),
+  }));
+
+  // Marchés de ce fournisseur (vu que les marchés sont déjà filtrés par
+  // supplier_id côté query, on ne propose que ceux-ci pour le form upload).
+  const marcheOptsForSupplier = supplierMarches.map((m) => ({
+    id: m.id,
+    label: `${m.name} — ${m.propertyName}`,
+    supplierId: s.id,
+  }));
+
+  // Parents devis / commandes existants de ce fournisseur.
+  const devisOptsForSupplier = supplierAccountingRows
+    .filter((r) => r.kind === 'devis')
+    .map((r) => ({
+      id: r.id,
+      label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
+      supplierId: s.id,
+      marcheId: r.marcheId,
+      companyId: r.companyId,
+    }));
+  const commandeOptsForSupplier = supplierAccountingRows
+    .filter((r) => r.kind === 'commande')
+    .map((r) => ({
+      id: r.id,
+      label: `${r.name}${r.documentDate ? ` (${r.documentDate})` : ''}`,
+      supplierId: s.id,
+      marcheId: r.marcheId,
+      companyId: r.companyId,
+    }));
 
   const facturesTab = (
-    <div className="card p-6 space-y-4">
-      {supplierAccountingDocs.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucun devis / commande / facture rattaché à ce fournisseur. Les documents compta sont
-          saisis sur la fiche société (onglet Compta).
-        </p>
-      ) : (
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] text-zinc-500">
-              {supplierAccountingDocs.length} document{supplierAccountingDocs.length > 1 ? 's' : ''} compta
-              · agrégés depuis toutes les sociétés.
-            </p>
-            <div className="flex flex-col items-end gap-0.5 font-mono text-[12px] tabular-nums text-zinc-700">
-              <span>Total HT : {totalHt.toLocaleString('fr-FR')} €</span>
-              <span className="font-medium text-zinc-900">
-                Total TTC : {totalTtc.toLocaleString('fr-FR')} €
-              </span>
-            </div>
-          </div>
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Société</th>
-                <th>Marché</th>
-                <th>Date document</th>
-                <th>Document</th>
-                <th className="text-right">HT</th>
-                <th className="text-right">TTC</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {supplierAccountingDocs.map((d) => (
-                <tr key={d.id}>
-                  <td>
-                    <span className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${KIND_BADGE[d.kind] ?? ''}`}>
-                      {KIND_LABEL[d.kind] ?? d.kind}
-                    </span>
-                  </td>
-                  <td>
-                    <Link href={`/societes/${d.companyId}`} className="link-cell-soft text-[12px]">
-                      {d.companyName}
-                    </Link>
-                  </td>
-                  <td className="text-[12px] text-zinc-500">
-                    {d.marcheId ? (
-                      <Link href={`/marches/${d.marcheId}`} className="link-cell-soft">
-                        {d.marcheName}
-                      </Link>
-                    ) : (
-                      <span className="text-zinc-300">—</span>
-                    )}
-                  </td>
-                  <td className="font-mono text-[12px] tabular-nums text-zinc-700">
-                    {d.documentDate ?? '—'}
-                  </td>
-                  <td className="text-[13px] text-zinc-900">{d.name}</td>
-                  <td className="text-right font-mono tabular-nums text-zinc-500">
-                    {d.amountHt ? `${Number(d.amountHt).toLocaleString('fr-FR')} €` : '—'}
-                  </td>
-                  <td className="text-right font-mono tabular-nums font-medium">
-                    {d.amountTtc ? `${Number(d.amountTtc).toLocaleString('fr-FR')} €` : '—'}
-                  </td>
-                  <td className="text-right">
-                    <SupplierComptaRowActions
-                      documentId={d.id}
-                      storageKey={d.storageKey}
-                      companyId={d.companyId}
-                      docName={d.name}
-                      getUrlAction={getAccountingDocUrlAction}
-                      deleteAction={deleteAccountingDocAction}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+    <div className="card p-6">
+      <AccountingDocumentsManager
+        scope="supplier"
+        parentId={s.id}
+        parentLabel={displayName}
+        rows={supplierAccountingRows}
+        totalHt={supplierComptaTotalHt}
+        totalTtc={supplierComptaTotalTtc}
+        companies={companyOpts}
+        suppliers={[{ id: s.id, label: displayName }]}
+        marches={marcheOptsForSupplier}
+        devisOptions={devisOptsForSupplier}
+        commandeOptions={commandeOptsForSupplier}
+        uploadAction={uploadAccountingDocAction}
+        deleteAction={deleteAccountingDocAction}
+        getUrlAction={getAccountingDocUrlAction}
+      />
     </div>
   );
 
