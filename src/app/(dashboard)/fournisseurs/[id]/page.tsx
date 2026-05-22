@@ -5,9 +5,13 @@ import {
   supplierDocuments,
   documentTypes,
   marchesTravaux,
+  marcheSousLots,
+  marcheTaches,
   properties,
   companies,
   companyAccountingDocuments,
+  rooms,
+  levels,
 } from '@/db/schema';
 import { eq, and, asc, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -30,6 +34,7 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
+import { SupplierTachesTable } from './supplier-taches-table';
 import {
   AccountingDocumentsManager,
   type AccountingDocKind,
@@ -104,6 +109,29 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId))
     .where(eq(marchesTravaux.supplierId, s.id))
     .orderBy(desc(marchesTravaux.dateDebutPrevu));
+
+  // V1.13 R6 — toutes les tâches des marchés du fournisseur (nouvel onglet
+  // "Suivi des tâches", Remarques client dashboard-17 §"Fiche FOURNISSEUR").
+  const supplierTaches = await db
+    .select({
+      id: marcheTaches.id,
+      title: marcheTaches.title,
+      status: marcheTaches.status,
+      dueDate: marcheTaches.dueDate,
+      marcheId: marchesTravaux.id,
+      marcheName: marchesTravaux.name,
+      sousLotId: marcheSousLots.id,
+      sousLotName: marcheSousLots.name,
+      roomName: rooms.name,
+      levelName: levels.name,
+    })
+    .from(marcheTaches)
+    .innerJoin(marcheSousLots, eq(marcheSousLots.id, marcheTaches.marcheSousLotId))
+    .innerJoin(marchesTravaux, eq(marchesTravaux.id, marcheSousLots.marcheId))
+    .leftJoin(rooms, eq(rooms.id, marcheTaches.roomId))
+    .leftJoin(levels, eq(levels.id, rooms.levelId))
+    .where(eq(marchesTravaux.supplierId, s.id))
+    .orderBy(asc(marcheTaches.dueDate), asc(marcheTaches.createdAt));
 
   const displayName =
     s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur';
@@ -421,6 +449,25 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       companyId: r.companyId,
     }));
 
+  // V1.13 R6 — onglet Suivi des tâches.
+  const tachesTab = (
+    <SupplierTachesTable
+      rows={supplierTaches.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        dueDate: t.dueDate,
+        marcheId: t.marcheId,
+        marcheName: t.marcheName,
+        sousLotId: t.sousLotId,
+        sousLotName: t.sousLotName,
+        roomName: t.roomName,
+        levelName: t.levelName,
+      }))}
+      returnTo={`/fournisseurs/${s.id}?tab=taches`}
+    />
+  );
+
   const facturesTab = (
     <div className="card p-6">
       <AccountingDocumentsManager
@@ -451,6 +498,13 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       label: 'Marchés',
       count: supplierMarches.length || undefined,
       content: marchesTab,
+    },
+    // V1.13 R6 — Suivi des tâches (Remarques client dashboard-17).
+    {
+      id: 'taches',
+      label: 'Suivi tâches',
+      count: supplierTaches.length || undefined,
+      content: tachesTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
     {
