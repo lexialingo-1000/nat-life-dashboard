@@ -13,6 +13,8 @@ import {
   supplierContacts,
   documentTypes,
   companyAccountingDocuments,
+  rooms,
+  levels,
 } from '@/db/schema';
 import { eq, asc, and, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -152,6 +154,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
 
   const sousLotIds = sousLotsRows.map((s) => s.id);
+  // V1.13 R3 — JOIN rooms + levels pour afficher Pièce + Niveau sur la liste tâches.
   const tachesRows =
     sousLotIds.length > 0
       ? await db
@@ -160,14 +163,19 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             title: marcheTaches.title,
             status: marcheTaches.status,
             locationDescription: marcheTaches.locationDescription,
+            dueDate: marcheTaches.dueDate,
             photos: marcheTaches.photos,
             lotId: marcheTaches.lotId,
             marcheSousLotId: marcheTaches.marcheSousLotId,
             supplierContactFirstName: supplierContacts.firstName,
             supplierContactLastName: supplierContacts.lastName,
+            roomName: rooms.name,
+            levelName: levels.name,
           })
           .from(marcheTaches)
           .leftJoin(supplierContacts, eq(marcheTaches.supplierContactId, supplierContacts.id))
+          .leftJoin(rooms, eq(marcheTaches.roomId, rooms.id))
+          .leftJoin(levels, eq(rooms.levelId, levels.id))
           .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
       : [];
 
@@ -271,6 +279,10 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         title: t.title,
         status: t.status,
         locationDescription: t.locationDescription,
+        // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
+        dueDate: t.dueDate,
+        roomName: t.roomName,
+        levelName: t.levelName,
         supplierContactName:
           t.supplierContactFirstName || t.supplierContactLastName
             ? `${t.supplierContactFirstName ?? ''} ${t.supplierContactLastName ?? ''}`.trim()

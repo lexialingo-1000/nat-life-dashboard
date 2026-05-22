@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil } from 'lucide-react';
+import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil, Calendar } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 
@@ -40,9 +40,23 @@ export interface TacheNode {
   title: string;
   status: string;
   locationDescription: string | null;
+  // V1.13 R3 — échéance + pièce + niveau visibles sur la liste tâches (Remarques dashboard-17).
+  dueDate: string | null;
+  roomName: string | null;
+  levelName: string | null;
   supplierContactName: string | null;
   photosCount: number;
   lotId: string;
+}
+
+// V1.13 R3 — formatage date FR sans dépendance (cohérent avec le reste de l'app
+// qui utilise toLocaleString partout).
+function formatDateFr(value: string | null): string | null {
+  if (!value) return null;
+  // marcheTaches.dueDate est une date Postgres → string "YYYY-MM-DD" ou Date.
+  const d = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN((d as Date).getTime())) return null;
+  return (d as Date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 export interface SousLotNode {
@@ -229,10 +243,25 @@ function TacheRow({
         <span className="truncate font-medium text-zinc-900">{tache.title}</span>
       </div>
       <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-        {tache.locationDescription && (
+        {/* V1.13 R3 — Pièce / Niveau (depuis JOIN rooms→levels) ; fallback sur locationDescription legacy. */}
+        {(tache.roomName || tache.levelName) ? (
+          <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
+            <MapPin className="h-3 w-3" strokeWidth={1.75} />
+            <span className="max-w-[180px] truncate">
+              {[tache.levelName, tache.roomName].filter(Boolean).join(' · ')}
+            </span>
+          </span>
+        ) : tache.locationDescription ? (
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3" strokeWidth={1.75} />
             <span className="max-w-[180px] truncate">{tache.locationDescription}</span>
+          </span>
+        ) : null}
+        {/* V1.13 R3 — Échéance. */}
+        {tache.dueDate && (
+          <span className="inline-flex items-center gap-1 tabular-nums" title="Échéance">
+            <Calendar className="h-3 w-3" strokeWidth={1.75} />
+            {formatDateFr(tache.dueDate)}
           </span>
         )}
         {tache.supplierContactName && (

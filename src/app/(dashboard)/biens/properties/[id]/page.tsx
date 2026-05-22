@@ -221,6 +221,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
 
     const sousLotIds = sousLotsRows.map((s) => s.id);
+    // V1.13 R3 — JOIN rooms + levels pour échéance + pièce + niveau sur la liste tâches.
     const tachesRows = sousLotIds.length > 0
       ? await db
           .select({
@@ -228,14 +229,19 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             title: marcheTaches.title,
             status: marcheTaches.status,
             locationDescription: marcheTaches.locationDescription,
+            dueDate: marcheTaches.dueDate,
             photos: marcheTaches.photos,
             marcheSousLotId: marcheTaches.marcheSousLotId,
             lotId: marcheTaches.lotId,
             contactFirstName: supplierContacts.firstName,
             contactLastName: supplierContacts.lastName,
+            roomName: rooms.name,
+            levelName: levels.name,
           })
           .from(marcheTaches)
           .leftJoin(supplierContacts, eq(supplierContacts.id, marcheTaches.supplierContactId))
+          .leftJoin(rooms, eq(marcheTaches.roomId, rooms.id))
+          .leftJoin(levels, eq(rooms.levelId, levels.id))
           .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
           .orderBy(asc(marcheTaches.createdAt))
       : [];
@@ -272,6 +278,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           title: t.title,
           status: t.status,
           locationDescription: t.locationDescription,
+          // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
+          dueDate: t.dueDate,
+          roomName: t.roomName,
+          levelName: t.levelName,
           supplierContactName:
             t.contactFirstName || t.contactLastName
               ? `${t.contactFirstName ?? ''} ${t.contactLastName ?? ''}`.trim()
