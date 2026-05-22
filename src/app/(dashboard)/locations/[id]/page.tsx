@@ -14,6 +14,7 @@ import { Pencil } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
 import { DocumentsManager } from '@/components/documents-manager';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { NotesCard } from '@/components/notes-card';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DeleteButton } from '@/components/delete-button';
@@ -214,6 +215,9 @@ export default async function LocationDetailPage({ params }: { params: { id: str
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -235,6 +239,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         uploadAction={uploadLocationDocumentAction}
         deleteAction={deleteLocationDocumentAction}
         getUrlAction={getLocationDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );

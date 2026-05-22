@@ -39,6 +39,8 @@ export interface DocTypeRow {
   label: string;
   code: string;
   category: string | null;
+  // V1.13 R1 — FK dynamique vers document_categories (source de vérité).
+  categoryId?: string | null;
   hasExpiration: boolean;
   isRequired: boolean;
   appliesToTenantType: string | null;
@@ -66,9 +68,12 @@ const CATEGORY_BADGE: Record<string, string> = {
 
 interface Props {
   rows: DocTypeRow[];
+  /** V1.13 R1 — map id → label depuis document_categories pour résoudre
+   * dynamiquement le label affiché (au lieu de l'enum legacy hardcodé). */
+  categoriesById?: Record<string, string>;
 }
 
-export function DocumentTypesSortableList({ rows }: Props) {
+export function DocumentTypesSortableList({ rows, categoriesById }: Props) {
   const [items, setItems] = useState<DocTypeRow[]>(rows);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -136,13 +141,28 @@ export function DocumentTypesSortableList({ rows }: Props) {
             {t.label}
           </td>
           <td>
-            {t.category ? (
-              <span className={CATEGORY_BADGE[t.category] ?? 'badge-neutral'}>
-                {CATEGORY_LABELS[t.category] ?? t.category}
-              </span>
-            ) : (
-              <span className="text-[12px] text-zinc-300">—</span>
-            )}
+            {/* V1.13 R1 — priorité au label dynamique via categoryId (source de
+                vérité, edit admin/document-categories propagé). Fallback sur
+                l'enum legacy + labels hardcodés si pas de categoryId. */}
+            {(() => {
+              const dynamicLabel = t.categoryId ? categoriesById?.[t.categoryId] : undefined;
+              if (dynamicLabel) {
+                const badgeKey = t.category ?? '';
+                return (
+                  <span className={CATEGORY_BADGE[badgeKey] ?? 'badge-neutral'}>
+                    {dynamicLabel}
+                  </span>
+                );
+              }
+              if (t.category) {
+                return (
+                  <span className={CATEGORY_BADGE[t.category] ?? 'badge-neutral'}>
+                    {CATEGORY_LABELS[t.category] ?? t.category}
+                  </span>
+                );
+              }
+              return <span className="text-[12px] text-zinc-300">—</span>;
+            })()}
           </td>
           <td>
             {t.hasExpiration ? (

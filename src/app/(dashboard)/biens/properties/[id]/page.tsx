@@ -40,6 +40,7 @@ import { formatDate } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { DocumentsManager } from '@/components/documents-manager';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { PropertyPhotosManager } from '@/components/property-photos-manager';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import {
@@ -535,6 +536,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -555,6 +559,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         uploadAction={uploadPropertyDocumentAction}
         deleteAction={deletePropertyDocumentAction}
         getUrlAction={getPropertyDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );

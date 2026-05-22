@@ -34,6 +34,7 @@ export default async function TypesDocumentsPage({
   let rows: any[] = [];
   let categories: { id: string; label: string }[] = [];
   let suppliers: { id: string; label: string }[] = [];
+  let allCategoriesById: Record<string, string> = {};
   let dbError: string | null = null;
   try {
     const base = db.select().from(documentTypes);
@@ -50,6 +51,14 @@ export default async function TypesDocumentsPage({
       .from(documentCategories)
       .where(eq(documentCategories.isActive, true))
       .orderBy(asc(documentCategories.sortOrder), asc(documentCategories.label));
+    // V1.13 R1 — map dynamique (inclut catégories inactives) pour résoudre le
+    // label affiché sur chaque ligne via documentTypes.categoryId, au lieu de
+    // l'enum legacy hardcodé (Remarques client dashboard-17 §"aramètres TYPE
+    // DE DOCUMENTS").
+    const allCategories = await db
+      .select({ id: documentCategories.id, label: documentCategories.label })
+      .from(documentCategories);
+    allCategoriesById = Object.fromEntries(allCategories.map((c) => [c.id, c.label]));
     suppliers = await db
       .select({ id: supplierTypes.id, label: supplierTypes.label })
       .from(supplierTypes)
@@ -129,7 +138,7 @@ export default async function TypesDocumentsPage({
                 <th className="w-[160px] pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <DocumentTypesSortableList rows={rows} />
+            <DocumentTypesSortableList rows={rows} categoriesById={allCategoriesById} />
           </table>
         </div>
       )}

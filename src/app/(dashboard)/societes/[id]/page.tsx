@@ -25,6 +25,7 @@ import {
 } from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import {
   AccountingDocumentsManager,
   type AccountingDocKind,
@@ -210,6 +211,9 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -231,6 +235,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         uploadAction={uploadCompanyDocumentAction}
         deleteAction={deleteCompanyDocumentAction}
         getUrlAction={getCompanyDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );

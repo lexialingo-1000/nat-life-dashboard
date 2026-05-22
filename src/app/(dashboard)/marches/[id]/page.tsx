@@ -31,6 +31,7 @@ import {
 } from '../actions';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { DocumentsManager } from '@/components/documents-manager';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { NotesCard } from '@/components/notes-card';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
@@ -373,6 +374,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -394,6 +398,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         uploadAction={uploadMarcheDocumentAction}
         deleteAction={deleteMarcheDocumentAction}
         getUrlAction={getMarcheDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );

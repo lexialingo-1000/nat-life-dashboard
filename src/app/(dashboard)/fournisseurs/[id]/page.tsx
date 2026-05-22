@@ -35,6 +35,7 @@ import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
 import { SupplierTachesTable } from './supplier-taches-table';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import {
   AccountingDocumentsManager,
   type AccountingDocKind,
@@ -298,6 +299,9 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -319,6 +323,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         uploadAction={uploadSupplierDocumentAction}
         deleteAction={deleteSupplierDocumentAction}
         getUrlAction={getSupplierDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );

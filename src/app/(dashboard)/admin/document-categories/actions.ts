@@ -81,6 +81,9 @@ export async function updateDocumentCategoryAction(formData: FormData): Promise<
 
   revalidatePath('/admin/document-categories');
   // V1.11 R9 — propage la mise à jour du label aux listes documents partout.
+  // V1.13 R1 — ajoute /admin/types-documents (col CATEGORIE) à la propagation
+  // (Remarques client dashboard-17 §"aramètres TYPE DE DOCUMENTS").
+  revalidatePath('/admin/types-documents');
   revalidatePath('/biens', 'layout');
   revalidatePath('/societes', 'layout');
   revalidatePath('/fournisseurs', 'layout');
@@ -101,6 +104,8 @@ export async function reorderDocumentCategoriesAction(orderedIds: string[]): Pro
   revalidatePath('/admin/document-categories');
   // V1.11 R9 — propage les renames/toggles aux listes documents dans toutes les
   // fiches (les labels y sont rendus dynamiques depuis cette table).
+  // V1.13 R1 — propage aussi à /admin/types-documents.
+  revalidatePath('/admin/types-documents');
   revalidatePath('/biens', 'layout');
   revalidatePath('/societes', 'layout');
   revalidatePath('/fournisseurs', 'layout');
@@ -128,6 +133,8 @@ export async function toggleDocumentCategoryActiveAction(formData: FormData): Pr
   revalidatePath('/admin/document-categories');
   // V1.11 R9 — propage les renames/toggles aux listes documents dans toutes les
   // fiches (les labels y sont rendus dynamiques depuis cette table).
+  // V1.13 R1 — propage aussi à /admin/types-documents.
+  revalidatePath('/admin/types-documents');
   revalidatePath('/biens', 'layout');
   revalidatePath('/societes', 'layout');
   revalidatePath('/fournisseurs', 'layout');

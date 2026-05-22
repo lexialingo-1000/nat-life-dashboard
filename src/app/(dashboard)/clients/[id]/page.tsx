@@ -28,6 +28,7 @@ import {
 } from '@/app/(dashboard)/locations/locations-table';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { NotesCard } from '@/components/notes-card';
 import { DeleteButton } from '@/components/delete-button';
 import { RequiredDocumentsWidget } from '@/components/required-documents-widget';
@@ -232,6 +233,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
   const documentsTab = (
     <div className="card p-6">
       <DocumentsManager
@@ -253,6 +257,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         uploadAction={uploadCustomerDocumentAction}
         deleteAction={deleteCustomerDocumentAction}
         getUrlAction={getCustomerDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
       />
     </div>
   );
