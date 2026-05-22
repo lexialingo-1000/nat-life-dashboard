@@ -129,6 +129,14 @@ export async function deletePropertyAction(
 
   // V1.12 R4 — pré-flight FK : compte lots + marchés rattachés.
   // property_documents ON DELETE CASCADE (vérifié schema).
+  // V1.13 R2 — nom du bien ajouté au message.
+  const propertyRow = await db
+    .select({ name: properties.name })
+    .from(properties)
+    .where(eq(properties.id, id))
+    .limit(1);
+  const propertyName = propertyRow[0]?.name ?? 'bien inconnu';
+
   const lotsRows = await db
     .select({ id: lots.id, displayName: lots.name })
     .from(lots)
@@ -138,10 +146,13 @@ export async function deletePropertyAction(
     .from(marchesTravaux)
     .where(eq(marchesTravaux.propertyId, id));
 
-  const summary = fkPreflightSummary([
-    { label: 'lots', rows: lotsRows },
-    { label: 'marchés de travaux', rows: marchesRows },
-  ]);
+  const summary = fkPreflightSummary(
+    [
+      { label: 'lots', rows: lotsRows },
+      { label: 'marchés de travaux', rows: marchesRows },
+    ],
+    { kind: 'bien immobilier', name: propertyName },
+  );
   if (summary) return { error: summary };
 
   try {

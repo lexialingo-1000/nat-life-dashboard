@@ -70,6 +70,14 @@ export async function deleteSocieteAction(
   if (!id) return { error: 'ID manquant' };
 
   // V1.12 R4 — pré-flight FK : compte biens immobiliers + docs compta liés.
+  // V1.13 R2 — nom de la société ajouté au message.
+  const societeRow = await db
+    .select({ name: companies.name })
+    .from(companies)
+    .where(eq(companies.id, id))
+    .limit(1);
+  const societeName = societeRow[0]?.name ?? 'société inconnue';
+
   const propertiesRows = await db
     .select({ id: properties.id, displayName: properties.name })
     .from(properties)
@@ -79,10 +87,13 @@ export async function deleteSocieteAction(
     .from(companyAccountingDocuments)
     .where(eq(companyAccountingDocuments.companyId, id));
 
-  const summary = fkPreflightSummary([
-    { label: 'biens immobiliers', rows: propertiesRows },
-    { label: 'documents compta', rows: acctRows },
-  ]);
+  const summary = fkPreflightSummary(
+    [
+      { label: 'biens immobiliers', rows: propertiesRows },
+      { label: 'documents compta (devis/commandes/factures)', rows: acctRows },
+    ],
+    { kind: 'société', name: societeName },
+  );
   if (summary) return { error: summary };
 
   try {

@@ -153,6 +153,21 @@ export async function deleteCustomerAction(
 
   // V1.12 R4 — pré-flight FK : compte locations liées + récupère 5 labels.
   // displayName via SQL : lot.id + date_debut pour distinguer si pas de nom propre.
+  // V1.13 R2 — nom du client ajouté au message.
+  const customerRow = await db
+    .select({
+      companyName: customers.companyName,
+      firstName: customers.firstName,
+      lastName: customers.lastName,
+    })
+    .from(customers)
+    .where(eq(customers.id, id))
+    .limit(1);
+  const customerName =
+    customerRow[0]?.companyName ||
+    `${customerRow[0]?.firstName ?? ''} ${customerRow[0]?.lastName ?? ''}`.trim() ||
+    'client inconnu';
+
   const locationsRows = await db
     .select({
       id: locations.id,
@@ -161,7 +176,10 @@ export async function deleteCustomerAction(
     .from(locations)
     .where(eq(locations.customerId, id));
 
-  const summary = fkPreflightSummary([{ label: 'locations', rows: locationsRows }]);
+  const summary = fkPreflightSummary(
+    [{ label: 'locations', rows: locationsRows }],
+    { kind: 'client', name: customerName },
+  );
   if (summary) return { error: summary };
 
   try {

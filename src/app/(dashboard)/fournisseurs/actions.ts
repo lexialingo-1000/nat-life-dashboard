@@ -191,6 +191,21 @@ export async function deleteSupplierAction(
   // V1.12 R4 — pré-flight FK : compte les child rows + récupère 5 noms par table
   // pour afficher un message custom dans la modale au lieu du digest générique
   // Next.js prod (qui masque les `throw new Error`).
+  // V1.13 R2 — nom du fournisseur ajouté au message (Remarques dashboard-17).
+  const supplierRow = await db
+    .select({
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+    })
+    .from(suppliers)
+    .where(eq(suppliers.id, id))
+    .limit(1);
+  const supplierName =
+    supplierRow[0]?.companyName ||
+    `${supplierRow[0]?.firstName ?? ''} ${supplierRow[0]?.lastName ?? ''}`.trim() ||
+    'fournisseur inconnu';
+
   const marchesRows = await db
     .select({ id: marchesTravaux.id, displayName: marchesTravaux.name })
     .from(marchesTravaux)
@@ -200,10 +215,13 @@ export async function deleteSupplierAction(
     .from(companyAccountingDocuments)
     .where(eq(companyAccountingDocuments.supplierId, id));
 
-  const summary = fkPreflightSummary([
-    { label: 'marchés de travaux', rows: marchesRows },
-    { label: 'documents compta', rows: acctRows },
-  ]);
+  const summary = fkPreflightSummary(
+    [
+      { label: 'marchés de travaux', rows: marchesRows },
+      { label: 'documents compta (devis/commandes/factures)', rows: acctRows },
+    ],
+    { kind: 'fournisseur', name: supplierName },
+  );
   if (summary) return { error: summary };
 
   try {
