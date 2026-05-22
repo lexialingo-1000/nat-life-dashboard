@@ -429,7 +429,8 @@ export async function updateSousLotAction(formData: FormData): Promise<void> {
 
 // === V1.8 P2-3+4 : Tâches dans sous-lots de marché ===========================
 
-const tacheStatusValues = ['a_faire', 'en_cours', 'termine', 'valide'] as const;
+// V1.13 R5 — 'en_attente' ajouté en tête (Remarques client dashboard-17).
+const tacheStatusValues = ['en_attente', 'a_faire', 'en_cours', 'termine', 'valide'] as const;
 
 const tacheCreateSchema = z.object({
   marcheSousLotId: z.string().uuid(),

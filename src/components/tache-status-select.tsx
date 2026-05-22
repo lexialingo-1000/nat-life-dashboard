@@ -4,7 +4,9 @@ import { useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import { updateTacheStatusAction } from '@/app/(dashboard)/marches/actions';
 
+// V1.13 R5 — 'en_attente' ajouté en tête (Remarques client dashboard-17).
 const STATUS_LABELS: Record<string, string> = {
+  en_attente: 'En attente',
   a_faire: 'À faire',
   en_cours: 'En cours',
   termine: 'Terminé',
@@ -12,6 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
+  en_attente: 'bg-amber-50 text-amber-800 border-amber-300',
   a_faire: 'bg-zinc-100 text-zinc-700 border-zinc-300',
   en_cours: 'bg-blue-100 text-blue-700 border-blue-300',
   termine: 'bg-emerald-100 text-emerald-700 border-emerald-300',

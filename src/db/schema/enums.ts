@@ -87,13 +87,11 @@ export const locationPeriodiciteEnum = pgEnum('location_periodicite', [
 /**
  * Statut d'une tâche de marché (anciennement `finition_status` en V1, renommé V1.8 P2-5).
  *
- * Source : Remarques client dashboard-8 §10 (à faire / en cours / terminé / validé).
- *
- * Migration V1.8 :
- * - `livre` (V1) → renamed to `termine`
- * - `valide` (NEW V1.8) ajouté
+ * Migration V1.8 : `livre` (V1) → `termine` ; `valide` ajouté.
+ * Migration V1.13 R5 : `en_attente` ajouté en tête (Remarques client dashboard-17).
  */
 export const marcheTacheStatusEnum = pgEnum('marche_tache_status', [
+  'en_attente',
   'a_faire',
   'en_cours',
   'termine',

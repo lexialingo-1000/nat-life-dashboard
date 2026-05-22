@@ -183,6 +183,13 @@
       "when": 1747740000000,
       "tag": "0025_drop_legacy_doc_category",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1747840000000,
+      "tag": "0026_marche_tache_status_en_attente",
+      "breakpoints": true
     }
   ]
 }

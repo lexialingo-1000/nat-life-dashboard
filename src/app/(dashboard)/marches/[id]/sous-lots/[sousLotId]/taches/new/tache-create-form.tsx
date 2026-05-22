@@ -9,7 +9,9 @@ import {
   type CreateTacheState,
 } from '@/app/(dashboard)/marches/actions';
 
+// V1.13 R5 — 'en_attente' ajouté en tête (Remarques client dashboard-17).
 const STATUS_OPTIONS = [
+  { value: 'en_attente', label: 'En attente' },
   { value: 'a_faire', label: 'À faire' },
   { value: 'en_cours', label: 'En cours' },
   { value: 'termine', label: 'Terminé' },
