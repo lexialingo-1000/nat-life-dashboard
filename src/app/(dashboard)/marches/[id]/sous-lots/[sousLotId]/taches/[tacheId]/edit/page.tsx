@@ -115,6 +115,15 @@ export default async function EditTachePage({
   const lotsStructure = lotIds.map((id) => ({ lotId: id, levels: levelsByLot.get(id) ?? [] }));
   const lotOptions = affectations.map((a) => ({ id: a.lotId, name: a.lotName }));
 
+  // V1.13 R4 — liste des sous-lots du marché pour le Select "Sous-lot rattaché"
+  // à droite de "Lot rattaché" (Remarques client dashboard-17).
+  const sousLotsRows = await db
+    .select({ id: marcheSousLots.id, name: marcheSousLots.name, sortOrder: marcheSousLots.sortOrder })
+    .from(marcheSousLots)
+    .where(eq(marcheSousLots.marcheId, t.marcheId))
+    .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
+  const sousLotOptions = sousLotsRows.map((sl) => ({ id: sl.id, name: sl.name }));
+
   // Contacts fournisseur (si marché a un fournisseur)
   const contacts = t.marcheSupplierId
     ? await db
@@ -146,7 +155,7 @@ export default async function EditTachePage({
 
       <form action={updateTacheAction} className="card space-y-5 p-6" autoComplete="off">
         <input type="hidden" name="id" value={t.id} />
-        <input type="hidden" name="marcheSousLotId" value={t.marcheSousLotId ?? params.sousLotId} />
+        {/* V1.13 R4 — marcheSousLotId est désormais piloté par le Select dans la fieldset. */}
         <input type="hidden" name="returnTo" value={returnTo} />
 
         <div>
@@ -183,11 +192,14 @@ export default async function EditTachePage({
         </div>
 
         {/* V12bis umbrella §7 — LOT RATTACHE en haut, puis NIVEAU+PIECE filtrés (live). */}
+        {/* V1.13 R4 — Sous-Lot rattaché à droite de Lot rattaché. */}
         <TacheLotLocationFieldset
           lotOptions={lotOptions}
           lotsStructure={lotsStructure}
           defaultLotId={t.lotId}
           defaultRoomId={t.roomId}
+          sousLotOptions={sousLotOptions}
+          defaultSousLotId={t.marcheSousLotId ?? params.sousLotId}
           required
         />
 

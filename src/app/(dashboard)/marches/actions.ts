@@ -548,6 +548,11 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
   await db
     .update(marcheTaches)
     .set({
+      // V1.13 R4 — déplacer la tâche entre sous-lots (Remarques client dashboard-17).
+      // marcheSousLotId est désormais piloté par un Select sur la fiche d'édition,
+      // donc il faut le persister (était omis jusqu'ici, fonctionnait uniquement
+      // car le hidden input verrouillait la valeur au sousLotId du path).
+      marcheSousLotId: data.marcheSousLotId,
       lotId: data.lotId,
       title: data.title,
       description: data.description || null,
