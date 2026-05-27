@@ -4,13 +4,14 @@ import {
   customerDocuments,
   documentTypes,
   locations,
+  locationDocuments,
   lots,
   properties,
 } from '@/db/schema';
-import { eq, and, asc, desc, or, isNull, sql } from 'drizzle-orm';
+import { eq, and, asc, desc, or, isNull, sql, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
 import {
@@ -20,7 +21,12 @@ import {
   toggleCustomerActiveAction,
   deleteCustomerAction,
 } from '../actions';
-import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
+import {
+  deleteLocationAction,
+  deleteLocationDocumentAction,
+  getLocationDocumentUrlAction,
+} from '@/app/(dashboard)/locations/actions';
+import { ClientComptaTable } from './client-compta-table';
 import {
   LocationsTable,
   type LocationRow,
@@ -145,6 +151,40 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .innerJoin(properties, eq(properties.id, lots.propertyId))
     .where(eq(locations.customerId, customer.id))
     .orderBy(desc(locations.dateDebut));
+
+  // V1.14 CL-1 — Onglet Compta fiche client : liste des factures/quittances de
+  // location toutes locations confondues (filtré sur document_types.category =
+  // 'comptabilite' pour absorber facture_loyer, quittance_loyer et tout futur
+  // type compta scope=location ajouté par l'admin).
+  // Source : Remarques client dashboard-18 §FICHE CLIENTS.
+  const customerLocationIds = customerLocations.map((l) => l.id);
+  const comptaDocs =
+    customerLocationIds.length > 0
+      ? await db
+          .select({
+            id: locationDocuments.id,
+            locationId: locationDocuments.locationId,
+            name: locationDocuments.name,
+            storageKey: locationDocuments.storageKey,
+            documentDate: locationDocuments.documentDate,
+            uploadedAt: locationDocuments.uploadedAt,
+            typeId: documentTypes.id,
+            typeLabel: documentTypes.label,
+            typeCode: documentTypes.code,
+          })
+          .from(locationDocuments)
+          .innerJoin(documentTypes, eq(documentTypes.id, locationDocuments.typeId))
+          .where(
+            and(
+              inArray(locationDocuments.locationId, customerLocationIds),
+              eq(documentTypes.category, 'comptabilite')
+            )
+          )
+          .orderBy(desc(locationDocuments.documentDate), desc(locationDocuments.uploadedAt))
+      : [];
+
+  // Index locations par id pour résoudre property/lot label par doc.
+  const locationsById = new Map(customerLocations.map((l) => [l.id, l]));
 
   const displayName =
     customer.companyName ??
@@ -302,16 +342,55 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     </div>
   );
 
-  const facturesTab = (
-    <div className="card p-6">
-      <p className="text-sm text-zinc-500">
-        Aucune facture pour l'instant. La synchronisation Pennylane (ventes FKA) arrivera en
-        V1.5 après l'entrée en vigueur de la réforme facturation électronique (1<sup>er</sup>{' '}
-        septembre 2026).
-      </p>
-      <p className="mt-3 text-[12px] text-zinc-400">
-        En attendant, les factures émises peuvent être archivées dans l'onglet « Documents »
-        avec le type « Autre ».
+  // V1.14 CL-1 — onglet Compta : factures + quittances de loyer toutes
+  // locations du client. Upload se fait depuis la fiche location (onglet
+  // Documents) avec le type "Facture loyer" ou "Quittance loyer".
+  const comptaRows = comptaDocs.map((d) => {
+    const loc = locationsById.get(d.locationId);
+    return {
+      id: d.id,
+      locationId: d.locationId,
+      propertyId: loc?.propertyId ?? '',
+      propertyName: loc?.propertyName ?? '—',
+      lotId: loc?.lotId ?? '',
+      lotName: loc?.lotName ?? '—',
+      name: d.name,
+      typeLabel: d.typeLabel,
+      typeCode: d.typeCode,
+      storageKey: d.storageKey,
+      documentDate: d.documentDate,
+      uploadedAt:
+        d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+    };
+  });
+
+  const firstLocationDocsHref =
+    customerLocations.length > 0 ? `/locations/${customerLocations[0].id}?tab=documents` : null;
+
+  const comptaTab = (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
+        <SectionTitle className="mb-0">Factures &amp; quittances de location</SectionTitle>
+        {firstLocationDocsHref && (
+          <Link href={firstLocationDocsHref} className="btn-secondary">
+            <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Uploader sur une location
+          </Link>
+        )}
+      </div>
+      <ClientComptaTable
+        rows={comptaRows}
+        getUrlAction={getLocationDocumentUrlAction}
+        deleteAction={deleteLocationDocumentAction}
+        emptyMessage={
+          customerLocations.length === 0
+            ? "Aucune location pour ce client — créez d'abord une location dans l'onglet « Locations »."
+            : 'Aucune facture ni quittance pour l\'instant. Upload depuis la fiche location (onglet Documents) avec le type « Facture loyer » ou « Quittance loyer ».'
+        }
+      />
+      <p className="text-[12px] text-zinc-400">
+        La synchronisation Pennylane (ventes FKA) arrivera en V1.5 après la réforme facturation
+        électronique (1<sup>er</sup> septembre 2026).
       </p>
     </div>
   );
@@ -326,7 +405,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       content: locationsTab,
     },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
-    { id: 'factures', label: 'Factures', content: facturesTab },
+    { id: 'compta', label: 'Compta', count: comptaRows.length || undefined, content: comptaTab },
   ];
 
   return (

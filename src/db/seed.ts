@@ -150,6 +150,9 @@ async function seedDocumentTypes(db: ReturnType<typeof drizzle<typeof schema>>) 
     { code: 'bail_signe', label: 'Bail signé', scope: 'location', sortOrder: 20, hasExpiration: false, category: 'location' },
     { code: 'etat_lieux_entree', label: "État des lieux d'entrée", scope: 'location', sortOrder: 30, hasExpiration: false, category: 'location' },
     { code: 'etat_lieux_sortie', label: 'État des lieux de sortie', scope: 'location', sortOrder: 40, hasExpiration: false, category: 'location' },
+    // V1.14 CL-1 — onglet Compta fiche client (Remarques client dashboard-18 §FICHE CLIENTS).
+    { code: 'facture_loyer', label: 'Facture loyer', scope: 'location', sortOrder: 50, hasExpiration: false, category: 'comptabilite' },
+    { code: 'quittance_loyer', label: 'Quittance loyer', scope: 'location', sortOrder: 60, hasExpiration: false, category: 'comptabilite' },
     { code: 'autre', label: 'Autre', scope: 'location', sortOrder: 99, hasExpiration: false },
   ];
 
