@@ -585,6 +585,80 @@ export async function deleteTacheAction(formData: FormData): Promise<void> {
 }
 
 /**
+ * V1.14 F-3 — Append une photo (déjà uploadée vers MinIO via /api/upload) à
+ * la tâche. Le client uploade le fichier directement puis appelle cette action
+ * avec la storageKey.
+ *
+ * Source : Remarques client dashboard-18 §"LISTE DE SUIVI DE TACHES DANS
+ * FOURNISSEURS" — "possibilité d'uploader des photos pour chaque tache".
+ */
+export async function appendTachePhotoAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!id || !storageKey) throw new Error('ID ou storageKey manquant');
+
+  const rows = await db
+    .select({ photos: marcheTaches.photos })
+    .from(marcheTaches)
+    .where(eq(marcheTaches.id, id))
+    .limit(1);
+  if (rows.length === 0) throw new Error('Tâche introuvable');
+
+  const next = Array.from(new Set([...(rows[0].photos ?? []), storageKey]));
+  await db
+    .update(marcheTaches)
+    .set({ photos: next, updatedAt: new Date() })
+    .where(eq(marcheTaches.id, id));
+
+  revalidatePath('/biens');
+  revalidatePath('/fournisseurs');
+  revalidatePath('/marches');
+}
+
+export async function deleteTachePhotoAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!id || !storageKey) throw new Error('ID ou storageKey manquant');
+
+  const rows = await db
+    .select({ photos: marcheTaches.photos })
+    .from(marcheTaches)
+    .where(eq(marcheTaches.id, id))
+    .limit(1);
+  if (rows.length === 0) throw new Error('Tâche introuvable');
+
+  const next = (rows[0].photos ?? []).filter((p: string) => p !== storageKey);
+  await db
+    .update(marcheTaches)
+    .set({ photos: next, updatedAt: new Date() })
+    .where(eq(marcheTaches.id, id));
+
+  // Best-effort MinIO delete (silencieux si échec).
+  try {
+    await deleteObject(storageKey);
+  } catch {
+    // ignore
+  }
+
+  revalidatePath('/biens');
+  revalidatePath('/fournisseurs');
+  revalidatePath('/marches');
+}
+
+export async function getTachePhotoUrlAction(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!storageKey) return { error: 'Clé manquante' };
+  try {
+    const url = await getDownloadUrl(storageKey);
+    return { url };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur MinIO' };
+  }
+}
+
+/**
  * Inline status update — appelé depuis le `<select>` dropdown du composant
  * `<TacheStatusSelect>`. Submit via useTransition, pas de redirect.
  */

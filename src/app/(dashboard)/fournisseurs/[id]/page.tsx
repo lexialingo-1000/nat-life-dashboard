@@ -12,6 +12,7 @@ import {
   companyAccountingDocuments,
   rooms,
   levels,
+  lots,
 } from '@/db/schema';
 import { eq, and, asc, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -34,7 +35,7 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
-import { SupplierTachesTable } from './supplier-taches-table';
+import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
 import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import {
   AccountingDocumentsManager,
@@ -111,24 +112,35 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     .where(eq(marchesTravaux.supplierId, s.id))
     .orderBy(desc(marchesTravaux.dateDebutPrevu));
 
-  // V1.13 R6 — toutes les tâches des marchés du fournisseur (nouvel onglet
-  // "Suivi des tâches", Remarques client dashboard-17 §"Fiche FOURNISSEUR").
+  // V1.13 R6 + V1.14 F-1/F-2/F-3 — toutes les tâches des marchés du
+  // fournisseur (onglet "Suivi tâches"). JOIN lots+properties pour rupture par
+  // lot immo (F-2), photos[] pour bouton upload (F-3).
+  // Source : Remarques client dashboard-18 §"LISTE DE SUIVI DE TACHES DANS
+  // FOURNISSEURS".
   const supplierTaches = await db
     .select({
       id: marcheTaches.id,
       title: marcheTaches.title,
       status: marcheTaches.status,
       dueDate: marcheTaches.dueDate,
+      locationDescription: marcheTaches.locationDescription,
+      photos: marcheTaches.photos,
       marcheId: marchesTravaux.id,
       marcheName: marchesTravaux.name,
       sousLotId: marcheSousLots.id,
       sousLotName: marcheSousLots.name,
+      lotId: lots.id,
+      lotName: lots.name,
+      propertyId: properties.id,
+      propertyName: properties.name,
       roomName: rooms.name,
       levelName: levels.name,
     })
     .from(marcheTaches)
     .innerJoin(marcheSousLots, eq(marcheSousLots.id, marcheTaches.marcheSousLotId))
     .innerJoin(marchesTravaux, eq(marchesTravaux.id, marcheSousLots.marcheId))
+    .innerJoin(lots, eq(lots.id, marcheTaches.lotId))
+    .innerJoin(properties, eq(properties.id, lots.propertyId))
     .leftJoin(rooms, eq(rooms.id, marcheTaches.roomId))
     .leftJoin(levels, eq(levels.id, rooms.levelId))
     .where(eq(marchesTravaux.supplierId, s.id))
@@ -454,22 +466,32 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       companyId: r.companyId,
     }));
 
-  // V1.13 R6 — onglet Suivi des tâches.
+  // V1.13 R6 + V1.14 F-1/F-2/F-3 — onglet Suivi tâches refondu avec filtres
+  // toutes colonnes, tri, rupture par lot immo, upload photos.
+  const tacheRows: TacheListRow[] = supplierTaches.map((t) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    dueDate: t.dueDate,
+    marcheId: t.marcheId,
+    marcheName: t.marcheName,
+    sousLotId: t.sousLotId,
+    sousLotName: t.sousLotName,
+    lotId: t.lotId,
+    lotName: t.lotName,
+    propertyId: t.propertyId,
+    propertyName: t.propertyName,
+    roomName: t.roomName,
+    levelName: t.levelName,
+    locationDescription: t.locationDescription,
+    photos: Array.isArray(t.photos) ? t.photos : [],
+  }));
+
   const tachesTab = (
-    <SupplierTachesTable
-      rows={supplierTaches.map((t) => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-        dueDate: t.dueDate,
-        marcheId: t.marcheId,
-        marcheName: t.marcheName,
-        sousLotId: t.sousLotId,
-        sousLotName: t.sousLotName,
-        roomName: t.roomName,
-        levelName: t.levelName,
-      }))}
+    <TachesListTable
+      rows={tacheRows}
       returnTo={`/fournisseurs/${s.id}?tab=taches`}
+      groupByLot
     />
   );
 

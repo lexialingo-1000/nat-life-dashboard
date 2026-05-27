@@ -35,6 +35,7 @@ import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { NotesCard } from '@/components/notes-card';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
 import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
+import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
 import {
   AccountingDocumentsManager,
   type AccountingDocKind,
@@ -403,6 +404,33 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     </div>
   );
 
+  // V1.14 M-1 — flat list filtrable/triable pour Emplacement + Échéance.
+  // Source : Remarques client dashboard-18 §"LISTE DES TACHES DANS MARCHE DE
+  // TRAVAUX". Co-existe avec la cascade ci-dessous (structure visuelle).
+  const tacheListRows: TacheListRow[] = tachesRows
+    .filter((t) => t.marcheSousLotId !== null)
+    .map((t) => {
+      const sl = sousLotsRows.find((s) => s.id === t.marcheSousLotId);
+      return {
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        dueDate: t.dueDate,
+        marcheId: marche.id,
+        marcheName: marche.name,
+        sousLotId: t.marcheSousLotId!,
+        sousLotName: sl?.name ?? '—',
+        lotId: t.lotId,
+        lotName: marche.propertyName ?? '—',
+        propertyId: marche.propertyId ?? '',
+        propertyName: marche.propertyName ?? '—',
+        roomName: t.roomName,
+        levelName: t.levelName,
+        locationDescription: t.locationDescription,
+        photos: Array.isArray(t.photos) ? t.photos : [],
+      };
+    });
+
   const suiviTab = (
     <div className="space-y-3">
       <div className="rounded-md border border-blue-100 bg-blue-50/50 p-4 text-[13px] text-blue-900">
@@ -418,6 +446,16 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       </div>
       <InlineSousLotForm marcheId={marche.id} />
       <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}?tab=suivi`} />
+      {tacheListRows.length > 0 && (
+        <div className="space-y-2 pt-3">
+          <SectionTitle className="mb-0">Toutes les tâches (filtrable)</SectionTitle>
+          <TachesListTable
+            rows={tacheListRows}
+            returnTo={`/marches/${marche.id}?tab=suivi`}
+            hideLotColumn
+          />
+        </div>
+      )}
     </div>
   );
 
