@@ -10,10 +10,8 @@ export type SocieteRow = {
   id: string;
   name: string;
   type: string;
-  formeJuridique: string | null;
   siren: string | null;
-  nafCode: string | null;
-  address: string | null;
+  tvaIntracom: string | null;
   isActive: boolean;
 };
 
@@ -66,13 +64,6 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
     },
   },
   {
-    accessorKey: 'formeJuridique',
-    header: 'Forme',
-    cell: ({ getValue }) => (
-      <span className="badge-neutral">{(getValue() as string | null) ?? '—'}</span>
-    ),
-  },
-  {
     accessorKey: 'siren',
     header: 'SIREN',
     cell: ({ getValue }) => (
@@ -82,21 +73,13 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
     ),
   },
   {
-    accessorKey: 'nafCode',
-    header: 'NAF',
+    accessorKey: 'tvaIntracom',
+    header: 'N° TVA',
     cell: ({ getValue }) => (
-      <span className="font-mono text-[12px] text-zinc-600">
+      <span className="font-mono text-[12px] tnum text-zinc-600">
         {(getValue() as string | null) ?? '—'}
       </span>
     ),
-  },
-  {
-    accessorKey: 'address',
-    header: 'Siège',
-    cell: ({ getValue }) => {
-      const v = getValue() as string | null;
-      return <span className="text-[12px] text-zinc-500">{v?.split(',')[0] ?? '—'}</span>;
-    },
   },
 ];
 
