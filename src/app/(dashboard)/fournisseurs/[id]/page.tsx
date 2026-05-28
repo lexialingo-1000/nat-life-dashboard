@@ -7,6 +7,7 @@ import {
   marchesTravaux,
   marcheSousLots,
   marcheTaches,
+  marcheLotAffectations,
   properties,
   companies,
   companyAccountingDocuments,
@@ -14,7 +15,7 @@ import {
   levels,
   lots,
 } from '@/db/schema';
-import { eq, and, asc, desc, inArray } from 'drizzle-orm';
+import { eq, and, asc, desc, inArray, sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -359,7 +360,9 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       companyId: companies.id,
       companyName: companies.name,
       marcheId: marchesTravaux.id,
-      marcheName: marchesTravaux.name,
+      // v19-2a — colonne MARCHE doit afficher la description du marché
+      // (ex: "Second-Oeuvre") plutôt que son name. Fallback name si description nulle.
+      marcheName: sql<string | null>`COALESCE(${marchesTravaux.description}, ${marchesTravaux.name})`,
     })
     .from(companyAccountingDocuments)
     .innerJoin(companies, eq(companies.id, companyAccountingDocuments.companyId))
@@ -395,25 +398,65 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
   };
 
-  const supplierAccountingRows: AccountingRow[] = supplierAccountingDocs.map((d) => ({
-    id: d.id,
-    kind: d.kind as AccountingDocKind,
-    name: d.name,
-    originalFilename: d.originalFilename ?? null,
-    storageKey: d.storageKey,
-    documentDate: d.documentDate,
-    amountHt: d.amountHt,
-    amountTtc: d.amountTtc,
-    uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
-    companyId: d.companyId,
-    companyName: d.companyName,
-    supplierId: s.id,
-    supplierLabel: displayName,
-    marcheId: d.marcheId ?? null,
-    marcheLabel: d.marcheName ?? null,
-    parentDevisLabel: formatSupplierParentLabel(d.parentDevisId),
-    parentCommandeLabel: formatSupplierParentLabel(d.parentCommandeId),
-  }));
+  // v19-2b — Résolution lots du marché pour chaque facture, pour rupture par
+  // LOT dans le tableau compta. Un marché peut concerner 0..N lots ; on prend
+  // le premier lot pour la clé de groupement (cas typique : marché = 1 lot).
+  const supplierMarcheIds = Array.from(
+    new Set(supplierAccountingDocs.map((d) => d.marcheId).filter((x): x is string => !!x))
+  );
+  const marcheLotRows =
+    supplierMarcheIds.length > 0
+      ? await db
+          .select({
+            marcheId: marcheLotAffectations.marcheId,
+            lotId: lots.id,
+            lotName: lots.name,
+            propertyName: properties.name,
+          })
+          .from(marcheLotAffectations)
+          .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
+          .innerJoin(properties, eq(properties.id, lots.propertyId))
+          .where(inArray(marcheLotAffectations.marcheId, supplierMarcheIds))
+      : [];
+  const firstLotByMarcheId = new Map<
+    string,
+    { lotId: string; lotName: string; propertyName: string }
+  >();
+  for (const r of marcheLotRows) {
+    if (!firstLotByMarcheId.has(r.marcheId)) {
+      firstLotByMarcheId.set(r.marcheId, {
+        lotId: r.lotId,
+        lotName: r.lotName,
+        propertyName: r.propertyName,
+      });
+    }
+  }
+
+  const supplierAccountingRows: AccountingRow[] = supplierAccountingDocs.map((d) => {
+    const lotInfo = d.marcheId ? firstLotByMarcheId.get(d.marcheId) ?? null : null;
+    return {
+      id: d.id,
+      kind: d.kind as AccountingDocKind,
+      name: d.name,
+      originalFilename: d.originalFilename ?? null,
+      storageKey: d.storageKey,
+      documentDate: d.documentDate,
+      amountHt: d.amountHt,
+      amountTtc: d.amountTtc,
+      uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+      companyId: d.companyId,
+      companyName: d.companyName,
+      supplierId: s.id,
+      supplierLabel: displayName,
+      marcheId: d.marcheId ?? null,
+      marcheLabel: d.marcheName ?? null,
+      lotId: lotInfo?.lotId ?? null,
+      lotName: lotInfo?.lotName ?? null,
+      propertyName: lotInfo?.propertyName ?? null,
+      parentDevisLabel: formatSupplierParentLabel(d.parentDevisId),
+      parentCommandeLabel: formatSupplierParentLabel(d.parentCommandeId),
+    };
+  });
 
   const supplierComptaTotalHt = supplierAccountingRows.reduce(
     (acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0),
@@ -512,6 +555,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         uploadAction={uploadAccountingDocAction}
         deleteAction={deleteAccountingDocAction}
         getUrlAction={getAccountingDocUrlAction}
+        groupByLot
       />
     </div>
   );

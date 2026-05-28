@@ -56,6 +56,11 @@ export interface AccountingRow {
   supplierLabel: string;
   marcheId: string | null;
   marcheLabel: string | null;
+  /** v19-2b — lot immo dérivé du marché (1er lot si marché multi-lots). Null si
+   *  marché parties communes ou facture sans marché. Utilisé pour rupture LOT. */
+  lotId?: string | null;
+  lotName?: string | null;
+  propertyName?: string | null;
   /** Label devis lié (visible colonne "Lié à" pour commande/facture). */
   parentDevisLabel: string | null;
   /** Label commande liée (visible colonne "Lié à" pour facture). */
@@ -135,6 +140,10 @@ interface Props {
   uploadAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
   getUrlAction: (formData: FormData) => Promise<{ url: string } | { error: string }>;
+
+  /** v19-2b — Active la rupture par LOT immobilier (section + sous-total par lot).
+   *  Pertinent uniquement sur scope=supplier. Default false. */
+  groupByLot?: boolean;
 }
 
 export function AccountingDocumentsManager({
@@ -158,6 +167,7 @@ export function AccountingDocumentsManager({
   uploadAction,
   deleteAction,
   getUrlAction,
+  groupByLot = false,
 }: Props) {
   const [marches, setMarches] = useState<MarcheOption[]>(initialMarches);
 
@@ -396,6 +406,45 @@ export function AccountingDocumentsManager({
       filteredRows.reduce((acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0), 0),
     [filteredRows]
   );
+
+  // v19-2b — Groupement par LOT immo (sur scope=supplier). Si groupByLot=false
+  // on garde un groupe unique pour préserver le rendu existant.
+  const rowGroups = useMemo(() => {
+    if (!groupByLot) {
+      return [
+        {
+          key: '__all__',
+          label: '',
+          rows: filteredRows,
+          subtotalHt: filteredTotalHt,
+          subtotalTtc: filteredTotalTtc,
+        },
+      ];
+    }
+    const map = new Map<
+      string,
+      { label: string; rows: AccountingRow[]; subtotalHt: number; subtotalTtc: number }
+    >();
+    for (const r of filteredRows) {
+      const key = r.lotId ?? '__commun__';
+      const label = r.lotId
+        ? `${r.propertyName ?? '—'} · ${r.lotName ?? '—'}`
+        : 'Parties communes / sans marché';
+      const g = map.get(key) ?? { label, rows: [], subtotalHt: 0, subtotalTtc: 0 };
+      g.rows.push(r);
+      g.subtotalHt += r.amountHt ? Number(r.amountHt) : 0;
+      g.subtotalTtc += r.amountTtc ? Number(r.amountTtc) : 0;
+      map.set(key, g);
+    }
+    // Trier : "Parties communes" en dernier, le reste alphabétique sur label.
+    return Array.from(map.entries())
+      .map(([key, g]) => ({ key, ...g }))
+      .sort((a, b) => {
+        if (a.key === '__commun__') return 1;
+        if (b.key === '__commun__') return -1;
+        return a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' });
+      });
+  }, [groupByLot, filteredRows, filteredTotalHt, filteredTotalTtc]);
 
   const showCompanyColumn = scope !== 'company';
   const showSupplierColumn = scope !== 'supplier';
@@ -1037,6 +1086,34 @@ export function AccountingDocumentsManager({
             ? 'Aucun devis / commande / facture. Utilise les boutons ci-dessus pour en ajouter ou glisse-dépose un fichier ici.'
             : 'Aucun document ne correspond aux filtres actifs.'}
         </p>
+      ) : groupByLot ? (
+        // v19-2b — Rupture par LOT : un bloc par lot avec sous-total HT/TTC.
+        <div className="space-y-6">
+          {rowGroups.map((g) => (
+            <section key={g.key} className="space-y-2">
+              <header className="flex flex-wrap items-end justify-between gap-2 border-b border-zinc-200 pb-1">
+                <h3 className="text-[12px] font-medium uppercase tracking-[0.06em] text-zinc-700">
+                  {g.label}
+                  <span className="ml-2 font-mono text-[11px] tnum font-normal text-zinc-400">
+                    {g.rows.length}
+                  </span>
+                </h3>
+                <div className="flex flex-col items-end gap-0 font-mono text-[11px] tabular-nums text-zinc-600">
+                  <span>HT : {g.subtotalHt.toLocaleString('fr-FR')} €</span>
+                  <span className="font-medium text-zinc-800">
+                    TTC : {g.subtotalTtc.toLocaleString('fr-FR')} €
+                  </span>
+                </div>
+              </header>
+              <DataTable
+                columns={columns}
+                data={g.rows}
+                emptyMessage="Aucun document compta."
+                enableFilters={false}
+              />
+            </section>
+          ))}
+        </div>
       ) : (
         <DataTable
           columns={columns}
