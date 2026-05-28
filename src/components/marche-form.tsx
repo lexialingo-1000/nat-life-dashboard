@@ -4,14 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { EntityCombobox } from '@/components/entity-combobox';
 
-const STATUS_OPTIONS = [
-  { value: 'devis_recu', label: 'Devis reçu' },
-  { value: 'signe', label: 'Signé' },
-  { value: 'en_cours', label: 'En cours' },
-  { value: 'livre', label: 'Livré' },
-  { value: 'conteste', label: 'Contesté' },
-  { value: 'annule', label: 'Annulé' },
-];
+// v19-3 — champ Statut retiré du formulaire (demande client v19). Le statut
+// reste géré côté DB avec default `devis_recu` ; les badges restent affichés
+// sur la liste/fiche/tree (cf. plan V1.15).
 
 interface LotOption {
   id: string;
@@ -111,7 +106,7 @@ export function MarcheForm({
           />
         </div>
 
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium">Fournisseur *</label>
           <div className="mt-1">
             <EntityCombobox
@@ -125,22 +120,6 @@ export function MarcheForm({
               required
             />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Statut *</label>
-          <select
-            name="status"
-            defaultValue={defaultValues.status ?? 'devis_recu'}
-            required
-            className="input mt-1"
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="col-span-2">
