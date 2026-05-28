@@ -127,7 +127,7 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND (
           dt.applies_to_tenant_type = 'all'
           OR (dt.applies_to_tenant_type IS NULL AND c.tenant_type IS NULL)
-          OR (dt.applies_to_tenant_type = c.tenant_type)
+          OR (dt.applies_to_tenant_type = c.tenant_type::text)
         )
         AND NOT EXISTS (
           SELECT 1 FROM ${customerDocuments} cd
