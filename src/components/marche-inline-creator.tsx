@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Loader2, X } from 'lucide-react';
 
 interface PropertyOption {
@@ -11,15 +12,23 @@ interface PropertyOption {
 type CreateResult = { id: string; label: string } | { error: string };
 
 interface Props {
-  /** Fournisseur déjà sélectionné dans le combobox parent (requis). */
+  /** Fournisseur présélectionné (contexte compta). Vide si on fournit `suppliers`. */
   supplierId: string;
-  /** Propriétés (biens) éligibles pour rattacher ce marché (filtrées société courante). */
+  /** Propriétés (biens) éligibles pour rattacher ce marché. */
   properties: PropertyOption[];
+  /** Si fourni (ex: /taches/new), affiche un select fournisseur dans le dialog
+   *  au lieu du supplier fixe. */
+  suppliers?: PropertyOption[];
   /** Action serveur de création inline. */
   createAction: (formData: FormData) => Promise<CreateResult>;
-  /** Callback quand la création réussit — typiquement pour ajouter l'option au combobox parent. */
-  onCreated: (marche: { id: string; label: string }) => void;
-  /** Désactivé tant que pas de supplier sélectionné. */
+  /** Callback quand la création réussit. */
+  onCreated: (marche: {
+    id: string;
+    label: string;
+    propertyId: string;
+    supplierId: string;
+  }) => void;
+  /** Désactivé tant que pas de supplier sélectionné (contexte compta). */
   disabled?: boolean;
 }
 
@@ -30,28 +39,34 @@ interface Props {
 export function MarcheInlineCreator({
   supplierId,
   properties,
+  suppliers,
   createAction,
   onCreated,
   disabled = false,
 }: Props) {
+  const pickSupplier = !!suppliers; // mode /taches/new : fournisseur choisi dans le dialog
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [propertyId, setPropertyId] = useState('');
+  const [chosenSupplierId, setChosenSupplierId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const effectiveSupplierId = pickSupplier ? chosenSupplierId : supplierId;
 
   const reset = () => {
     setOpen(false);
     setName('');
     setPropertyId('');
+    setChosenSupplierId('');
     setError(null);
     setSubmitting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supplierId) {
-      setError('Sélectionne un fournisseur avant de créer un marché');
+    if (!effectiveSupplierId) {
+      setError('Sélectionne un fournisseur');
       return;
     }
     if (!propertyId) {
@@ -65,7 +80,7 @@ export function MarcheInlineCreator({
     setSubmitting(true);
     setError(null);
     const fd = new FormData();
-    fd.set('supplierId', supplierId);
+    fd.set('supplierId', effectiveSupplierId);
     fd.set('propertyId', propertyId);
     fd.set('name', name.trim());
     const res = await createAction(fd);
@@ -74,7 +89,7 @@ export function MarcheInlineCreator({
       setSubmitting(false);
       return;
     }
-    onCreated({ id: res.id, label: res.label });
+    onCreated({ id: res.id, label: res.label, propertyId, supplierId: effectiveSupplierId });
     reset();
   };
 
@@ -83,14 +98,18 @@ export function MarcheInlineCreator({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        disabled={disabled || !supplierId}
-        title={!supplierId ? 'Choisis un fournisseur d\'abord' : 'Créer un marché à la volée'}
+        disabled={disabled || (!pickSupplier && !supplierId)}
+        title={
+          !pickSupplier && !supplierId
+            ? "Choisis un fournisseur d'abord"
+            : 'Créer un marché à la volée'
+        }
         className="mt-1 inline-flex items-center gap-1 text-[11px] text-blue-700 hover:underline disabled:cursor-not-allowed disabled:text-zinc-400 disabled:no-underline"
       >
         <Plus className="h-3 w-3" strokeWidth={2} />
         Créer un marché à la volée
       </button>
-      {open && (
+      {open && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -113,6 +132,27 @@ export function MarcheInlineCreator({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {pickSupplier && (
+              <div>
+                <label className="block text-[12px] font-medium text-zinc-700">
+                  Fournisseur *
+                </label>
+                <select
+                  value={chosenSupplierId}
+                  onChange={(e) => setChosenSupplierId(e.target.value)}
+                  required
+                  className="input mt-1"
+                >
+                  <option value="">— Choisir un fournisseur —</option>
+                  {suppliers!.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-[12px] font-medium text-zinc-700">Nom *</label>
@@ -183,7 +223,8 @@ export function MarcheInlineCreator({
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

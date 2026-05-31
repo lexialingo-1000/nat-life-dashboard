@@ -109,6 +109,30 @@ export async function createMarcheInlineAction(
   return { id: inserted[0].id, label: name };
 }
 
+// V12.1 — création inline d'un sous-lot depuis /taches/new (retourne l'id pour
+// alimenter le select sans rechargement). Mirror de createMarcheInlineAction.
+export async function createSousLotInlineAction(
+  formData: FormData
+): Promise<{ id: string; name: string } | { error: string }> {
+  const marcheId = String(formData.get('marcheId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(marcheId)) return { error: 'Marché (marcheId) invalide' };
+  if (!name) return { error: 'Nom du sous-lot requis' };
+
+  try {
+    const inserted = await db
+      .insert(marcheSousLots)
+      .values({ marcheId, name })
+      .returning({ id: marcheSousLots.id });
+    revalidatePath(`/marches/${marcheId}`);
+    revalidatePath('/biens');
+    return { id: inserted[0].id, name };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { error: `Création du sous-lot impossible : ${detail}` };
+  }
+}
+
 export async function createMarcheAction(formData: FormData): Promise<void> {
   const parsed = marcheBaseSchema.safeParse({
     propertyId: formData.get('propertyId'),

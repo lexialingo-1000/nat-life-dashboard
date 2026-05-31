@@ -5,14 +5,17 @@ import {
   marcheLotAffectations,
   lots,
   properties,
+  suppliers,
 } from '@/db/schema';
 import { eq, inArray, asc } from 'drizzle-orm';
 import { BackLink } from '@/components/back-link';
+import { createMarcheInlineAction, createSousLotInlineAction } from '../../marches/actions';
 import {
   TacheCreateSelectableForm,
   type MarcheOption,
   type SousLotOption,
   type LotOption,
+  type SupplierOption,
 } from './tache-create-selectable-form';
 
 export const dynamic = 'force-dynamic';
@@ -99,18 +102,43 @@ export default async function NewTachePage({
     }
   }
 
-  // 3. Lots par bien (pour scoper le choix du lot).
+  // 3. Lots par bien — chargés pour TOUS les biens : un marché créé à la volée
+  // (V12.1) peut viser n'importe quel bien, le select Lot doit avoir ses lots.
+  void propertyIds; // (le scoping se fait côté client via le bien du marché)
   const lotsByProperty: Record<string, LotOption[]> = {};
-  if (propertyIds.length > 0) {
+  {
     const lotRows = await db
       .select({ id: lots.id, name: lots.name, propertyId: lots.propertyId })
       .from(lots)
-      .where(inArray(lots.propertyId, propertyIds))
       .orderBy(asc(lots.name));
     for (const l of lotRows) {
       (lotsByProperty[l.propertyId] ??= []).push({ id: l.id, name: l.name });
     }
   }
+
+  // 4. Fournisseurs actifs + tous les biens — pour la création de marché à la volée (V12.1).
+  const supplierRows = await db
+    .select({
+      id: suppliers.id,
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+      isActive: suppliers.isActive,
+    })
+    .from(suppliers)
+    .orderBy(asc(suppliers.companyName));
+  const supplierOpts: SupplierOption[] = supplierRows
+    .filter((s) => s.isActive)
+    .map((s) => ({
+      id: s.id,
+      label: s.companyName || `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || 'Fournisseur',
+    }));
+
+  const propertyRows = await db
+    .select({ id: properties.id, name: properties.name })
+    .from(properties)
+    .orderBy(asc(properties.name));
+  const propertyOpts: SupplierOption[] = propertyRows.map((p) => ({ id: p.id, label: p.name }));
 
   const defaultMarcheId = marches.length === 1 ? marches[0].id : undefined;
 
@@ -129,6 +157,10 @@ export default async function NewTachePage({
         marches={marches}
         sousLotsByMarche={sousLotsByMarche}
         lotsByProperty={lotsByProperty}
+        suppliers={supplierOpts}
+        properties={propertyOpts}
+        createMarcheAction={createMarcheInlineAction}
+        createSousLotAction={createSousLotInlineAction}
         defaultMarcheId={defaultMarcheId}
         defaultLotId={lotId}
         returnTo={returnTo}
