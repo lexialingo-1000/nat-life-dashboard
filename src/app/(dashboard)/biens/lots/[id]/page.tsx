@@ -8,6 +8,8 @@ import {
   rooms,
   marchesTravaux,
   marcheLotAffectations,
+  marcheSousLots,
+  marcheTaches,
   suppliers,
   locations,
   customers,
@@ -27,6 +29,7 @@ import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { DeleteButton } from '@/components/delete-button';
 import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
+import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import {
   LocationsTable,
@@ -130,6 +133,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
 
   let lotMarches: any[] = [];
   let lotLocations: any[] = [];
+  let lotTaches: any[] = [];
   if (lot) {
     lotMarches = await db
       .select({
@@ -164,6 +168,32 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       .innerJoin(customers, eq(customers.id, locations.customerId))
       .where(eq(locations.lotId, lot.id))
       .orderBy(desc(locations.dateDebut));
+
+    // V20 §FICHE LOT §3 — toutes les tâches de suivi de CE lot (filtre lotId),
+    // peu importe le marché/sous-lot. JOIN sous-lot+marché pour les libellés,
+    // rooms+levels pour l'emplacement. Rendu via <TachesListTable>.
+    lotTaches = await db
+      .select({
+        id: marcheTaches.id,
+        title: marcheTaches.title,
+        status: marcheTaches.status,
+        dueDate: marcheTaches.dueDate,
+        locationDescription: marcheTaches.locationDescription,
+        photos: marcheTaches.photos,
+        marcheId: marchesTravaux.id,
+        marcheName: marchesTravaux.name,
+        sousLotId: marcheSousLots.id,
+        sousLotName: marcheSousLots.name,
+        roomName: rooms.name,
+        levelName: levels.name,
+      })
+      .from(marcheTaches)
+      .innerJoin(marcheSousLots, eq(marcheSousLots.id, marcheTaches.marcheSousLotId))
+      .innerJoin(marchesTravaux, eq(marchesTravaux.id, marcheSousLots.marcheId))
+      .leftJoin(rooms, eq(rooms.id, marcheTaches.roomId))
+      .leftJoin(levels, eq(levels.id, rooms.levelId))
+      .where(eq(marcheTaches.lotId, lot.id))
+      .orderBy(asc(marcheTaches.dueDate), asc(marcheTaches.createdAt));
   }
 
   let lotDocs: any[] = [];
@@ -333,6 +363,48 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     </div>
   );
 
+  // V20 §FICHE LOT §3 — onglet "Suivi travaux" : toutes les tâches en cours du
+  // lot (format liste filtrable, identique à la fiche fournisseur).
+  const lotTacheRows: TacheListRow[] = lotTaches.map((t) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    dueDate: t.dueDate,
+    marcheId: t.marcheId,
+    marcheName: t.marcheName,
+    sousLotId: t.sousLotId,
+    sousLotName: t.sousLotName,
+    lotId: lot.id,
+    lotName: lot.name,
+    propertyId: lot.propertyId,
+    propertyName: lot.propertyName,
+    roomName: t.roomName,
+    levelName: t.levelName,
+    locationDescription: t.locationDescription,
+    photos: Array.isArray(t.photos) ? t.photos : [],
+  }));
+
+  const suiviTravauxTab = (
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <SectionTitle className="mb-0">Suivi des travaux de ce lot</SectionTitle>
+        <Link
+          href={`/taches/new?lotId=${lot.id}&returnTo=${encodeURIComponent(
+            `/biens/lots/${lot.id}?tab=suivi-travaux`
+          )}`}
+          className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
+        >
+          + Ajouter une tâche
+        </Link>
+      </div>
+      <TachesListTable
+        rows={lotTacheRows}
+        returnTo={`/biens/lots/${lot.id}?tab=suivi-travaux`}
+        hideLotColumn
+      />
+    </div>
+  );
+
   const computeStatus = (dateDebut: string, dateFin: string | null): LocationStatus => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -493,6 +565,12 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       label: 'Compta',
       count: lotMarches.length || undefined,
       content: marchesTab,
+    },
+    {
+      id: 'suivi-travaux',
+      label: 'Suivi travaux',
+      count: lotTaches.length || undefined,
+      content: suiviTravauxTab,
     },
     {
       id: 'photos',

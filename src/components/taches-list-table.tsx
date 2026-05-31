@@ -84,14 +84,17 @@ function formatDateFr(value: string | null): string {
   });
 }
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Tous' },
+const STATUS_FILTER_OPTIONS = [
   { value: 'en_attente', label: 'En attente' },
   { value: 'a_faire', label: 'À faire' },
   { value: 'en_cours', label: 'En cours' },
   { value: 'termine', label: 'Terminé' },
   { value: 'valide', label: 'Validé' },
 ];
+const ALL_STATUS_VALUES = STATUS_FILTER_OPTIONS.map((o) => o.value);
+// V20 §FICHE LOT §5 — par défaut on masque les tâches terminées (toutes les
+// autres cases cochées). Système de cases à cocher pour la colonne statut.
+const DEFAULT_VISIBLE_STATUS = ALL_STATUS_VALUES.filter((v) => v !== 'termine');
 
 export function TachesListTable({
   rows,
@@ -103,11 +106,14 @@ export function TachesListTable({
     marche: '',
     sousLot: '',
     title: '',
-    status: '',
     lot: '',
     emplacement: '',
     dueDate: '',
   });
+  // V20 §5 — filtre statut multi (cases à cocher). Défaut : tout sauf "Terminé".
+  const [statusSet, setStatusSet] = useState<Set<string>>(
+    () => new Set(DEFAULT_VISIBLE_STATUS)
+  );
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: 'dueDate',
     dir: 'asc',
@@ -120,7 +126,7 @@ export function TachesListTable({
       if (filters.marche && !norm(r.marcheName).includes(norm(filters.marche))) return false;
       if (filters.sousLot && !norm(r.sousLotName).includes(norm(filters.sousLot))) return false;
       if (filters.title && !norm(r.title).includes(norm(filters.title))) return false;
-      if (filters.status && r.status !== filters.status) return false;
+      if (!statusSet.has(r.status)) return false;
       if (filters.lot) {
         const lotLabel = `${r.propertyName} ${r.lotName}`;
         if (!norm(lotLabel).includes(norm(filters.lot))) return false;
@@ -137,7 +143,7 @@ export function TachesListTable({
       }
       return true;
     });
-  }, [rows, filters]);
+  }, [rows, filters, statusSet]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -209,14 +215,26 @@ export function TachesListTable({
       marche: '',
       sousLot: '',
       title: '',
-      status: '',
       lot: '',
       emplacement: '',
       dueDate: '',
     });
+    // Réinitialise au défaut métier : tout sauf "Terminé".
+    setStatusSet(new Set(DEFAULT_VISIBLE_STATUS));
   };
 
-  const hasActiveFilters = Object.values(filters).some((v) => v !== '');
+  const toggleStatus = (value: string) => {
+    setStatusSet((cur) => {
+      const next = new Set(cur);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  };
+
+  const statusFilterActive = statusSet.size !== ALL_STATUS_VALUES.length;
+  const hasActiveFilters =
+    Object.values(filters).some((v) => v !== '') || statusFilterActive;
 
   if (rows.length === 0) {
     return (
@@ -308,17 +326,38 @@ export function TachesListTable({
               />
             </FilterTh>
             <FilterTh>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                className="filter-input"
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              <details className="status-filter">
+                <summary className="filter-input status-filter-summary">
+                  {statusSet.size === ALL_STATUS_VALUES.length
+                    ? 'Tous'
+                    : statusSet.size === 0
+                      ? 'Aucun'
+                      : `${statusSet.size} statut${statusSet.size > 1 ? 's' : ''}`}
+                </summary>
+                <div className="status-filter-panel">
+                  {STATUS_FILTER_OPTIONS.map((o) => (
+                    <label key={o.value} className="status-filter-option">
+                      <input
+                        type="checkbox"
+                        checked={statusSet.has(o.value)}
+                        onChange={() => toggleStatus(o.value)}
+                      />
+                      <span>{o.label}</span>
+                    </label>
+                  ))}
+                  <div className="status-filter-actions">
+                    <button
+                      type="button"
+                      onClick={() => setStatusSet(new Set(ALL_STATUS_VALUES))}
+                    >
+                      Tout
+                    </button>
+                    <button type="button" onClick={() => setStatusSet(new Set())}>
+                      Aucun
+                    </button>
+                  </div>
+                </div>
+              </details>
             </FilterTh>
             {!hideLotColumn && (
               <FilterTh>
@@ -390,6 +429,59 @@ export function TachesListTable({
         :global(.filter-input:focus) {
           outline: 2px solid rgb(96 165 250);
           outline-offset: -1px;
+        }
+        .status-filter {
+          position: relative;
+        }
+        .status-filter-summary {
+          cursor: pointer;
+          list-style: none;
+          user-select: none;
+          white-space: nowrap;
+        }
+        .status-filter-summary::-webkit-details-marker {
+          display: none;
+        }
+        .status-filter-panel {
+          position: absolute;
+          z-index: 20;
+          margin-top: 4px;
+          min-width: 160px;
+          background: white;
+          border: 1px solid rgb(228 228 231);
+          border-radius: 6px;
+          box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+          padding: 6px;
+        }
+        .status-filter-option {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 6px;
+          font-size: 12px;
+          font-weight: 400;
+          text-transform: none;
+          letter-spacing: normal;
+          color: rgb(63 63 70);
+          cursor: pointer;
+          border-radius: 4px;
+        }
+        .status-filter-option:hover {
+          background: rgb(244 244 245);
+        }
+        .status-filter-actions {
+          display: flex;
+          gap: 8px;
+          border-top: 1px solid rgb(244 244 245);
+          margin-top: 4px;
+          padding: 6px 6px 2px;
+        }
+        .status-filter-actions button {
+          font-size: 11px;
+          color: rgb(29 78 216);
+        }
+        .status-filter-actions button:hover {
+          text-decoration: underline;
         }
       `}</style>
 

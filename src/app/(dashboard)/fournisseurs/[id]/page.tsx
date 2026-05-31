@@ -531,11 +531,24 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   }));
 
   const tachesTab = (
-    <TachesListTable
-      rows={tacheRows}
-      returnTo={`/fournisseurs/${s.id}?tab=taches`}
-      groupByLot
-    />
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <SectionTitle className="mb-0">Suivi des travaux</SectionTitle>
+        <Link
+          href={`/taches/new?supplierId=${s.id}&returnTo=${encodeURIComponent(
+            `/fournisseurs/${s.id}?tab=taches`
+          )}`}
+          className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
+        >
+          + Ajouter une tâche
+        </Link>
+      </div>
+      <TachesListTable
+        rows={tacheRows}
+        returnTo={`/fournisseurs/${s.id}?tab=taches`}
+        groupByLot
+      />
+    </div>
   );
 
   const facturesTab = (

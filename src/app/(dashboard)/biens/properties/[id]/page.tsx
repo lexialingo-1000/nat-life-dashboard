@@ -526,7 +526,16 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   const travauxTab = (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <Link
+          href={`/taches/new?propertyId=${property.id}&returnTo=${encodeURIComponent(
+            `/biens/properties/${property.id}?tab=travaux`
+          )}`}
+          className="btn-secondary"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+          Ajouter une tâche
+        </Link>
         <Link href={`/biens/properties/${property.id}/marches/new`} className="btn-primary">
           <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
           Nouveau marché
