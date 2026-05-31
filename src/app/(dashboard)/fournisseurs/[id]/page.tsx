@@ -573,7 +573,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     // V1.13 R6 — Suivi des tâches (Remarques client dashboard-17).
     {
       id: 'taches',
-      label: 'Suivi tâches',
+      label: 'Suivi travaux',
       count: supplierTaches.length || undefined,
       content: tachesTab,
     },

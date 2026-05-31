@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { DataTable } from '@/components/data-table';
@@ -83,6 +84,9 @@ export function LocationsTable({
   enableSelection = false,
   emptyMessage = 'Aucune location.',
 }: Props) {
+  const router = useRouter();
+  // Fiche client (customer masqué) : toute la ligne navigue vers la fiche location (V20).
+  const rowClickable = (hideColumns ?? []).includes('customer');
   const columns = useMemo<ColumnDef<LocationRow>[]>(() => {
     const hidden = new Set<LocationColumnId>(hideColumns ?? []);
     // Quand 'customer' est caché (fiche client : on connaît déjà le locataire),
@@ -115,13 +119,11 @@ export function LocationsTable({
           header: 'Bien',
           cell: ({ row }) =>
             customerHidden ? (
-              <EntityLink
-                href={`/locations/${row.original.id}`}
-                className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-                title="Voir la fiche location"
-              >
+              // Fiche client : la ligne entière navigue vers /locations/[id] (V20
+              // §FICHE CLIENTS). La cellule reste du texte simple.
+              <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em] text-zinc-900">
                 {row.original.propertyName}
-              </EntityLink>
+              </span>
             ) : (
               <Link
                 href={`/biens/properties/${row.original.propertyId}`}
@@ -137,14 +139,19 @@ export function LocationsTable({
         def: {
           accessorKey: 'lotName',
           header: 'Lot',
-          cell: ({ row }) => (
-            <Link
-              href={`/biens/lots/${row.original.lotId}`}
-              className="link-cell-soft whitespace-nowrap"
-            >
-              {row.original.lotName}
-            </Link>
-          ),
+          cell: ({ row }) =>
+            // V20 §FICHE CLIENTS : "la colonne lot n'a pas besoin d'être cliquable".
+            // Dans la fiche client, on retire le lien lot (la ligne navigue vers la location).
+            customerHidden ? (
+              <span className="whitespace-nowrap text-zinc-700">{row.original.lotName}</span>
+            ) : (
+              <Link
+                href={`/biens/lots/${row.original.lotId}`}
+                className="link-cell-soft whitespace-nowrap"
+              >
+                {row.original.lotName}
+              </Link>
+            ),
         },
       },
       {
@@ -258,6 +265,8 @@ export function LocationsTable({
       data={rows}
       emptyMessage={emptyMessage}
       enableSelection={enableSelection}
+      // V20 §FICHE CLIENTS — fiche client : clic n'importe où sur la ligne → fiche location.
+      onRowClick={rowClickable ? (r) => router.push(`/locations/${r.id}`) : undefined}
       // V1.9 — défaut : plus récente date début en haut. User peut cliquer un header
       // pour basculer en alphabétique (locataire / bien / lot) à la demande.
       initialSorting={[{ id: 'dateDebut', desc: true }]}

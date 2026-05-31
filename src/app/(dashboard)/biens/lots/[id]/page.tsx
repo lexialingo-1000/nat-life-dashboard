@@ -490,7 +490,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     },
     {
       id: 'marches',
-      label: 'Travaux',
+      label: 'Compta',
       count: lotMarches.length || undefined,
       content: marchesTab,
     },

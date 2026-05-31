@@ -27,6 +27,10 @@ interface Props<T> {
   initialSorting?: SortingState;
   /** Message vide. */
   emptyMessage?: string;
+  /** Si fourni, rend chaque ligne cliquable (curseur pointer + onClick). */
+  onRowClick?: (row: T) => void;
+  /** Ids de colonnes dont le clic ne doit PAS déclencher onRowClick (default: select, actions). */
+  rowClickIgnoreColumnIds?: string[];
 }
 
 function IndeterminateCheckbox({
@@ -65,7 +69,10 @@ export function DataTable<T>({
   enableSelection = false,
   initialSorting,
   emptyMessage = 'Aucune donnée.',
+  onRowClick,
+  rowClickIgnoreColumnIds,
 }: Props<T>) {
+  const ignoreRowClick = new Set(rowClickIgnoreColumnIds ?? ['select', 'actions']);
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -180,12 +187,21 @@ export function DataTable<T>({
             table.getRowModel().rows.map((row, rowIndex) => (
               <tr
                 key={row.id}
+                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 className={`transition-colors hover:bg-zinc-50 ${
                   striped && rowIndex % 2 === 1 ? 'bg-zinc-50/40' : ''
-                }`}
+                } ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-2 text-zinc-700">
+                  <td
+                    key={cell.id}
+                    className="px-4 py-2 text-zinc-700"
+                    onClick={
+                      onRowClick && ignoreRowClick.has(cell.column.id)
+                        ? (e) => e.stopPropagation()
+                        : undefined
+                    }
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

@@ -572,7 +572,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
-    { id: 'suivi', label: 'Suivi', count: totalTaches, content: suiviTab },
+    { id: 'suivi', label: 'Suivi travaux', count: totalTaches, content: suiviTab },
     { id: 'compta', label: 'Compta', count: marcheAccountingDocs.length || undefined, content: comptaTab },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
