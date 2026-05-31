@@ -85,8 +85,8 @@ export function LocationsTable({
   emptyMessage = 'Aucune location.',
 }: Props) {
   const router = useRouter();
-  // Fiche client (customer masqué) : toute la ligne navigue vers la fiche location (V20).
-  const rowClickable = (hideColumns ?? []).includes('customer');
+  // V12.2 — toute la ligne navigue vers la fiche location, partout (fiche client
+  // ET liste globale). Colonnes Bien/actions exclues, colonne Lot non-cliquable.
   const columns = useMemo<ColumnDef<LocationRow>[]>(() => {
     const hidden = new Set<LocationColumnId>(hideColumns ?? []);
     // Quand 'customer' est caché (fiche client : on connaît déjà le locataire),
@@ -139,19 +139,11 @@ export function LocationsTable({
         def: {
           accessorKey: 'lotName',
           header: 'Lot',
-          cell: ({ row }) =>
-            // V20 §FICHE CLIENTS : "la colonne lot n'a pas besoin d'être cliquable".
-            // Dans la fiche client, on retire le lien lot (la ligne navigue vers la location).
-            customerHidden ? (
-              <span className="whitespace-nowrap text-zinc-700">{row.original.lotName}</span>
-            ) : (
-              <Link
-                href={`/biens/lots/${row.original.lotId}`}
-                className="link-cell-soft whitespace-nowrap"
-              >
-                {row.original.lotName}
-              </Link>
-            ),
+          // V20/V12.2 : "la colonne lot n'a pas besoin d'être cliquable" → texte
+          // simple partout (la ligne navigue vers la fiche location).
+          cell: ({ row }) => (
+            <span className="whitespace-nowrap text-zinc-700">{row.original.lotName}</span>
+          ),
         },
       },
       {
@@ -265,8 +257,10 @@ export function LocationsTable({
       data={rows}
       emptyMessage={emptyMessage}
       enableSelection={enableSelection}
-      // V20 §FICHE CLIENTS — fiche client : clic n'importe où sur la ligne → fiche location.
-      onRowClick={rowClickable ? (r) => router.push(`/locations/${r.id}`) : undefined}
+      // V12.2 — clic n'importe où sur la ligne → fiche location (partout).
+      // Colonne Bien exclue (lien vers /biens/properties) ; Lot = texte simple.
+      onRowClick={(r) => router.push(`/locations/${r.id}`)}
+      rowClickIgnoreColumnIds={['property', 'select', 'actions']}
       // V1.9 — défaut : plus récente date début en haut. User peut cliquer un header
       // pour basculer en alphabétique (locataire / bien / lot) à la demande.
       initialSorting={[{ id: 'dateDebut', desc: true }]}

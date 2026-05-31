@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
 import { EntityLink } from './entity-link';
@@ -112,11 +113,15 @@ const columns: ColumnDef<SupplierMarcheRow>[] = [
 ];
 
 export function SupplierMarchesTable({ rows }: { rows: SupplierMarcheRow[] }) {
+  const router = useRouter();
   return (
     <DataTable
       columns={columns}
       data={rows}
       emptyMessage="Aucun marché pour ce fournisseur."
+      onRowClick={(r) => router.push(`/marches/${r.id}`)}
+      // La colonne "Bien" pointe vers /biens/properties → exclue du clic-ligne.
+      rowClickIgnoreColumnIds={['propertyName', 'select', 'actions']}
     />
   );
 }

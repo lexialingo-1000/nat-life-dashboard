@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function MarchesTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<MarcheRow>[]>(
     () => [
       {
@@ -178,6 +180,7 @@ export function MarchesTable({ rows, deleteAction }: Props) {
       data={rows}
       emptyMessage="Aucun marché de travaux."
       enableSelection
+      onRowClick={(r) => router.push(`/marches/${r.id}`)}
     />
   );
 }

@@ -809,14 +809,20 @@ export function AccountingDocumentsManager({
               {createMarcheAction && (
                 <MarcheInlineCreator
                   supplierId={supplierId}
+                  // V12.2 — scope société (fournisseur non présélectionné) :
+                  // fournir la liste active le select fournisseur dans le dialog
+                  // → bouton toujours actif/visible.
+                  suppliers={scope === 'company' ? suppliers : undefined}
                   properties={properties}
                   createAction={createMarcheAction}
-                  onCreated={({ id, label }) => {
+                  onCreated={({ id, label, supplierId: createdSupplierId }) => {
+                    const sid = createdSupplierId || supplierId;
                     setMarches((prev) => [
-                      { id, label, supplierId },
+                      { id, label, supplierId: sid },
                       ...prev.filter((m) => m.id !== id),
                     ]);
                     setMarcheId(id);
+                    if (sid) setSupplierId(sid);
                   }}
                 />
               )}

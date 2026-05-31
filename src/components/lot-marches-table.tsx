@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
 import { EntityLink } from './entity-link';
@@ -96,11 +97,13 @@ const columns: ColumnDef<LotMarcheRow>[] = [
 ];
 
 export function LotMarchesTable({ rows }: { rows: LotMarcheRow[] }) {
+  const router = useRouter();
   return (
     <DataTable
       columns={columns}
       data={rows}
       emptyMessage="Aucun marché affecté à ce lot."
+      onRowClick={(r) => router.push(`/marches/${r.id}`)}
     />
   );
 }

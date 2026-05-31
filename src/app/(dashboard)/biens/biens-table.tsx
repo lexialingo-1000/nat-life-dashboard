@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
@@ -151,6 +152,7 @@ interface Props {
 }
 
 export function BiensTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<BienLotRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -187,6 +189,12 @@ export function BiensTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun lot."
       enableSelection
       initialSorting={[{ id: 'lotName', desc: false }]}
+      // Ligne → fiche lot. Bien/Société pointent ailleurs → exclus. Ligne sans
+      // lot (bien sans lot) : pas de navigation.
+      onRowClick={(r) => {
+        if (r.lotId) router.push(`/biens/lots/${r.lotId}`);
+      }}
+      rowClickIgnoreColumnIds={['propertyName', 'companyName', 'select', 'actions']}
     />
   );
 }
