@@ -601,7 +601,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       count: propertyLocations.length || undefined,
       content: locationsTab,
     },
-    { id: 'travaux', label: 'Travaux', count: propertyMarches.length, content: travauxTab },
+    { id: 'travaux', label: 'Suivi travaux', count: propertyMarches.length, content: travauxTab },
     { id: 'photos', label: 'Photos', count: propertyPhotos.length || undefined, content: photosTab },
     { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
