@@ -48,6 +48,7 @@ import {
   deleteAccountingDocAction,
   getAccountingDocUrlAction,
 } from '../../societes/accounting-actions';
+import { createMarcheInlineAction } from '../../marches/actions';
 import { slugify } from '@/lib/storage/minio';
 
 export const dynamic = 'force-dynamic';
@@ -551,6 +552,16 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     </div>
   );
 
+  // V20 §6 — création de marché à la volée depuis les écrans devis/commande/
+  // facture du fournisseur (le bouton n'existait que sur la fiche société).
+  // Un marché peut être rattaché à n'importe quel bien (toutes sociétés).
+  const allPropertyOpts = (
+    await db
+      .select({ id: properties.id, name: properties.name })
+      .from(properties)
+      .orderBy(asc(properties.name))
+  ).map((p) => ({ id: p.id, label: p.name }));
+
   const facturesTab = (
     <div className="card p-6">
       <AccountingDocumentsManager
@@ -565,6 +576,8 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         marches={marcheOptsForSupplier}
         devisOptions={devisOptsForSupplier}
         commandeOptions={commandeOptsForSupplier}
+        createMarcheAction={createMarcheInlineAction}
+        properties={allPropertyOpts}
         uploadAction={uploadAccountingDocAction}
         deleteAction={deleteAccountingDocAction}
         getUrlAction={getAccountingDocUrlAction}
