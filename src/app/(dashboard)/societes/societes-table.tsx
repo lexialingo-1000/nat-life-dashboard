@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -90,6 +91,7 @@ interface Props {
 }
 
 export function SocietesTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<SocieteRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -116,5 +118,14 @@ export function SocietesTable({ rows, deleteAction }: Props) {
     ];
   }, [deleteAction]);
 
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucune société." enableSelection />;
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyMessage="Aucune société."
+      enableSelection
+      onRowClick={(r) => router.push(`/societes/${r.id}`)}
+      rowClickIgnoreColumnIds={['name', 'select', 'actions']}
+    />
+  );
 }
