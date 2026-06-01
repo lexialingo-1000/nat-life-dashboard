@@ -125,7 +125,6 @@ export function SocietesTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucune société."
       enableSelection
       onRowClick={(r) => router.push(`/societes/${r.id}`)}
-      rowClickIgnoreColumnIds={['name', 'select', 'actions']}
     />
   );
 }

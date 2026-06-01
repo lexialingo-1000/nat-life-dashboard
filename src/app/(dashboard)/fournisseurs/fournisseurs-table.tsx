@@ -134,7 +134,6 @@ export function FournisseursTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun fournisseur."
       enableSelection
       onRowClick={(r) => router.push(`/fournisseurs/${r.id}`)}
-      rowClickIgnoreColumnIds={['displayName', 'select', 'actions']}
     />
   );
 }

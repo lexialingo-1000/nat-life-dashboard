@@ -143,7 +143,6 @@ export function ClientsTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun client."
       enableSelection
       onRowClick={(r) => router.push(`/clients/${r.id}`)}
-      rowClickIgnoreColumnIds={['displayName', 'select', 'actions']}
     />
   );
 }
