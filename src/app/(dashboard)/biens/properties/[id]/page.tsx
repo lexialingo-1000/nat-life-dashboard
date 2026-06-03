@@ -274,22 +274,28 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         name: sl.name,
         status: sl.status,
         marcheTypeLabel: sl.marcheTypeLabel,
-        taches: (tachesBySousLot.get(sl.id) ?? []).map((t) => ({
-          id: t.id,
-          title: t.title,
-          status: t.status,
-          locationDescription: t.locationDescription,
-          // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
-          dueDate: t.dueDate,
-          roomName: t.roomName,
-          levelName: t.levelName,
-          supplierContactName:
-            t.contactFirstName || t.contactLastName
-              ? `${t.contactFirstName ?? ''} ${t.contactLastName ?? ''}`.trim()
-              : null,
-          photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
-          lotId: t.lotId,
-        })),
+        // V1.x dashboard-21 §3 — la cascade Travaux masque les tâches terminées
+        // (vue "à faire") ; le tableau bas (TachesListTable) garde tout via filtre.
+        taches: (tachesBySousLot.get(sl.id) ?? [])
+          .filter((t) => t.status !== 'termine')
+          .map((t) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            locationDescription: t.locationDescription,
+            // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
+            dueDate: t.dueDate,
+            roomName: t.roomName,
+            levelName: t.levelName,
+            supplierContactName:
+              t.contactFirstName || t.contactLastName
+                ? `${t.contactFirstName ?? ''} ${t.contactLastName ?? ''}`.trim()
+                : null,
+            photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
+            // V1.x dashboard-21 §2 — photos[] pour la caméra cliquable du tree.
+            photos: Array.isArray(t.photos) ? t.photos : [],
+            lotId: t.lotId,
+          })),
       })),
     }));
   }
@@ -559,6 +565,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           id: d.id,
           name: d.name,
           typeLabel: d.typeLabel,
+          // V1.x dashboard-21 §1 — catégorie héritée du type (était oubliée du map).
+          category: d.category,
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,

@@ -38,6 +38,8 @@ export interface TacheListRow {
   // Marché parent
   marcheId: string;
   marcheName: string;
+  // V1.x dashboard-21 §4 — nom du fournisseur, affiché quand firstColumn='fournisseur'.
+  supplierName?: string;
   // Sous-lot parent
   sousLotId: string;
   sousLotName: string;
@@ -61,6 +63,12 @@ interface Props {
   groupByLot?: boolean;
   /** Masque les colonnes Bien/Lot quand on est déjà dans le contexte d'un marché unique. */
   hideLotColumn?: boolean;
+  /**
+   * V1.x dashboard-21 §4 — contenu de la 1ère colonne. 'marche' (défaut) =
+   * en-tête "Marché" + nom du marché ; 'fournisseur' = en-tête "Fournisseur" +
+   * nom du fournisseur (utile sur la fiche marché où le marché est constant).
+   */
+  firstColumn?: 'marche' | 'fournisseur';
 }
 
 type SortKey =
@@ -101,7 +109,11 @@ export function TachesListTable({
   returnTo,
   groupByLot = false,
   hideLotColumn = false,
+  firstColumn = 'marche',
 }: Props) {
+  // V1.x dashboard-21 §4 — valeur affichée/triée/filtrée pour la 1ère colonne.
+  const firstColText = (r: TacheListRow) =>
+    firstColumn === 'fournisseur' ? (r.supplierName ?? '—') : r.marcheName;
   const [filters, setFilters] = useState({
     marche: '',
     sousLot: '',
@@ -123,7 +135,7 @@ export function TachesListTable({
   const filtered = useMemo(() => {
     const norm = (s: string) => s.toLowerCase().trim();
     return rows.filter((r) => {
-      if (filters.marche && !norm(r.marcheName).includes(norm(filters.marche))) return false;
+      if (filters.marche && !norm(firstColText(r)).includes(norm(filters.marche))) return false;
       if (filters.sousLot && !norm(r.sousLotName).includes(norm(filters.sousLot))) return false;
       if (filters.title && !norm(r.title).includes(norm(filters.title))) return false;
       if (!statusSet.has(r.status)) return false;
@@ -143,7 +155,7 @@ export function TachesListTable({
       }
       return true;
     });
-  }, [rows, filters, statusSet]);
+  }, [rows, filters, statusSet, firstColumn]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -153,8 +165,8 @@ export function TachesListTable({
       let bv: string;
       switch (sort.key) {
         case 'marche':
-          av = a.marcheName;
-          bv = b.marcheName;
+          av = firstColText(a);
+          bv = firstColText(b);
           break;
         case 'sousLot':
           av = a.sousLotName;
@@ -184,7 +196,7 @@ export function TachesListTable({
       return av.localeCompare(bv, 'fr', { sensitivity: 'base' }) * dir;
     });
     return arr;
-  }, [filtered, sort]);
+  }, [filtered, sort, firstColumn]);
 
   // F-2 — rupture par LOT immo : on regroupe les rows triées par lotId, en
   // gardant l'ordre du tri courant à l'intérieur de chaque groupe.
@@ -272,7 +284,7 @@ export function TachesListTable({
         <thead className="border-b border-zinc-100 bg-[#fbf8f0]/40 text-left text-[11px] uppercase tracking-[0.04em] text-zinc-500">
           <tr>
             <Th sortKey="marche" sort={sort} onSort={toggleSort}>
-              Marché
+              {firstColumn === 'fournisseur' ? 'Fournisseur' : 'Marché'}
             </Th>
             <Th sortKey="sousLot" sort={sort} onSort={toggleSort}>
               Sous-lot
@@ -409,6 +421,7 @@ export function TachesListTable({
                 rows={g.rows}
                 returnTo={returnTo}
                 hideLotColumn={hideLotColumn}
+                firstColumn={firstColumn}
                 colCount={colCount}
                 onOpenPhotos={(t) => setPhotosTache(t)}
               />
@@ -536,6 +549,7 @@ function GroupBlock({
   rows,
   returnTo,
   hideLotColumn,
+  firstColumn,
   colCount,
   onOpenPhotos,
 }: {
@@ -543,6 +557,7 @@ function GroupBlock({
   rows: TacheListRow[];
   returnTo: string;
   hideLotColumn: boolean;
+  firstColumn: 'marche' | 'fournisseur';
   colCount: number;
   onOpenPhotos: (t: TacheListRow) => void;
 }) {
@@ -567,6 +582,7 @@ function GroupBlock({
           tache={t}
           returnTo={returnTo}
           hideLotColumn={hideLotColumn}
+          firstColumn={firstColumn}
           onOpenPhotos={() => onOpenPhotos(t)}
         />
       ))}
@@ -578,14 +594,19 @@ function RowItem({
   tache,
   returnTo,
   hideLotColumn,
+  firstColumn,
   onOpenPhotos,
 }: {
   tache: TacheListRow;
   returnTo: string;
   hideLotColumn: boolean;
+  firstColumn: 'marche' | 'fournisseur';
   onOpenPhotos: () => void;
 }) {
   const location = [tache.levelName, tache.roomName].filter(Boolean).join(' · ');
+  // V1.x dashboard-21 §4 — fournisseur (fiche marché) ou nom du marché (défaut).
+  const firstColText =
+    firstColumn === 'fournisseur' ? (tache.supplierName ?? '—') : tache.marcheName;
   return (
     <tr className="hover:bg-[#fbf8f0]/40">
       <td className="px-3 py-2">
@@ -593,7 +614,7 @@ function RowItem({
           href={`/marches/${tache.marcheId}?tab=suivi`}
           className="text-blue-700 hover:underline"
         >
-          {tache.marcheName}
+          {firstColText}
         </Link>
       </td>
       <td className="px-3 py-2 text-zinc-600">{tache.sousLotName}</td>

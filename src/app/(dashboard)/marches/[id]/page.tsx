@@ -276,22 +276,28 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       name: sl.name,
       status: sl.status,
       marcheTypeLabel: sl.marcheTypeLabel,
-      taches: (tachesBySousLot.get(sl.id) ?? []).map((t) => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-        locationDescription: t.locationDescription,
-        // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
-        dueDate: t.dueDate,
-        roomName: t.roomName,
-        levelName: t.levelName,
-        supplierContactName:
-          t.supplierContactFirstName || t.supplierContactLastName
-            ? `${t.supplierContactFirstName ?? ''} ${t.supplierContactLastName ?? ''}`.trim()
-            : null,
-        photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
-        lotId: t.lotId,
-      })),
+      // V1.x dashboard-21 §3 — la cascade masque les tâches terminées (vue "à
+      // faire") ; le tableau bas (TachesListTable) garde tout via son filtre statut.
+      taches: (tachesBySousLot.get(sl.id) ?? [])
+        .filter((t) => t.status !== 'termine')
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          locationDescription: t.locationDescription,
+          // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
+          dueDate: t.dueDate,
+          roomName: t.roomName,
+          levelName: t.levelName,
+          supplierContactName:
+            t.supplierContactFirstName || t.supplierContactLastName
+              ? `${t.supplierContactFirstName ?? ''} ${t.supplierContactLastName ?? ''}`.trim()
+              : null,
+          photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
+          // V1.x dashboard-21 §2 — photos[] pour la caméra cliquable du tree.
+          photos: Array.isArray(t.photos) ? t.photos : [],
+          lotId: t.lotId,
+        })),
     })),
   };
 
@@ -418,6 +424,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         dueDate: t.dueDate,
         marcheId: marche.id,
         marcheName: marche.name,
+        // V1.x dashboard-21 §4 — colonne "Fournisseur" sur la fiche marché.
+        supplierName: supplierLabel,
         sousLotId: t.marcheSousLotId!,
         sousLotName: sl?.name ?? '—',
         lotId: t.lotId,
@@ -453,6 +461,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
             rows={tacheListRows}
             returnTo={`/marches/${marche.id}?tab=suivi`}
             hideLotColumn
+            firstColumn="fournisseur"
           />
         </div>
       )}

@@ -1,9 +1,10 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil, Calendar } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
+import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 
 /**
@@ -46,6 +47,8 @@ export interface TacheNode {
   levelName: string | null;
   supplierContactName: string | null;
   photosCount: number;
+  // V1.x dashboard-21 §2 — clés MinIO des photos, pour la caméra cliquable.
+  photos: string[];
   lotId: string;
 }
 
@@ -82,6 +85,9 @@ interface Props {
 }
 
 export function MarchesTree({ marches, returnTo }: Props) {
+  // V1.x dashboard-21 §2 — caméra cliquable par tâche (comme TachesListTable).
+  const [photosTache, setPhotosTache] = useState<TacheNode | null>(null);
+
   if (marches.length === 0) {
     return (
       <div className="card p-8 text-center text-sm text-zinc-500">
@@ -97,13 +103,34 @@ export function MarchesTree({ marches, returnTo }: Props) {
   return (
     <div className="space-y-2">
       {marches.map((m) => (
-        <MarcheBranch key={m.id} marche={m} returnTo={returnTo} />
+        <MarcheBranch
+          key={m.id}
+          marche={m}
+          returnTo={returnTo}
+          onOpenPhotos={setPhotosTache}
+        />
       ))}
+      {photosTache && (
+        <TachePhotosDialog
+          tacheId={photosTache.id}
+          tacheTitle={photosTache.title}
+          photos={photosTache.photos}
+          onClose={() => setPhotosTache(null)}
+        />
+      )}
     </div>
   );
 }
 
-function MarcheBranch({ marche, returnTo }: { marche: MarcheNode; returnTo: string }) {
+function MarcheBranch({
+  marche,
+  returnTo,
+  onOpenPhotos,
+}: {
+  marche: MarcheNode;
+  returnTo: string;
+  onOpenPhotos: (t: TacheNode) => void;
+}) {
   const totalTaches = marche.sousLots.reduce((acc, sl) => acc + sl.taches.length, 0);
   const totalSousLots = marche.sousLots.length;
 
@@ -150,6 +177,7 @@ function MarcheBranch({ marche, returnTo }: { marche: MarcheNode; returnTo: stri
                 sousLot={sl}
                 marcheId={marche.id}
                 returnTo={returnTo}
+                onOpenPhotos={onOpenPhotos}
               />
             ))}
           </div>
@@ -163,10 +191,12 @@ function SousLotBranch({
   sousLot,
   marcheId,
   returnTo,
+  onOpenPhotos,
 }: {
   sousLot: SousLotNode;
   marcheId: string;
   returnTo: string;
+  onOpenPhotos: (t: TacheNode) => void;
 }) {
   return (
     <details open className="rounded-md border border-zinc-200 bg-white">
@@ -216,6 +246,7 @@ function SousLotBranch({
                 marcheId={marcheId}
                 sousLotId={sousLot.id}
                 returnTo={returnTo}
+                onOpenPhotos={onOpenPhotos}
               />
             ))}
           </ul>
@@ -230,11 +261,13 @@ function TacheRow({
   marcheId,
   sousLotId,
   returnTo,
+  onOpenPhotos,
 }: {
   tache: TacheNode;
   marcheId: string;
   sousLotId: string;
   returnTo: string;
+  onOpenPhotos: (t: TacheNode) => void;
 }) {
   return (
     <li className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] hover:bg-[#fbf8f0]/60">
@@ -270,12 +303,19 @@ function TacheRow({
             {tache.supplierContactName}
           </span>
         )}
-        {tache.photosCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-blue-700">
-            <Camera className="h-3 w-3" strokeWidth={1.75} />
-            {tache.photosCount}
-          </span>
-        )}
+        {/* V1.x dashboard-21 §2 — caméra cliquable (voir/ajouter photos), comme
+            le tableau du bas. Toujours visible, même sans photo. */}
+        <button
+          type="button"
+          onClick={() => onOpenPhotos(tache)}
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
+          title="Voir / ajouter des photos"
+        >
+          <Camera className="h-3 w-3" strokeWidth={1.75} />
+          {tache.photos.length > 0 && (
+            <span className="tabular-nums">{tache.photos.length}</span>
+          )}
+        </button>
         {/* V12bis PR9 §6 — modifier la tâche. */}
         <Link
           href={`/marches/${marcheId}/sous-lots/${sousLotId}/taches/${tache.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
