@@ -163,7 +163,7 @@ export function DataTable<T>({
                           value={(header.column.getFilterValue() as string) ?? ''}
                           onChange={(e) => header.column.setFilterValue(e.target.value)}
                           placeholder="Filtrer"
-                          className="block w-full rounded-sm border border-zinc-200 bg-[#fbf8f0] px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-400"
+                          className="hidden w-full rounded-sm border border-zinc-200 bg-[#fbf8f0] px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-400 sm:block"
                         />
                       )}
                     </div>
@@ -176,10 +176,7 @@ export function DataTable<T>({
         <tbody className="divide-y divide-zinc-100">
           {table.getRowModel().rows.length === 0 ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                className="px-5 py-12 text-center text-sm text-zinc-500"
-              >
+              <td colSpan={columns.length} className="px-5 py-12 text-center text-sm text-zinc-500">
                 {emptyMessage}
               </td>
             </tr>
@@ -215,9 +212,10 @@ export function DataTable<T>({
           <span>
             {table.getFilteredRowModel().rows.length} ligne
             {table.getFilteredRowModel().rows.length > 1 ? 's' : ''}
-            {columnFilters.length > 0 && data.length !== table.getFilteredRowModel().rows.length && (
-              <span> (sur {data.length})</span>
-            )}
+            {columnFilters.length > 0 &&
+              data.length !== table.getFilteredRowModel().rows.length && (
+                <span> (sur {data.length})</span>
+              )}
           </span>
           {enableSelection && selectedCount > 0 && (
             <span className="text-blue-700">

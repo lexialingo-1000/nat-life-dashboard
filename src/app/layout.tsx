@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -23,6 +23,11 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Nat Life · Gestion multi-société',
   description: 'Dashboard de gestion patrimoniale multi-société · Natacha Aouizerate (FKA Holding)',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

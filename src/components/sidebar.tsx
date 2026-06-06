@@ -13,10 +13,8 @@ import {
   LogOut,
   Briefcase,
   HardHat,
-  FileBox,
   KeyRound,
   ChevronRight,
-  Tags,
 } from 'lucide-react';
 
 interface NavItem {
@@ -67,7 +65,7 @@ const sections: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-export function Sidebar({ userEmail }: { userEmail: string | null }) {
+export function SidebarContent({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();
 
   // Items à enfants : section ouverte si on est sur /admin/parametres ou un sous-item.
@@ -87,18 +85,18 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
   };
 
   return (
-    <aside className="flex h-screen w-[260px] flex-col bg-sidebar text-sidebar-fg">
+    <div className="flex h-full w-[260px] flex-col bg-sidebar text-sidebar-fg">
       <div className="flex h-16 items-baseline gap-2 px-6 pt-6">
         <span className="font-serif text-[22px] leading-none tracking-tight text-sidebar-active">
           Nat Life
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#3D5A8A]">
-          v1
-        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#3D5A8A]">v1</span>
       </div>
 
       <div className="px-6 pb-6 text-[12px] leading-relaxed text-[#4A6A9E]">
-        Gestion patrimoniale<br />multi-société
+        Gestion patrimoniale
+        <br />
+        multi-société
       </div>
 
       <div className="mx-6 border-t border-[#1A3366]" />
@@ -113,8 +111,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isExactActive = pathname === item.href;
-                const isWithinScope =
-                  item.href !== '/' && pathname?.startsWith(item.href);
+                const isWithinScope = item.href !== '/' && pathname?.startsWith(item.href);
                 const hasActiveChild = item.children?.some((c) => pathname?.startsWith(c.href));
                 const isActive = isExactActive || (item.children ? hasActiveChild : isWithinScope);
                 const open = openMap[item.href] ?? !!hasActiveChild;
@@ -124,7 +121,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                     {item.children ? (
                       <>
                         <div
-                          className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart ${
+                          className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart max-md:min-h-[44px] ${
                             isActive
                               ? 'bg-[#163060] text-sidebar-active'
                               : 'text-[#7FA3D4] hover:bg-white/10 hover:text-[#D0E2F4]'
@@ -133,13 +130,12 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                           {isActive && (
                             <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[#5BA3E0]" />
                           )}
-                          <Link
-                            href={item.href}
-                            className="flex flex-1 items-center gap-3"
-                          >
+                          <Link href={item.href} className="flex flex-1 items-center gap-3">
                             <Icon
                               className={`h-[15px] w-[15px] ${
-                                isActive ? 'text-sidebar-active' : 'text-[#5A85B8] group-hover:text-[#8BBCE8]'
+                                isActive
+                                  ? 'text-sidebar-active'
+                                  : 'text-[#5A85B8] group-hover:text-[#8BBCE8]'
                               }`}
                               strokeWidth={1.75}
                             />
@@ -168,7 +164,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                                 <li key={child.href}>
                                   <Link
                                     href={child.href}
-                                    className={`block rounded-sm px-2 py-1 text-[12px] transition-colors duration-150 ease-out-quart ${
+                                    className={`block rounded-sm px-2 py-1 text-[12px] transition-colors duration-150 ease-out-quart max-md:flex max-md:min-h-[40px] max-md:items-center ${
                                       childActive
                                         ? 'bg-[#163060] text-sidebar-active'
                                         : 'text-[#7FA3D4] hover:bg-white/10 hover:text-[#D0E2F4]'
@@ -185,7 +181,7 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                     ) : (
                       <Link
                         href={item.href}
-                        className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart ${
+                        className={`group relative flex items-center gap-3 rounded-sm px-3 py-2 text-[13px] transition-colors duration-150 ease-out-quart max-md:min-h-[44px] ${
                           isActive
                             ? 'bg-[#163060] text-sidebar-active'
                             : 'text-[#7FA3D4] hover:bg-white/10 hover:text-[#D0E2F4]'
@@ -196,7 +192,9 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
                         )}
                         <Icon
                           className={`h-[15px] w-[15px] ${
-                            isActive ? 'text-sidebar-active' : 'text-[#5A85B8] group-hover:text-[#8BBCE8]'
+                            isActive
+                              ? 'text-sidebar-active'
+                              : 'text-[#5A85B8] group-hover:text-[#8BBCE8]'
                           }`}
                           strokeWidth={1.75}
                         />
@@ -224,6 +222,6 @@ export function Sidebar({ userEmail }: { userEmail: string | null }) {
           </button>
         </form>
       </div>
-    </aside>
+    </div>
   );
 }
