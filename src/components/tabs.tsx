@@ -55,7 +55,7 @@ export function Tabs({ tabs, defaultTabId, syncWithSearchParams = true }: Props)
 
   return (
     <div className="space-y-6">
-      <div role="tablist" className="flex gap-1 border-b border-zinc-200">
+      <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-zinc-200">
         {tabs.map((tab) => {
           const isActive = tab.id === active?.id;
           return (
@@ -67,7 +67,7 @@ export function Tabs({ tabs, defaultTabId, syncWithSearchParams = true }: Props)
               id={`tab-${tab.id}`}
               type="button"
               onClick={() => onSelect(tab.id)}
-              className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`relative shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'text-zinc-900'
                   : 'text-zinc-500 hover:text-zinc-700'
