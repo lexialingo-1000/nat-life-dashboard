@@ -23,11 +23,17 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Nat Life · Gestion multi-société',
   description: 'Dashboard de gestion patrimoniale multi-société · Natacha Aouizerate (FKA Holding)',
+  appleWebApp: {
+    capable: true,
+    title: 'Nat Life',
+    statusBarStyle: 'default',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#0D2144',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
