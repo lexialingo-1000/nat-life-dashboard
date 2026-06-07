@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import { locations, locationDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -15,18 +16,12 @@ const locationTypeValues = [
   'saisonnier_plateforme',
 ] as const;
 
-const locationPeriodiciteValues = [
-  'forfait',
-  'jour',
-  'semaine',
-  'mois',
-  'annee',
-] as const;
+const locationPeriodiciteValues = ['forfait', 'jour', 'semaine', 'mois', 'annee'] as const;
 
 const moneyField = z
   .preprocess(
     (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.'))),
-    z.number().nonnegative().nullable()
+    z.number().nonnegative().nullable(),
   )
   .optional();
 
@@ -181,13 +176,21 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
       .where(eq(locationDocuments.locationId, id));
 
     for (const doc of docs) {
-      try { await deleteObject(doc.storageKey); } catch {}
+      try {
+        await deleteObject(doc.storageKey);
+      } catch {}
     }
 
     await db.delete(locationDocuments).where(eq(locationDocuments.locationId, id));
     await db.delete(locations).where(eq(locations.id, id));
   } catch (err) {
-    console.error('[deleteLocationAction] id=%s lotId=%s customerId=%s err=', id, lotId, customerId, err);
+    logger.error(
+      '[deleteLocationAction] id=%s lotId=%s customerId=%s err=',
+      id,
+      lotId,
+      customerId,
+      err,
+    );
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
     throw new Error(`Suppression impossible : ${msg}`);
   }
@@ -197,7 +200,9 @@ export async function deleteLocationAction(formData: FormData): Promise<void> {
   if (customerId) revalidatePath(`/clients/${customerId}`);
 
   const returnTo = formData.get('returnTo');
-  redirect(safeReturnTo(typeof returnTo === 'string' && returnTo ? returnTo : '/locations', '/locations'));
+  redirect(
+    safeReturnTo(typeof returnTo === 'string' && returnTo ? returnTo : '/locations', '/locations'),
+  );
 }
 
 const locationDocumentSchema = z.object({
@@ -249,7 +254,7 @@ export async function deleteLocationDocumentAction(formData: FormData): Promise<
 }
 
 export async function getLocationDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

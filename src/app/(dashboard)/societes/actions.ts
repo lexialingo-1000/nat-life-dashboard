@@ -24,7 +24,7 @@ const createSchema = z.object({
         .string()
         .regex(/^\d{9}$/, 'SIREN/SIRET invalide (9 ou 14 chiffres)')
         .optional()
-        .or(z.literal(''))
+        .or(z.literal('')),
     )
     .optional(),
   type: z.enum(['commerciale', 'immobiliere']),
@@ -63,9 +63,7 @@ export async function lookupSirenAction(formData: FormData) {
   }
 }
 
-export async function deleteSocieteAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deleteSocieteAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -152,10 +150,7 @@ export async function createSocieteAction(formData: FormData) {
 
 const updateSchema = createSchema.extend({
   id: z.string().uuid(),
-  isActive: z.preprocess(
-    (v) => v === 'on' || v === 'true' || v === true,
-    z.boolean()
-  ),
+  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()),
 });
 
 export async function updateSocieteAction(formData: FormData): Promise<void> {
@@ -260,7 +255,7 @@ export async function deleteCompanyDocumentAction(formData: FormData): Promise<v
 }
 
 export async function getCompanyDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

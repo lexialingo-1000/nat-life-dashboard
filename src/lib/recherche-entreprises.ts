@@ -6,7 +6,8 @@
  * Gratuit, sans clé.
  */
 
-const API_URL = process.env.RECHERCHE_ENTREPRISES_API ?? 'https://recherche-entreprises.api.gouv.fr/search';
+const API_URL =
+  process.env.RECHERCHE_ENTREPRISES_API ?? 'https://recherche-entreprises.api.gouv.fr/search';
 
 interface ApiResult {
   siren: string;

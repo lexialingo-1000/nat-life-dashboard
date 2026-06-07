@@ -66,9 +66,7 @@ export function InlineRoomForm({ lotId, levelId }: Props) {
         <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
         Pièce
       </button>
-      {error && (
-        <p className="w-full text-[12px] text-red-600">{error}</p>
-      )}
+      {error && <p className="w-full text-[12px] text-red-600">{error}</p>}
     </form>
   );
 }

@@ -17,7 +17,7 @@ import {
   locations,
   customers,
 } from '@/db/schema';
-import { eq, asc, and, sql, desc, inArray, ne, notInArray } from 'drizzle-orm';
+import { eq, asc, and, sql, desc, inArray, notInArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, Pencil, Plus } from 'lucide-react';
@@ -43,10 +43,7 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { PropertyPhotosManager } from '@/components/property-photos-manager';
 import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
-import {
-  PropertyStructureTree,
-  type PropertyTree,
-} from '@/components/property-structure-tree';
+import { PropertyStructureTree, type PropertyTree } from '@/components/property-structure-tree';
 import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
@@ -223,29 +220,30 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
     const sousLotIds = sousLotsRows.map((s) => s.id);
     // V1.13 R3 — JOIN rooms + levels pour échéance + pièce + niveau sur la liste tâches.
-    const tachesRows = sousLotIds.length > 0
-      ? await db
-          .select({
-            id: marcheTaches.id,
-            title: marcheTaches.title,
-            status: marcheTaches.status,
-            locationDescription: marcheTaches.locationDescription,
-            dueDate: marcheTaches.dueDate,
-            photos: marcheTaches.photos,
-            marcheSousLotId: marcheTaches.marcheSousLotId,
-            lotId: marcheTaches.lotId,
-            contactFirstName: supplierContacts.firstName,
-            contactLastName: supplierContacts.lastName,
-            roomName: rooms.name,
-            levelName: levels.name,
-          })
-          .from(marcheTaches)
-          .leftJoin(supplierContacts, eq(supplierContacts.id, marcheTaches.supplierContactId))
-          .leftJoin(rooms, eq(marcheTaches.roomId, rooms.id))
-          .leftJoin(levels, eq(rooms.levelId, levels.id))
-          .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
-          .orderBy(asc(marcheTaches.createdAt))
-      : [];
+    const tachesRows =
+      sousLotIds.length > 0
+        ? await db
+            .select({
+              id: marcheTaches.id,
+              title: marcheTaches.title,
+              status: marcheTaches.status,
+              locationDescription: marcheTaches.locationDescription,
+              dueDate: marcheTaches.dueDate,
+              photos: marcheTaches.photos,
+              marcheSousLotId: marcheTaches.marcheSousLotId,
+              lotId: marcheTaches.lotId,
+              contactFirstName: supplierContacts.firstName,
+              contactLastName: supplierContacts.lastName,
+              roomName: rooms.name,
+              levelName: levels.name,
+            })
+            .from(marcheTaches)
+            .leftJoin(supplierContacts, eq(supplierContacts.id, marcheTaches.supplierContactId))
+            .leftJoin(rooms, eq(marcheTaches.roomId, rooms.id))
+            .leftJoin(levels, eq(rooms.levelId, levels.id))
+            .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
+            .orderBy(asc(marcheTaches.createdAt))
+        : [];
 
     // Build tree
     const tachesBySousLot = new Map<string, typeof tachesRows>();
@@ -329,7 +327,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       and(
         eq(propertyDocuments.propertyId, property.id),
         notInArray(documentTypes.code, ['photo', 'plan']),
-      )
+      ),
     )
     .orderBy(asc(documentTypes.sortOrder));
 
@@ -346,7 +344,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   // Dropdown upload de l'onglet Documents : exclut photo/plan (uploadés via leurs onglets).
   const propertyDocTypesNoMedia = propertyDocTypes.filter(
-    (t) => t.code !== 'photo' && t.code !== 'plan'
+    (t) => t.code !== 'photo' && t.code !== 'plan',
   );
 
   const photoTypeId = propertyDocTypes.find((t) => t.code === 'photo')?.id ?? null;
@@ -365,11 +363,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         eq(propertyDocuments.propertyId, property.id),
         eq(documentTypes.code, 'photo'),
         eq(documentTypes.scope, 'property'),
-      )
+      ),
     )
     .orderBy(desc(propertyDocuments.uploadedAt));
 
-  const notaire = (property.notaire as any) ?? {};
+  const notaire = property.notaire ?? {};
   const hasNotaire = Boolean(notaire.name || notaire.etude || notaire.phone || notaire.email);
 
   const tree: PropertyTree = {
@@ -427,7 +425,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           label="Lots loués"
           value={
             propertyLots.filter((l) =>
-              ['loue_annuel', 'loue_saisonnier'].includes(l.status as string)
+              ['loue_annuel', 'loue_saisonnier'].includes(l.status as string),
             ).length
           }
         />
@@ -477,13 +475,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   className="h-4 w-4 text-zinc-500 transition-transform duration-150 group-open:rotate-90"
                   strokeWidth={2}
                 />
-                <h2 className="text-[15px] font-medium tracking-tight text-zinc-900">
-                  Notaire
-                </h2>
+                <h2 className="text-[15px] font-medium tracking-tight text-zinc-900">Notaire</h2>
               </div>
-              {!hasNotaire && (
-                <span className="text-[11px] text-zinc-400">Aucune information</span>
-              )}
+              {!hasNotaire && <span className="text-[11px] text-zinc-400">Aucune information</span>}
             </div>
           </summary>
           <dl className="mt-4 space-y-2 text-[13px]">
@@ -535,7 +529,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       <div className="flex justify-end gap-3">
         <Link
           href={`/taches/new?propertyId=${property.id}&returnTo=${encodeURIComponent(
-            `/biens/properties/${property.id}?tab=travaux`
+            `/biens/properties/${property.id}?tab=travaux`,
           )}`}
           className="btn-secondary"
         >
@@ -570,7 +564,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
         }))}
         availableTypes={propertyDocTypesNoMedia}
         uploadAction={uploadPropertyDocumentAction}
@@ -590,7 +585,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           id: p.id,
           name: p.name,
           storageKey: p.storageKey,
-          uploadedAt: p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
+          uploadedAt:
+            p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
         }))}
         photoTypeId={photoTypeId}
         uploadAction={uploadPropertyDocumentAction}
@@ -610,7 +606,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       content: locationsTab,
     },
     { id: 'travaux', label: 'Suivi travaux', count: propertyMarches.length, content: travauxTab },
-    { id: 'photos', label: 'Photos', count: propertyPhotos.length || undefined, content: photosTab },
+    {
+      id: 'photos',
+      label: 'Photos',
+      count: propertyPhotos.length || undefined,
+      content: photosTab,
+    },
     { id: 'documents', label: 'Documents', count: propertyDocs.length, content: documentsTab },
   ];
 
@@ -628,16 +629,24 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{property.name}</span>
             {property.statut && (
-              <span className={
-                property.statut === 'vendu' ? 'badge-neutral' :
-                property.statut === 'en_cours_acquisition' ? 'badge-blue' :
-                property.statut === 'vacant' ? 'badge-amber' :
-                'badge-emerald'
-              }>
-                {property.statut === 'en_cours_acquisition' ? 'Acquisition' :
-                 property.statut === 'vendu' ? 'Vendu' :
-                 property.statut === 'vacant' ? 'Vacant' :
-                 'Loué'}
+              <span
+                className={
+                  property.statut === 'vendu'
+                    ? 'badge-neutral'
+                    : property.statut === 'en_cours_acquisition'
+                      ? 'badge-blue'
+                      : property.statut === 'vacant'
+                        ? 'badge-amber'
+                        : 'badge-emerald'
+                }
+              >
+                {property.statut === 'en_cours_acquisition'
+                  ? 'Acquisition'
+                  : property.statut === 'vendu'
+                    ? 'Vendu'
+                    : property.statut === 'vacant'
+                      ? 'Vacant'
+                      : 'Loué'}
               </span>
             )}
           </h1>

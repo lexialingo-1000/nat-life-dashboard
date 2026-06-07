@@ -73,7 +73,9 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
             />
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-zinc-700">Scope (verrouillé)</label>
+            <label className="block text-[12px] font-medium text-zinc-700">
+              Scope (verrouillé)
+            </label>
             <input
               value={SCOPE_LABELS[t.scope] ?? t.scope}
               readOnly
@@ -97,11 +99,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
             <label className="block text-[12px] font-medium text-zinc-700">
               Catégorie (regroupement transversal)
             </label>
-            <select
-              name="categoryId"
-              defaultValue={t.categoryId ?? ''}
-              className="input mt-1"
-            >
+            <select name="categoryId" defaultValue={t.categoryId ?? ''} className="input mt-1">
               <option value="">— Aucune —</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -110,7 +108,8 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
               ))}
             </select>
             <p className="mt-1 text-[11px] text-zinc-500">
-              Paramétrable via <span className="font-mono">Paramètres → Catégories de documents</span>.
+              Paramétrable via{' '}
+              <span className="font-mono">Paramètres → Catégories de documents</span>.
             </p>
           </div>
         </div>
@@ -132,9 +131,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
               <option value="all">Tous les locataires</option>
             </select>
             {!isCustomerScope && (
-              <p className="mt-1 text-[11px] text-zinc-500">
-                Réservé aux types scope « Client ».
-              </p>
+              <p className="mt-1 text-[11px] text-zinc-500">Réservé aux types scope « Client ».</p>
             )}
           </div>
           <div>
@@ -164,9 +161,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[12px] font-medium text-zinc-700">
-              Ordre d'affichage
-            </label>
+            <label className="block text-[12px] font-medium text-zinc-700">Ordre d'affichage</label>
             <input
               type="number"
               name="sortOrder"

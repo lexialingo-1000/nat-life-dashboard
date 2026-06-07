@@ -93,7 +93,9 @@ export default async function DashboardHome() {
         <FeaturedKpi
           label="Lots immobiliers"
           value={counts?.lots}
-          sublabel={counts ? `${counts.properties} immeuble${counts.properties > 1 ? 's' : ''}` : undefined}
+          sublabel={
+            counts ? `${counts.properties} immeuble${counts.properties > 1 ? 's' : ''}` : undefined
+          }
           icon={HomeIcon}
           href="/biens"
         />

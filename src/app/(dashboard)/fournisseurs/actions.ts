@@ -1,7 +1,13 @@
 'use server';
 
 import { db } from '@/db/client';
-import { suppliers, supplierContacts, supplierDocuments, marchesTravaux, companyAccountingDocuments } from '@/db/schema';
+import {
+  suppliers,
+  supplierContacts,
+  supplierDocuments,
+  marchesTravaux,
+  companyAccountingDocuments,
+} from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { buildStoragePrefix } from '@/lib/storage/minio';
@@ -136,9 +142,9 @@ export async function createSupplierAction(formData: FormData): Promise<void> {
  * Création inline depuis un combobox (form de marché de travaux, etc.).
  * Retourne l'id et le label, sans redirect.
  */
-export async function createSupplierInlineAction(formData: FormData): Promise<
-  { id: string; label: string } | { error: string }
-> {
+export async function createSupplierInlineAction(
+  formData: FormData,
+): Promise<{ id: string; label: string } | { error: string }> {
   // Le dialog d'EntityCombobox ne contient que companyName/firstName/lastName/email/phone.
   // formData.get('address'/'notes'/...) retournerait `null` → schema `z.string().optional().or(z.literal(''))`
   // rejetterait null en "Invalid input". Object.fromEntries omet les clés absentes
@@ -148,8 +154,7 @@ export async function createSupplierInlineAction(formData: FormData): Promise<
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }
   const data = parsed.data;
-  const displayName =
-    data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
+  const displayName = data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
   if (!displayName) {
     return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
   }
@@ -182,9 +187,7 @@ const contactSchema = z.object({
   function: z.string().optional().or(z.literal('')),
 });
 
-export async function deleteSupplierAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deleteSupplierAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -330,7 +333,7 @@ export async function deleteSupplierDocumentAction(formData: FormData): Promise<
 }
 
 export async function getSupplierDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

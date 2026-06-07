@@ -45,7 +45,8 @@ export default async function ParametresPage() {
       href: '/admin/marche-types',
       icon: HardHat,
       title: 'Types de marchés',
-      description: "Corps d'état pour qualifier les sous-lots techniques (Plomberie, Électricité, etc.).",
+      description:
+        "Corps d'état pour qualifier les sous-lots techniques (Plomberie, Électricité, etc.).",
       count: marcheTypesCount,
     },
     {

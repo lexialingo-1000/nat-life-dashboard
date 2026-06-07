@@ -249,18 +249,17 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     if (!id) return null;
     const p = marcheParentById.get(id);
     if (!p) return null;
-    const kindLabel =
-      p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    const kindLabel = p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
     return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
   };
 
   const marcheComptaTotalHt = marcheAccountingDocs.reduce(
     (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
-    0
+    0,
   );
   const marcheComptaTotalTtc = marcheAccountingDocs.reduce(
     (acc, d) => acc + (d.amountTtc ? Number(d.amountTtc) : 0),
-    0
+    0,
   );
 
   const marcheTreeNode: MarcheNode = {
@@ -311,11 +310,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       <div className="grid gap-4 md:grid-cols-3">
         <Kpi
           label="Montant HT"
-          value={
-            marche.amountHt
-              ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
-              : '—'
-          }
+          value={marche.amountHt ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €` : '—'}
         />
         <Kpi label="Lots concernés" value={affectedLots.length || 'communs'} />
         <Kpi
@@ -334,18 +329,12 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         <SectionTitle>Identité</SectionTitle>
         <dl className="space-y-2 text-[13px]">
           <Row label="Bien">
-            <Link
-              href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-blue-700"
-            >
+            <Link href={`/biens/properties/${marche.propertyId}`} className="hover:text-blue-700">
               {marche.propertyName}
             </Link>
           </Row>
           <Row label="Fournisseur">
-            <Link
-              href={`/fournisseurs/${marche.supplierId}`}
-              className="hover:text-blue-700"
-            >
+            <Link href={`/fournisseurs/${marche.supplierId}`} className="hover:text-blue-700">
               {supplierLabel}
             </Link>
           </Row>
@@ -360,16 +349,12 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
         <dl className="space-y-2 text-[13px]">
           <Row label="HT">
             <span className="tnum">
-              {marche.amountHt
-                ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €`
-                : '—'}
+              {marche.amountHt ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €` : '—'}
             </span>
           </Row>
           <Row label="TTC">
             <span className="tnum">
-              {marche.amountTtc
-                ? `${Number(marche.amountTtc).toLocaleString('fr-FR')} €`
-                : '—'}
+              {marche.amountTtc ? `${Number(marche.amountTtc).toLocaleString('fr-FR')} €` : '—'}
             </span>
           </Row>
           <Row label="Début prévu">{marche.dateDebutPrevu ?? '—'}</Row>
@@ -398,7 +383,8 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={marcheDocTypes}
@@ -444,12 +430,11 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       <div className="rounded-md border border-blue-100 bg-blue-50/50 p-4 text-[13px] text-blue-900">
         <p className="font-medium">Comment fonctionne le suivi&nbsp;?</p>
         <p className="mt-1 text-blue-800">
-          Un marché se découpe en <strong>sous-lots</strong> (corps d&apos;état&nbsp;:
-          plomberie, électricité, peinture…). Chaque sous-lot regroupe des{' '}
-          <strong>tâches</strong> (statut à faire / en cours / terminé / validé) que
-          tu peux modifier directement depuis cette vue. Crée d&apos;abord un sous-lot
-          ci-dessous, puis ajoute-lui des tâches via le bouton «&nbsp;Ajouter&nbsp;» à droite
-          de chaque sous-lot.
+          Un marché se découpe en <strong>sous-lots</strong> (corps d&apos;état&nbsp;: plomberie,
+          électricité, peinture…). Chaque sous-lot regroupe des <strong>tâches</strong> (statut à
+          faire / en cours / terminé / validé) que tu peux modifier directement depuis cette vue.
+          Crée d&apos;abord un sous-lot ci-dessous, puis ajoute-lui des tâches via le bouton
+          «&nbsp;Ajouter&nbsp;» à droite de chaque sous-lot.
         </p>
       </div>
       <InlineSousLotForm marcheId={marche.id} />
@@ -518,9 +503,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     .orderBy(asc(suppliers.companyName));
   const supplierOpts = supplierOptionsList.map((s) => ({
     id: s.id,
-    label:
-      (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) ||
-      'Fournisseur',
+    label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
   }));
 
   // Devis/commandes déjà liés à ce marché (pour parent dropdowns)
@@ -582,7 +565,12 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
     { id: 'suivi', label: 'Suivi travaux', count: totalTaches, content: suiviTab },
-    { id: 'compta', label: 'Compta', count: marcheAccountingDocs.length || undefined, content: comptaTab },
+    {
+      id: 'compta',
+      label: 'Compta',
+      count: marcheAccountingDocs.length || undefined,
+      content: comptaTab,
+    },
     { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
   ];
 
@@ -597,10 +585,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
               {marche.companyName}
             </Link>{' '}
             ·{' '}
-            <Link
-              href={`/biens/properties/${marche.propertyId}`}
-              className="hover:text-blue-800"
-            >
+            <Link href={`/biens/properties/${marche.propertyId}`} className="hover:text-blue-800">
               {marche.propertyName}
             </Link>
           </div>
@@ -696,8 +681,8 @@ function Kpi({
           variant === 'good'
             ? 'text-blue-700'
             : variant === 'warn'
-            ? 'text-blue-700'
-            : 'text-zinc-900'
+              ? 'text-blue-700'
+              : 'text-zinc-900'
         }`}
       >
         {value}

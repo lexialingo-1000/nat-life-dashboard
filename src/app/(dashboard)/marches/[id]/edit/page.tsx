@@ -9,7 +9,6 @@ import {
 } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { updateMarcheAction } from '../../actions';
 import { createSupplierInlineAction } from '../../../fournisseurs/actions';
@@ -62,8 +61,7 @@ export default async function EditMarchePage({ params }: { params: { id: string 
 
   const supplierOptions = supplierRows.map((s) => ({
     id: s.id,
-    label:
-      s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur',
+    label: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur',
   }));
 
   const affectations = await db

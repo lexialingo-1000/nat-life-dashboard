@@ -29,22 +29,19 @@ const CATEGORY_VALUES = [
 
 const categoryPreprocess = z.preprocess(
   (v) => (v === '' || v == null || v === undefined ? null : v),
-  z.enum(CATEGORY_VALUES).nullable()
+  z.enum(CATEGORY_VALUES).nullable(),
 );
 
-const checkboxToBool = z.preprocess(
-  (v) => v === 'on' || v === true,
-  z.boolean()
-);
+const checkboxToBool = z.preprocess((v) => v === 'on' || v === true, z.boolean());
 
 const tenantPreprocess = z.preprocess(
   (v) => (v === '' || v == null || v === undefined ? null : v),
-  z.enum(['LT', 'CT', 'all']).nullable()
+  z.enum(['LT', 'CT', 'all']).nullable(),
 );
 
 const uuidOrNull = z.preprocess(
   (v) => (v === '' || v == null || v === undefined ? null : v),
-  z.string().uuid().nullable()
+  z.string().uuid().nullable(),
 );
 
 const createSchema = z.object({
@@ -80,7 +77,7 @@ const updateSchema = z.object({
 // Si le code de la catégorie est dans l'enum legacy, on l'écrit aussi dans
 // documentTypes.category. Sinon (ex: URBANISME), null.
 async function resolveLegacyCategoryEnum(
-  categoryId: string | null
+  categoryId: string | null,
 ): Promise<(typeof CATEGORY_VALUES)[number] | null> {
   if (!categoryId) return null;
   const [row] = await db
@@ -108,7 +105,7 @@ export type CreateDocumentTypeState =
 
 export async function createDocumentTypeAction(
   _prev: CreateDocumentTypeState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateDocumentTypeState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -129,8 +126,8 @@ export async function createDocumentTypeAction(
     appliesToTenantType,
   } = parsed.data;
 
-  const finalAppliesTo = scope === 'customer' ? appliesToTenantType ?? null : null;
-  const finalSupplierTypeId = scope === 'supplier' ? supplierTypeId ?? null : null;
+  const finalAppliesTo = scope === 'customer' ? (appliesToTenantType ?? null) : null;
+  const finalSupplierTypeId = scope === 'supplier' ? (supplierTypeId ?? null) : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(categoryId ?? null);
 
   try {
@@ -168,10 +165,8 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
     .limit(1);
   if (current.length === 0) throw new Error('Type introuvable');
 
-  const finalAppliesTo =
-    current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
-  const finalSupplierTypeId =
-    current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
+  const finalAppliesTo = current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
+  const finalSupplierTypeId = current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(parsed.data.categoryId);
 
   await db
@@ -239,7 +234,7 @@ export async function deleteDocumentTypeAction(formData: FormData): Promise<void
     const msg = e instanceof Error ? e.message : String(e);
     if (code === '23503' || /foreign key|violates/i.test(msg)) {
       throw new Error(
-        `Ce type est utilisé par un ou plusieurs documents existants. Désactive-le plutôt via le toggle "Type actif" (les documents historiques garderont leur référence).`
+        `Ce type est utilisé par un ou plusieurs documents existants. Désactive-le plutôt via le toggle "Type actif" (les documents historiques garderont leur référence).`,
       );
     }
     throw new Error(msg || 'Erreur lors de la suppression du type.');

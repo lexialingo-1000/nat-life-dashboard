@@ -154,7 +154,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   const expiringDocsCount = docs.filter((d) => {
     if (!d.expiresAt) return false;
     const days = Math.floor(
-      (new Date(d.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(d.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
     );
     return days < 30;
   }).length;
@@ -330,7 +330,8 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={supplierTypes}
@@ -363,13 +364,18 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       marcheId: marchesTravaux.id,
       // v19-2a — colonne MARCHE doit afficher la description du marché
       // (ex: "Second-Oeuvre") plutôt que son name. Fallback name si description nulle.
-      marcheName: sql<string | null>`COALESCE(${marchesTravaux.description}, ${marchesTravaux.name})`,
+      marcheName: sql<
+        string | null
+      >`COALESCE(${marchesTravaux.description}, ${marchesTravaux.name})`,
     })
     .from(companyAccountingDocuments)
     .innerJoin(companies, eq(companies.id, companyAccountingDocuments.companyId))
     .leftJoin(marchesTravaux, eq(marchesTravaux.id, companyAccountingDocuments.marcheId))
     .where(eq(companyAccountingDocuments.supplierId, s.id))
-    .orderBy(desc(companyAccountingDocuments.documentDate), desc(companyAccountingDocuments.uploadedAt));
+    .orderBy(
+      desc(companyAccountingDocuments.documentDate),
+      desc(companyAccountingDocuments.uploadedAt),
+    );
 
   // V1.10 §4 §5 — résolution labels parents.
   const supplierParentIds = new Set<string>();
@@ -394,8 +400,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     if (!id) return null;
     const p = supplierParentById.get(id);
     if (!p) return null;
-    const kindLabel =
-      p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    const kindLabel = p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
     return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
   };
 
@@ -403,7 +408,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   // LOT dans le tableau compta. Un marché peut concerner 0..N lots ; on prend
   // le premier lot pour la clé de groupement (cas typique : marché = 1 lot).
   const supplierMarcheIds = Array.from(
-    new Set(supplierAccountingDocs.map((d) => d.marcheId).filter((x): x is string => !!x))
+    new Set(supplierAccountingDocs.map((d) => d.marcheId).filter((x): x is string => !!x)),
   );
   const marcheLotRows =
     supplierMarcheIds.length > 0
@@ -434,7 +439,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
   }
 
   const supplierAccountingRows: AccountingRow[] = supplierAccountingDocs.map((d) => {
-    const lotInfo = d.marcheId ? firstLotByMarcheId.get(d.marcheId) ?? null : null;
+    const lotInfo = d.marcheId ? (firstLotByMarcheId.get(d.marcheId) ?? null) : null;
     return {
       id: d.id,
       kind: d.kind as AccountingDocKind,
@@ -461,11 +466,11 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
 
   const supplierComptaTotalHt = supplierAccountingRows.reduce(
     (acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0),
-    0
+    0,
   );
   const supplierComptaTotalTtc = supplierAccountingRows.reduce(
     (acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0),
-    0
+    0,
   );
 
   // Companies + marches actifs pour le form upload (scope=supplier autorise
@@ -537,18 +542,14 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
         <SectionTitle className="mb-0">Suivi des travaux</SectionTitle>
         <Link
           href={`/taches/new?supplierId=${s.id}&returnTo=${encodeURIComponent(
-            `/fournisseurs/${s.id}?tab=taches`
+            `/fournisseurs/${s.id}?tab=taches`,
           )}`}
           className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
         >
           + Ajouter une tâche
         </Link>
       </div>
-      <TachesListTable
-        rows={tacheRows}
-        returnTo={`/fournisseurs/${s.id}?tab=taches`}
-        groupByLot
-      />
+      <TachesListTable rows={tacheRows} returnTo={`/fournisseurs/${s.id}?tab=taches`} groupByLot />
     </div>
   );
 
@@ -630,7 +631,10 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/fournisseurs/${s.id}/edit`} className="btn-secondary inline-flex items-center">
+          <Link
+            href={`/fournisseurs/${s.id}/edit`}
+            className="btn-secondary inline-flex items-center"
+          >
             <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Modifier
           </Link>
@@ -683,8 +687,8 @@ function Kpi({
           variant === 'good'
             ? 'text-blue-700'
             : variant === 'warn' && value !== 0 && value !== 'Actif'
-            ? 'text-zinc-500'
-            : 'text-zinc-900'
+              ? 'text-zinc-500'
+              : 'text-zinc-900'
         }`}
       >
         {value}

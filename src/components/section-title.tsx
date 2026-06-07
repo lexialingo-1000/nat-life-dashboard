@@ -16,9 +16,7 @@ export function SectionTitle({
   as?: 'h2' | 'h3';
 }) {
   return (
-    <Tag
-      className={`mb-4 text-[15px] font-medium tracking-tight text-zinc-900 ${className ?? ''}`}
-    >
+    <Tag className={`mb-4 text-[15px] font-medium tracking-tight text-zinc-900 ${className ?? ''}`}>
       {children}
     </Tag>
   );

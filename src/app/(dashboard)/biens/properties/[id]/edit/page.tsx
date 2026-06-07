@@ -50,7 +50,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
 
   if (rows.length === 0) notFound();
   const p = rows[0];
-  const notaire = (p.notaire as any) ?? {};
+  const notaire = p.notaire ?? {};
 
   return (
     <div className="max-w-3xl space-y-8">

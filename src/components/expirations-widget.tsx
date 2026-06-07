@@ -32,10 +32,7 @@ async function fetchExpirations(): Promise<ExpirationItem[]> {
     .innerJoin(documentTypes, sql`${supplierDocuments.typeId} = ${documentTypes.id}`)
     .innerJoin(suppliers, sql`${supplierDocuments.supplierId} = ${suppliers.id}`)
     .where(
-      and(
-        isNotNull(supplierDocuments.expiresAt),
-        lte(supplierDocuments.expiresAt, thresholdIso)
-      )
+      and(isNotNull(supplierDocuments.expiresAt), lte(supplierDocuments.expiresAt, thresholdIso)),
     );
 
   return supplierExp.map((row) => ({
@@ -99,8 +96,8 @@ export async function ExpirationsWidget() {
                   status.color === 'red'
                     ? 'badge-red'
                     : status.color === 'orange'
-                    ? 'badge-amber'
-                    : 'badge-emerald'
+                      ? 'badge-amber'
+                      : 'badge-emerald'
                 }
               >
                 {status.label}

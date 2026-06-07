@@ -11,11 +11,7 @@ import { updateMarcheTypeAction, deleteMarcheTypeAction } from '../../actions';
 export const dynamic = 'force-dynamic';
 
 export default async function EditMarcheTypePage({ params }: { params: { id: string } }) {
-  const rows = await db
-    .select()
-    .from(marcheTypes)
-    .where(eq(marcheTypes.id, params.id))
-    .limit(1);
+  const rows = await db.select().from(marcheTypes).where(eq(marcheTypes.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const t = rows[0];
 

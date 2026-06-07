@@ -78,7 +78,7 @@ export function ComptaEditForm({
   // V1.10 §2 — marchés filtrés par fournisseur sélectionné.
   const marchesForSupplier = useMemo(
     () => marches.filter((m) => m.supplierId === supplierId),
-    [marches, supplierId]
+    [marches, supplierId],
   );
 
   // V1.10 §4 §5 — devis disponibles si kind=commande/facture, commandes si kind=facture.
@@ -89,7 +89,7 @@ export function ComptaEditForm({
         .filter((d) => d.supplierId === supplierId)
         .filter((d) => !marcheId || !d.marcheId || d.marcheId === marcheId)
         .filter((d) => d.id !== doc.id),
-    [devisOptions, supplierId, marcheId, doc.id]
+    [devisOptions, supplierId, marcheId, doc.id],
   );
   const visibleCommandes = useMemo(
     () =>
@@ -97,7 +97,7 @@ export function ComptaEditForm({
         .filter((c) => c.supplierId === supplierId)
         .filter((c) => !marcheId || !c.marcheId || c.marcheId === marcheId)
         .filter((c) => c.id !== doc.id),
-    [commandeOptions, supplierId, marcheId, doc.id]
+    [commandeOptions, supplierId, marcheId, doc.id],
   );
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,9 +233,7 @@ export function ComptaEditForm({
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-zinc-700">
-            Marché (optionnel)
-          </label>
+          <label className="block text-[12px] font-medium text-zinc-700">Marché (optionnel)</label>
           <select
             name="marcheId"
             value={marcheId}
@@ -254,9 +252,7 @@ export function ComptaEditForm({
             ))}
           </select>
           {marchesForSupplier.length === 0 && supplierId && (
-            <p className="mt-1 text-[11px] text-zinc-500">
-              Aucun marché lié à ce fournisseur.
-            </p>
+            <p className="mt-1 text-[11px] text-zinc-500">Aucun marché lié à ce fournisseur.</p>
           )}
         </div>
       </div>

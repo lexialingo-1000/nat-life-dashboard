@@ -4,10 +4,7 @@ import { useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { AlertCircle, Loader2, Plus, Save, X } from 'lucide-react';
-import {
-  createTacheAction,
-  type CreateTacheState,
-} from '@/app/(dashboard)/marches/actions';
+import { createTacheAction, type CreateTacheState } from '@/app/(dashboard)/marches/actions';
 import { MarcheInlineCreator } from '@/components/marche-inline-creator';
 
 // V20 §FICHE LOT §4 + V12.1 — ajout de tâche depuis fournisseur / bien / lot :
@@ -42,10 +39,10 @@ export interface SupplierOption {
 }
 
 type InlineCreateMarche = (
-  formData: FormData
+  formData: FormData,
 ) => Promise<{ id: string; label: string } | { error: string }>;
 type InlineCreateSousLot = (
-  formData: FormData
+  formData: FormData,
 ) => Promise<{ id: string; name: string } | { error: string }>;
 
 interface Props {
@@ -102,8 +99,7 @@ export function TacheCreateSelectableForm({
 
   // État local : les listes peuvent grandir via création inline.
   const [marcheList, setMarcheList] = useState<MarcheOption[]>(marches);
-  const [sousLotsMap, setSousLotsMap] =
-    useState<Record<string, SousLotOption[]>>(sousLotsByMarche);
+  const [sousLotsMap, setSousLotsMap] = useState<Record<string, SousLotOption[]>>(sousLotsByMarche);
   const [lotsMap] = useState<Record<string, LotOption[]>>(lotsByProperty);
 
   const [marcheId, setMarcheId] = useState<string>(defaultMarcheId ?? '');
@@ -111,8 +107,8 @@ export function TacheCreateSelectableForm({
   const [lotId, setLotId] = useState<string>(defaultLotId ?? '');
 
   const selectedMarche = marcheList.find((m) => m.id === marcheId);
-  const sousLots = marcheId ? sousLotsMap[marcheId] ?? [] : [];
-  const lotOptions = selectedMarche ? lotsMap[selectedMarche.propertyId] ?? [] : [];
+  const sousLots = marcheId ? (sousLotsMap[marcheId] ?? []) : [];
+  const lotOptions = selectedMarche ? (lotsMap[selectedMarche.propertyId] ?? []) : [];
 
   const effectiveSousLotId = useMemo(() => {
     if (sousLotId && sousLots.some((s) => s.id === sousLotId)) return sousLotId;
@@ -271,11 +267,7 @@ export function TacheCreateSelectableForm({
                 disabled={creatingSousLot || !newSousLotName.trim()}
                 className="btn-primary"
               >
-                {creatingSousLot ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  'Ajouter'
-                )}
+                {creatingSousLot ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Ajouter'}
               </button>
               <button
                 type="button"
@@ -288,9 +280,7 @@ export function TacheCreateSelectableForm({
               >
                 <X className="h-4 w-4" />
               </button>
-              {sousLotError && (
-                <p className="w-full text-[11px] text-red-700">{sousLotError}</p>
-              )}
+              {sousLotError && <p className="w-full text-[11px] text-red-700">{sousLotError}</p>}
             </div>
           )}
         </div>

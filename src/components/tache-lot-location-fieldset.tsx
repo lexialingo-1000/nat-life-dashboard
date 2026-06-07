@@ -90,11 +90,7 @@ export function TacheLotLocationFieldset({
   const sousLotSelect = sousLotOptions ? (
     <div>
       <label className="block text-[12px] font-medium text-zinc-700">Sous-lot rattaché</label>
-      <select
-        name="marcheSousLotId"
-        defaultValue={defaultSousLotId}
-        className="input mt-1"
-      >
+      <select name="marcheSousLotId" defaultValue={defaultSousLotId} className="input mt-1">
         {sousLotOptions.length === 0 ? (
           <option value="">— Aucun sous-lot —</option>
         ) : (

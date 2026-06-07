@@ -95,8 +95,8 @@ export function TacheLocationSelectors({
           </select>
         </div>
         <p className="col-span-2 text-[11px] text-zinc-500">
-          Le lot rattaché n&apos;a pas de niveaux configurés. Crée-les depuis la fiche bien
-          (onglet Structure) avant d&apos;associer une pièce à la tâche.
+          Le lot rattaché n&apos;a pas de niveaux configurés. Crée-les depuis la fiche bien (onglet
+          Structure) avant d&apos;associer une pièce à la tâche.
         </p>
         <input type="hidden" name={name} value="" />
       </div>

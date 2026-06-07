@@ -49,12 +49,12 @@ export function SocieteFormFields({
   const [siren, setSiren] = useState(defaultValues.siren ?? '');
   const [name, setName] = useState(defaultValues.name ?? '');
   const [type, setType] = useState<'commerciale' | 'immobiliere'>(
-    defaultValues.type ?? 'commerciale'
+    defaultValues.type ?? 'commerciale',
   );
   const [formeJuridique, setFormeJuridique] = useState(defaultValues.formeJuridique ?? '');
   const [address, setAddress] = useState(defaultValues.address ?? '');
   const [activitePrincipale, setActivitePrincipale] = useState(
-    defaultValues.activitePrincipale ?? ''
+    defaultValues.activitePrincipale ?? '',
   );
   const [nafCode, setNafCode] = useState(defaultValues.nafCode ?? '');
   const [tvaIntracom, setTvaIntracom] = useState(defaultValues.tvaIntracom ?? '');
@@ -67,7 +67,7 @@ export function SocieteFormFields({
   const [tvaFrequency, setTvaFrequency] = useState<TvaFrequency | ''>(
     defaultValues.tvaFrequency && defaultValues.tvaFrequency !== 'non_assujettie'
       ? defaultValues.tvaFrequency
-      : ''
+      : '',
   );
   const [isActive, setIsActive] = useState(defaultValues.isActive ?? true);
 

@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 const tenantTypePreprocess = z.preprocess(
   (v) => (v === '' || v == null ? null : v),
-  z.enum(['LT', 'CT']).nullable()
+  z.enum(['LT', 'CT']).nullable(),
 );
 
 const customerSchema = z.object({
@@ -109,9 +109,9 @@ export async function createCustomerAction(formData: FormData): Promise<void> {
  * Retourne l'id et le label pour sélection immédiate dans le combobox parent.
  * Pas de redirect — l'appelant fait son propre revalidate.
  */
-export async function createCustomerInlineAction(formData: FormData): Promise<
-  { id: string; label: string } | { error: string }
-> {
+export async function createCustomerInlineAction(
+  formData: FormData,
+): Promise<{ id: string; label: string } | { error: string }> {
   // Le dialog d'EntityCombobox ne contient que companyName/firstName/lastName/email/phone.
   // formData.get('address'/'notes') retournerait `null` → schema `z.string().optional().or(z.literal(''))`
   // rejetterait null en "Invalid input". Object.fromEntries omet les clés absentes
@@ -121,8 +121,7 @@ export async function createCustomerInlineAction(formData: FormData): Promise<
     return { error: parsed.error.errors.map((e) => e.message).join(', ') };
   }
   const data = parsed.data;
-  const displayName =
-    data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
+  const displayName = data.companyName || `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
   if (!displayName) {
     return { error: 'Saisissez au moins une raison sociale ou un prénom/nom.' };
   }
@@ -145,9 +144,7 @@ export async function createCustomerInlineAction(formData: FormData): Promise<
   return { id: inserted[0].id, label: displayName };
 }
 
-export async function deleteCustomerAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deleteCustomerAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -176,10 +173,10 @@ export async function deleteCustomerAction(
     .from(locations)
     .where(eq(locations.customerId, id));
 
-  const summary = fkPreflightSummary(
-    [{ label: 'locations', rows: locationsRows }],
-    { kind: 'client', name: customerName },
-  );
+  const summary = fkPreflightSummary([{ label: 'locations', rows: locationsRows }], {
+    kind: 'client',
+    name: customerName,
+  });
   if (summary) return { error: summary };
 
   try {
@@ -259,7 +256,7 @@ export async function deleteCustomerDocumentAction(formData: FormData): Promise<
 }
 
 export async function getCustomerDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

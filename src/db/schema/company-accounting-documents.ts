@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, timestamp, date, numeric, pgEnum, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  date,
+  numeric,
+  pgEnum,
+  type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { suppliers } from './suppliers';
 import { marchesTravaux } from './marches';
@@ -41,12 +50,12 @@ export const companyAccountingDocuments = pgTable('company_accounting_documents'
   // V1.10 §4 — lien optionnel commande/facture → devis source.
   parentDevisId: uuid('parent_devis_id').references(
     (): AnyPgColumn => companyAccountingDocuments.id,
-    { onDelete: 'set null' }
+    { onDelete: 'set null' },
   ),
   // V1.10 §5 — lien optionnel facture → commande source.
   parentCommandeId: uuid('parent_commande_id').references(
     (): AnyPgColumn => companyAccountingDocuments.id,
-    { onDelete: 'set null' }
+    { onDelete: 'set null' },
   ),
   notes: text('notes'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),

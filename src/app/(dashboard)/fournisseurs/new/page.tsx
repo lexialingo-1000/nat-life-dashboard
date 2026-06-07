@@ -27,7 +27,8 @@ export default async function NewFournisseurPage() {
           Ajouter un fournisseur
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">
-          Informations générales + contacts optionnels. Documents (RC, décennale, KBis…) à ajouter depuis la fiche.
+          Informations générales + contacts optionnels. Documents (RC, décennale, KBis…) à ajouter
+          depuis la fiche.
         </p>
       </div>
 

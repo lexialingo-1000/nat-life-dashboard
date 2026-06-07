@@ -2,7 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, Upload, Trash2, X, ChevronLeft, ChevronRight, ImageIcon, Loader2 } from 'lucide-react';
+import {
+  Download,
+  Upload,
+  Trash2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ImageIcon,
+  Loader2,
+} from 'lucide-react';
 
 interface PhotoItem {
   id: string;
@@ -86,7 +95,11 @@ export function PropertyPhotosManager({
         if (!res.ok) throw new Error('Erreur obtention URL upload');
         const { uploadUrl, storageKey } = await res.json();
 
-        await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
 
         const fd = new FormData();
         fd.set('propertyId', propertyId);
@@ -123,9 +136,16 @@ export function PropertyPhotosManager({
             ? 'border-blue-400 bg-blue-50'
             : 'border-zinc-200 bg-[#fbf8f0] hover:border-zinc-300'
         }`}
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => { e.preventDefault(); setIsDragging(false); uploadFiles(e.dataTransfer.files); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          uploadFiles(e.dataTransfer.files);
+        }}
       >
         <input
           ref={fileInputRef}
@@ -165,15 +185,11 @@ export function PropertyPhotosManager({
         )}
       </div>
 
-      {uploadError && (
-        <p className="text-[12px] text-red-600">{uploadError}</p>
-      )}
+      {uploadError && <p className="text-[12px] text-red-600">{uploadError}</p>}
 
       {/* Photo grid */}
       {photos.length === 0 ? (
-        <p className="text-center text-[13px] text-zinc-400">
-          Aucune photo pour l'instant.
-        </p>
+        <p className="text-center text-[13px] text-zinc-400">Aucune photo pour l'instant.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {photos.map((photo, i) => (
@@ -263,7 +279,10 @@ export function PropertyPhotosManager({
           {lightboxIndex > 0 && (
             <button
               className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-              onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                prevPhoto();
+              }}
             >
               <ChevronLeft className="h-6 w-6" strokeWidth={2} />
             </button>
@@ -271,7 +290,10 @@ export function PropertyPhotosManager({
           {lightboxIndex < photos.length - 1 && (
             <button
               className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-              onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                nextPhoto();
+              }}
             >
               <ChevronRight className="h-6 w-6" strokeWidth={2} />
             </button>

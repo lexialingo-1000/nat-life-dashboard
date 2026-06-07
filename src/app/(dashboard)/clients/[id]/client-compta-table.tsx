@@ -48,9 +48,7 @@ function formatDateFr(value: string | null): string {
 
 export function ClientComptaTable({ rows, getUrlAction, deleteAction, emptyMessage }: Props) {
   if (rows.length === 0) {
-    return (
-      <div className="card p-8 text-center text-sm text-zinc-500">{emptyMessage}</div>
-    );
+    return <div className="card p-8 text-center text-sm text-zinc-500">{emptyMessage}</div>;
   }
 
   return (

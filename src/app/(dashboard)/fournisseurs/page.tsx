@@ -31,8 +31,7 @@ export default async function FournisseursPage() {
 
     rows = raw.map((s) => ({
       id: s.id,
-      displayName:
-        s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? '—',
+      displayName: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? '—',
       email: s.email,
       phone: s.phone,
       invoicingType: s.invoicingType,
@@ -66,9 +65,7 @@ export default async function FournisseursPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-sm text-blue-700">
-          Connexion DB indisponible : {dbError}
-        </div>
+        <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
       )}
 
       {!dbError && (

@@ -62,12 +62,7 @@ export default async function EditLotPage({ params }: { params: { id: string } }
 
         <div>
           <label className="block text-sm font-medium">Nom *</label>
-          <input
-            name="name"
-            defaultValue={lot.name}
-            required
-            className="input mt-1"
-          />
+          <input name="name" defaultValue={lot.name} required className="input mt-1" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

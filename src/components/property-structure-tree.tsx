@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { ChevronRight, Trash2, Building2, Layers, DoorOpen, Plus } from 'lucide-react';
-import {
-  deleteLevelAction,
-  deleteRoomAction,
-} from '@/app/(dashboard)/biens/actions';
+import { deleteLevelAction, deleteRoomAction } from '@/app/(dashboard)/biens/actions';
 import { InlineLevelForm } from './inline-level-form';
 import { InlineRoomForm } from './inline-room-form';
 
@@ -74,12 +71,9 @@ export function PropertyStructureTree({ tree }: { tree: PropertyTree }) {
             />
             <Building2 className="h-5 w-5 text-blue-700" strokeWidth={1.75} />
             <div>
-              <div className="text-[15px] font-medium text-zinc-900 display-serif">
-                {tree.name}
-              </div>
+              <div className="text-[15px] font-medium text-zinc-900 display-serif">{tree.name}</div>
               <div className="text-[12px] text-zinc-500">
-                {LOT_TYPE_LABELS[tree.type] ?? tree.type} ·{' '}
-                {tree.address ?? 'adresse à compléter'}
+                {LOT_TYPE_LABELS[tree.type] ?? tree.type} · {tree.address ?? 'adresse à compléter'}
                 {tree.postalCode && tree.city && ` · ${tree.postalCode} ${tree.city}`}
               </div>
             </div>
@@ -127,7 +121,10 @@ export function PropertyStructureTree({ tree }: { tree: PropertyTree }) {
 function LotBranch({ lot }: { lot: LotNode }) {
   const totalRooms = lot.levels.reduce((acc, lv) => acc + lv.rooms.length, 0);
   return (
-    <details open className="group/lot ml-6 rounded-md border-l-2 border-blue-200 bg-[#fbf8f0]/40 pl-3">
+    <details
+      open
+      className="group/lot ml-6 rounded-md border-l-2 border-blue-200 bg-[#fbf8f0]/40 pl-3"
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between py-2 pr-2">
         <div className="flex items-center gap-2">
           <ChevronRight
@@ -147,9 +144,7 @@ function LotBranch({ lot }: { lot: LotNode }) {
           </span>
           <span className="text-[12px] text-zinc-500">
             · {LOT_TYPE_LABELS[lot.type] ?? lot.type}
-            {lot.surfaceCarrez && (
-              <span className="tnum"> · {lot.surfaceCarrez} m² Carrez</span>
-            )}
+            {lot.surfaceCarrez && <span className="tnum"> · {lot.surfaceCarrez} m² Carrez</span>}
           </span>
         </div>
         <span className="text-[11px] text-zinc-400">
@@ -161,13 +156,9 @@ function LotBranch({ lot }: { lot: LotNode }) {
 
       <div className="space-y-2 py-2 pl-3">
         {lot.levels.length === 0 ? (
-          <p className="text-[12px] italic text-zinc-400">
-            Aucun niveau déclaré dans ce lot.
-          </p>
+          <p className="text-[12px] italic text-zinc-400">Aucun niveau déclaré dans ce lot.</p>
         ) : (
-          lot.levels.map((level) => (
-            <LevelBranch key={level.id} level={level} lotId={lot.id} />
-          ))
+          lot.levels.map((level) => <LevelBranch key={level.id} level={level} lotId={lot.id} />)
         )}
 
         <InlineLevelForm lotId={lot.id} />
@@ -178,16 +169,17 @@ function LotBranch({ lot }: { lot: LotNode }) {
 
 function LevelBranch({ level, lotId }: { level: LevelNode; lotId: string }) {
   return (
-    <details open className="group/level ml-6 rounded-md border-l-2 border-zinc-200 bg-white/40 pl-3">
+    <details
+      open
+      className="group/level ml-6 rounded-md border-l-2 border-zinc-200 bg-white/40 pl-3"
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between py-1.5 pr-2">
         <div className="flex items-center gap-2">
           <ChevronRight
             className="h-3.5 w-3.5 text-zinc-500 transition-transform duration-150 group-open/level:rotate-90"
             strokeWidth={2}
           />
-          <span className="text-[13px] font-medium text-zinc-800">
-            🪜 {level.name}
-          </span>
+          <span className="text-[13px] font-medium text-zinc-800">🪜 {level.name}</span>
           <span className="text-[11px] text-zinc-400">
             ({level.rooms.length} {level.rooms.length > 1 ? 'pièces' : 'pièce'})
           </span>
@@ -207,9 +199,7 @@ function LevelBranch({ level, lotId }: { level: LevelNode; lotId: string }) {
 
       <ul className="space-y-1 py-1.5 pl-3">
         {level.rooms.length === 0 ? (
-          <li className="text-[12px] italic text-zinc-400">
-            Aucune pièce déclarée à ce niveau.
-          </li>
+          <li className="text-[12px] italic text-zinc-400">Aucune pièce déclarée à ce niveau.</li>
         ) : (
           level.rooms.map((room) => (
             <li

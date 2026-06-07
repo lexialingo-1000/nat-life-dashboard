@@ -45,16 +45,16 @@ export type FkParent = {
   name: string;
 };
 
-export function fkPreflightSummary(
-  checks: FkCheck[],
-  parent?: FkParent,
-): string | null {
+export function fkPreflightSummary(checks: FkCheck[], parent?: FkParent): string | null {
   const nonEmpty = checks.filter((c) => c.rows.length > 0);
   if (nonEmpty.length === 0) return null;
 
   const parts = nonEmpty.map((c) => {
     const total = c.rows.length;
-    const namesShown = c.rows.slice(0, 5).map((r) => r.displayName).join(', ');
+    const namesShown = c.rows
+      .slice(0, 5)
+      .map((r) => r.displayName)
+      .join(', ');
     const moreCount = total - 5;
     const tail = moreCount > 0 ? ` +${moreCount} autres` : '';
     return `${total} ${c.label} (${namesShown}${tail})`;

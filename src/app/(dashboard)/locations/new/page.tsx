@@ -15,11 +15,7 @@ interface SearchParams {
   returnTo?: string;
 }
 
-export default async function NewLocationPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function NewLocationPage({ searchParams }: { searchParams: SearchParams }) {
   const lotRows = await db
     .select({
       id: lots.id,
@@ -51,8 +47,8 @@ export default async function NewLocationPage({
     (presetLotId
       ? `/biens/lots/${presetLotId}`
       : presetCustomerId
-      ? `/clients/${presetCustomerId}`
-      : '/locations');
+        ? `/clients/${presetCustomerId}`
+        : '/locations');
 
   const lotOptions = lotRows.map((l) => ({
     id: l.id,
@@ -61,10 +57,7 @@ export default async function NewLocationPage({
 
   const customerOptions = customerRows.map((c) => ({
     id: c.id,
-    label:
-      c.companyName ||
-      `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() ||
-      'client',
+    label: c.companyName || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'client',
     hint: c.email ?? undefined,
   }));
 
@@ -80,9 +73,9 @@ export default async function NewLocationPage({
           <span className="display-serif">Lier un locataire à un bien ou un lot</span>
         </h1>
         <p className="mt-1.5 max-w-xl text-[13px] text-zinc-500">
-          La location établit la relation locative — bail annuel meublé/nu, saisonnier direct ou
-          via plateforme. Renseignez le loyer (avec sa périodicité), le dépôt de garantie et les
-          charges associées.
+          La location établit la relation locative — bail annuel meublé/nu, saisonnier direct ou via
+          plateforme. Renseignez le loyer (avec sa périodicité), le dépôt de garantie et les charges
+          associées.
         </p>
       </header>
 

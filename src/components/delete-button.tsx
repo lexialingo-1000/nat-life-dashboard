@@ -72,7 +72,13 @@ export function DeleteButton({
         }
       } catch (err) {
         // Next.js redirect() throws NEXT_REDIRECT — let it propagate so navigation happens.
-        if (err && typeof err === 'object' && 'digest' in err && typeof (err as { digest?: unknown }).digest === 'string' && (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'digest' in err &&
+          typeof (err as { digest?: unknown }).digest === 'string' &&
+          (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')
+        ) {
           throw err;
         }
         const msg = err instanceof Error ? err.message : 'Erreur inconnue lors de la suppression';
@@ -112,7 +118,8 @@ export function DeleteButton({
 
             <div className="mt-4">
               <label className="block text-sm text-zinc-700">
-                Tape <span className="font-mono text-red-600">{confirmationPhrase}</span> pour confirmer
+                Tape <span className="font-mono text-red-600">{confirmationPhrase}</span> pour
+                confirmer
               </label>
               <input
                 autoFocus

@@ -19,7 +19,7 @@ import {
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
@@ -27,7 +27,6 @@ import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
-import { DeleteButton } from '@/components/delete-button';
 import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
 import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
@@ -41,7 +40,6 @@ import {
   deleteLotDocumentAction,
   getLotDocumentUrlAction,
 } from '../../actions';
-import { formatDate } from '@/lib/utils';
 import { slugify } from '@/lib/storage/minio';
 
 const LOT_STATUS_LABELS: Record<string, string> = {
@@ -216,8 +214,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         expiresAt: lotDocuments.expiresAt,
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
-      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+        // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+        category: documentTypes.category,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
@@ -263,7 +261,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           eq(lotDocuments.lotId, lot.id),
           eq(documentTypes.code, 'plan'),
           eq(documentTypes.scope, 'lot'),
-        )
+        ),
       )
       .orderBy(desc(lotDocuments.uploadedAt));
 
@@ -282,16 +280,14 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           eq(lotDocuments.lotId, lot.id),
           eq(documentTypes.code, 'photo'),
           eq(documentTypes.scope, 'lot'),
-        )
+        ),
       )
       .orderBy(desc(lotDocuments.uploadedAt));
   }
 
   if (!lot) {
     return (
-      <div className="card p-6 text-sm text-blue-700">
-        Connexion DB indisponible : {dbError}
-      </div>
+      <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
     );
   }
 
@@ -300,10 +296,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
   const overviewTab = (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Kpi
-          label="Surface Carrez"
-          value={lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'}
-        />
+        <Kpi label="Surface Carrez" value={lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'} />
         <Kpi label="Niveaux" value={lotLevels.length} />
         <Kpi label="Pièces" value={totalRooms} />
       </div>
@@ -319,14 +312,10 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           <span className="badge-neutral">{lot.type}</span>
         </Row>
         <Row label="Surface Carrez">
-          <span className="tnum">
-            {lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'}
-          </span>
+          <span className="tnum">{lot.surfaceCarrez ? `${lot.surfaceCarrez} m²` : '—'}</span>
         </Row>
         <Row label="Statut">
-          <span className="badge-neutral">
-            {LOT_STATUS_LABELS[lot.status] ?? lot.status}
-          </span>
+          <span className="badge-neutral">{LOT_STATUS_LABELS[lot.status] ?? lot.status}</span>
         </Row>
         <Row label="Bien parent">
           <Link href={`/biens/properties/${lot.propertyId}`} className="link-cell-soft">
@@ -390,7 +379,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         <SectionTitle className="mb-0">Suivi des travaux de ce lot</SectionTitle>
         <Link
           href={`/taches/new?lotId=${lot.id}&returnTo=${encodeURIComponent(
-            `/biens/lots/${lot.id}?tab=suivi-travaux`
+            `/biens/lots/${lot.id}?tab=suivi-travaux`,
           )}`}
           className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
         >
@@ -478,7 +467,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={lotDocTypesNoMedia}
@@ -506,7 +496,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
             storageKey: d.storageKey,
             documentDate: d.documentDate,
             expiresAt: d.expiresAt,
-            uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+            uploadedAt:
+              d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
             category: d.category,
           }))}
           availableTypes={[lotPlanType]}
@@ -535,7 +526,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
           id: p.id,
           name: p.name,
           storageKey: p.storageKey,
-          uploadedAt: p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
+          uploadedAt:
+            p.uploadedAt instanceof Date ? p.uploadedAt.toISOString() : String(p.uploadedAt),
         }))}
         photoTypeId={lotPhotoTypeId}
         uploadAction={uploadLotDocumentAction}
@@ -602,9 +594,8 @@ export default async function LotDetailPage({ params }: { params: { id: string }
             <span className="display-serif">{lot.name}</span>
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
-            {lot.type} · <span className="badge-neutral">
-              {LOT_STATUS_LABELS[lot.status] ?? lot.status}
-            </span>
+            {lot.type} ·{' '}
+            <span className="badge-neutral">{LOT_STATUS_LABELS[lot.status] ?? lot.status}</span>
             {lot.surfaceCarrez && (
               <span className="ml-2 tnum text-zinc-600">{lot.surfaceCarrez} m²</span>
             )}

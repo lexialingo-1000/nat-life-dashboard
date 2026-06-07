@@ -171,7 +171,7 @@ export function MarchesTable({ rows, deleteAction }: Props) {
         ),
       },
     ],
-    [deleteAction]
+    [deleteAction],
   );
 
   return (

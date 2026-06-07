@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { EntityCombobox, type ComboboxOption } from '@/components/entity-combobox';
 
 type CreateAction = (
-  formData: FormData
+  formData: FormData,
 ) => Promise<{ id: string; label: string } | { error: string }>;
 
 const TYPE_OPTIONS = [
@@ -59,12 +59,12 @@ export function LocationFormFields({
     periodicite === 'forfait'
       ? '(forfait)'
       : periodicite === 'jour'
-      ? '/ jour'
-      : periodicite === 'semaine'
-      ? '/ semaine'
-      : periodicite === 'mois'
-      ? '/ mois'
-      : '/ an';
+        ? '/ jour'
+        : periodicite === 'semaine'
+          ? '/ semaine'
+          : periodicite === 'mois'
+            ? '/ mois'
+            : '/ an';
 
   return (
     <div className="space-y-6">
@@ -138,9 +138,7 @@ export function LocationFormFields({
         </legend>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] uppercase tracking-wider text-zinc-500">
-            Périodicité :
-          </span>
+          <span className="text-[11px] uppercase tracking-wider text-zinc-500">Périodicité :</span>
           {PERIODICITE_OPTIONS.map((p) => {
             const active = p.value === periodicite;
             return (
@@ -178,9 +176,7 @@ export function LocationFormFields({
       </fieldset>
 
       <div>
-        <label className="block text-[12px] font-medium text-zinc-700">
-          Dépôt de garantie (€)
-        </label>
+        <label className="block text-[12px] font-medium text-zinc-700">Dépôt de garantie (€)</label>
         <input
           type="number"
           step="0.01"

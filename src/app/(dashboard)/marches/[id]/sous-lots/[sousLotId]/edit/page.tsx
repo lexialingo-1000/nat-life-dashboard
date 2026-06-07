@@ -72,11 +72,7 @@ export default async function EditSousLotPage({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-[12px] font-medium text-zinc-700">Type de marché</label>
-            <select
-              name="marcheTypeId"
-              defaultValue={sl.marcheTypeId ?? ''}
-              className="input mt-1"
-            >
+            <select name="marcheTypeId" defaultValue={sl.marcheTypeId ?? ''} className="input mt-1">
               <option value="">— Aucun —</option>
               {typeOptions.map((t) => (
                 <option key={t.id} value={t.id}>

@@ -32,9 +32,9 @@ export default async function DocumentCategoriesPage() {
           <span className="ml-2 font-mono text-[13px] tnum text-zinc-400">{rows.length}</span>
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-zinc-500">
-          Regroupement transversal des types de documents (Notaire, Banque, Comptabilité,
-          Urbanisme, etc.). Chaque type de document peut être rattaché à une catégorie. Glisser-
-          déposer pour réordonner.
+          Regroupement transversal des types de documents (Notaire, Banque, Comptabilité, Urbanisme,
+          etc.). Chaque type de document peut être rattaché à une catégorie. Glisser- déposer pour
+          réordonner.
         </p>
       </header>
 

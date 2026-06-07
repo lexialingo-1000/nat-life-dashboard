@@ -1,4 +1,5 @@
 import { db } from '@/db/client';
+import { logger } from '@/lib/logger';
 import { sql } from 'drizzle-orm';
 import {
   documentTypes,
@@ -45,7 +46,7 @@ async function safeQuery<T>(label: string, run: () => Promise<T[]>): Promise<T[]
   try {
     return await run();
   } catch (err) {
-    console.error(`[RequiredDocumentsOverdueWidget] ${label} failed:`, err);
+    logger.error(`[RequiredDocumentsOverdueWidget] ${label} failed:`, err);
     return [];
   }
 }
@@ -213,7 +214,14 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
       LIMIT 50
     `);
 
-  const [supplierMissing, supplierExpired, customerMissing, customerExpired, companyMissing, companyExpired] = await Promise.all([
+  const [
+    supplierMissing,
+    supplierExpired,
+    customerMissing,
+    customerExpired,
+    companyMissing,
+    companyExpired,
+  ] = await Promise.all([
     safeQuery('supplierMissing', supplierMissingRun),
     safeQuery('supplierExpired', supplierExpiredRun),
     safeQuery('customerMissing', customerMissingRun),
@@ -330,9 +338,7 @@ export async function RequiredDocumentsOverdueWidget() {
           </div>
           <div className="flex items-center gap-3">
             {item.state === 'expired' && item.expiresAt ? (
-              <span className="badge-red">
-                Expiré depuis {daysSince(item.expiresAt)}j
-              </span>
+              <span className="badge-red">Expiré depuis {daysSince(item.expiresAt)}j</span>
             ) : (
               <span className="badge-amber">Manquant</span>
             )}

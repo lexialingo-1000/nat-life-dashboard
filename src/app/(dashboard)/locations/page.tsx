@@ -77,7 +77,7 @@ export default async function LocationsListPage() {
       acc[r.status] += 1;
       return acc;
     },
-    { actif: 0, a_venir: 0, inactif: 0 } as Record<LocationStatus, number>
+    { actif: 0, a_venir: 0, inactif: 0 } as Record<LocationStatus, number>,
   );
 
   return (
@@ -116,9 +116,7 @@ export default async function LocationsListPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-sm text-blue-700">
-          Connexion DB indisponible : {dbError}
-        </div>
+        <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
       )}
 
       {!dbError && (

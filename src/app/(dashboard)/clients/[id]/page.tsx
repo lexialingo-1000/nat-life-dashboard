@@ -39,7 +39,6 @@ import { NotesCard } from '@/components/notes-card';
 import { DeleteButton } from '@/components/delete-button';
 import { RequiredDocumentsWidget } from '@/components/required-documents-widget';
 import { slugify } from '@/lib/storage/minio';
-import { formatDate } from '@/lib/utils';
 
 function computeLocationStatus(dateDebut: string, dateFin: string | null): LocationStatus {
   const today = new Date();
@@ -68,11 +67,7 @@ const PERIODICITE_LABELS: Record<string, string> = {
 export const dynamic = 'force-dynamic';
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
-  const customerRow = await db
-    .select()
-    .from(customers)
-    .where(eq(customers.id, params.id))
-    .limit(1);
+  const customerRow = await db.select().from(customers).where(eq(customers.id, params.id)).limit(1);
   if (customerRow.length === 0) notFound();
   const customer = customerRow[0];
 
@@ -111,9 +106,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           eq(documentTypes.appliesToTenantType, 'all'),
           customer.tenantType
             ? eq(documentTypes.appliesToTenantType, customer.tenantType)
-            : sql`false`
-        )
-      )
+            : sql`false`,
+        ),
+      ),
     )
     .orderBy(asc(documentTypes.sortOrder));
 
@@ -177,8 +172,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           .where(
             and(
               inArray(locationDocuments.locationId, customerLocationIds),
-              eq(documentTypes.category, 'comptabilite')
-            )
+              eq(documentTypes.category, 'comptabilite'),
+            ),
           )
           .orderBy(desc(locationDocuments.documentDate), desc(locationDocuments.uploadedAt))
       : [];
@@ -194,7 +189,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const expiringDocsCount = docs.filter((d) => {
     if (!d.expiresAt) return false;
     const days = Math.floor(
-      (new Date(d.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(d.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
     );
     return days < 30;
   }).length;
@@ -203,8 +198,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     customer.tenantType === 'LT'
       ? 'Locataire long terme — exigences spécifiques aux baux annuels.'
       : customer.tenantType === 'CT'
-      ? 'Locataire court terme — exigences spécifiques aux contrats saisonniers.'
-      : 'Client B2B (non-locataire). Seuls les types « Tous » apparaissent ici.';
+        ? 'Locataire court terme — exigences spécifiques aux contrats saisonniers.'
+        : 'Client B2B (non-locataire). Seuls les types « Tous » apparaissent ici.';
 
   const overviewTab = (
     <div className="space-y-6">
@@ -235,8 +230,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     customer.tenantType === 'LT'
       ? { text: 'Bail long terme', cls: 'badge-emerald' }
       : customer.tenantType === 'CT'
-      ? { text: 'Saisonnier', cls: 'badge-amber' }
-      : null;
+        ? { text: 'Saisonnier', cls: 'badge-amber' }
+        : null;
 
   const identityTab = (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -264,9 +259,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             <span className="font-mono">{customer.phone ?? '—'}</span>
           </Row>
           <Row label="Pennylane ID">
-            <span className="font-mono text-[12px]">
-              {customer.pennylaneCustomerId ?? '—'}
-            </span>
+            <span className="font-mono text-[12px]">{customer.pennylaneCustomerId ?? '—'}</span>
           </Row>
         </dl>
       </div>
@@ -290,7 +283,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: (d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt)),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={customerTypes}
@@ -359,8 +353,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       typeCode: d.typeCode,
       storageKey: d.storageKey,
       documentDate: d.documentDate,
-      uploadedAt:
-        d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+      uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
     };
   });
 
@@ -385,7 +378,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         emptyMessage={
           customerLocations.length === 0
             ? "Aucune location pour ce client — créez d'abord une location dans l'onglet « Locations »."
-            : 'Aucune facture ni quittance pour l\'instant. Upload depuis la fiche location (onglet Documents) avec le type « Facture loyer » ou « Quittance loyer ».'
+            : "Aucune facture ni quittance pour l'instant. Upload depuis la fiche location (onglet Documents) avec le type « Facture loyer » ou « Quittance loyer »."
         }
       />
       <p className="text-[12px] text-zinc-400">
@@ -419,9 +412,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{displayName}</span>
-            {tenantTypeLabel && (
-              <span className={tenantTypeLabel.cls}>{tenantTypeLabel.text}</span>
-            )}
+            {tenantTypeLabel && <span className={tenantTypeLabel.cls}>{tenantTypeLabel.text}</span>}
             {!customer.isActive && <span className="badge-neutral">Inactif</span>}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
@@ -429,7 +420,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/clients/${customer.id}/edit`} className="btn-secondary inline-flex items-center">
+          <Link
+            href={`/clients/${customer.id}/edit`}
+            className="btn-secondary inline-flex items-center"
+          >
             <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             Modifier
           </Link>
@@ -482,8 +476,8 @@ function Kpi({
           variant === 'good'
             ? 'text-blue-700'
             : variant === 'warn' && value !== 0 && value !== 'Actif'
-            ? 'text-zinc-500'
-            : 'text-zinc-900'
+              ? 'text-zinc-500'
+              : 'text-zinc-900'
         }`}
       >
         {value}

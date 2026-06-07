@@ -21,7 +21,7 @@ interface Props {
 export function RoomsSortableList({ rooms: initialRooms, levelId, lotId }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<RoomItem[]>(
-    [...initialRooms].sort((a, b) => a.sortOrder - b.sortOrder)
+    [...initialRooms].sort((a, b) => a.sortOrder - b.sortOrder),
   );
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -58,7 +58,10 @@ export function RoomsSortableList({ rooms: initialRooms, levelId, lotId }: Props
     dragIndex.current = null;
 
     startTransition(async () => {
-      await reorderRoomsAction(next.map((r) => r.id), lotId);
+      await reorderRoomsAction(
+        next.map((r) => r.id),
+        lotId,
+      );
     });
   };
 
@@ -69,9 +72,7 @@ export function RoomsSortableList({ rooms: initialRooms, levelId, lotId }: Props
 
   if (items.length === 0) {
     return (
-      <li className="px-4 py-3 text-[12px] text-zinc-400">
-        Aucune pièce déclarée à ce niveau.
-      </li>
+      <li className="px-4 py-3 text-[12px] text-zinc-400">Aucune pièce déclarée à ce niveau.</li>
     );
   }
 

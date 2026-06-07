@@ -31,13 +31,10 @@ export function FournisseurCreateForm({ action, typeOptions = [] }: Props) {
 
   const addContact = () => setContacts((prev) => [...prev, emptyContact()]);
 
-  const removeContact = (i: number) =>
-    setContacts((prev) => prev.filter((_, idx) => idx !== i));
+  const removeContact = (i: number) => setContacts((prev) => prev.filter((_, idx) => idx !== i));
 
   const updateContact = (i: number, field: keyof Contact, value: string) =>
-    setContacts((prev) =>
-      prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c))
-    );
+    setContacts((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
 
   return (
     <form action={action} className="card space-y-5 p-6">
@@ -46,11 +43,7 @@ export function FournisseurCreateForm({ action, typeOptions = [] }: Props) {
       {/* Identité fournisseur */}
       <div>
         <label className="block text-sm font-medium">Raison sociale</label>
-        <input
-          name="companyName"
-          className="input mt-1"
-          placeholder="Plomberie Dupont SARL"
-        />
+        <input name="companyName" className="input mt-1" placeholder="Plomberie Dupont SARL" />
         <p className="mt-1 text-xs text-zinc-500">
           Pour un artisan en nom propre, laisse vide et utilise prénom/nom.
         </p>

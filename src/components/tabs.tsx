@@ -68,9 +68,7 @@ export function Tabs({ tabs, defaultTabId, syncWithSearchParams = true }: Props)
               type="button"
               onClick={() => onSelect(tab.id)}
               className={`relative shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-700'
+                isActive ? 'text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
               <span className="inline-flex items-baseline gap-1.5">
@@ -96,11 +94,7 @@ export function Tabs({ tabs, defaultTabId, syncWithSearchParams = true }: Props)
         })}
       </div>
 
-      <div
-        role="tabpanel"
-        id={`tab-panel-${active?.id}`}
-        aria-labelledby={`tab-${active?.id}`}
-      >
+      <div role="tabpanel" id={`tab-panel-${active?.id}`} aria-labelledby={`tab-${active?.id}`}>
         {active?.content}
       </div>
     </div>

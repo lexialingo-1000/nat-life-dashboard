@@ -58,12 +58,7 @@ export default async function EditClientPage({ params }: { params: { id: string 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">Email</label>
-            <input
-              name="email"
-              type="email"
-              defaultValue={c.email ?? ''}
-              className="input mt-1"
-            />
+            <input name="email" type="email" defaultValue={c.email ?? ''} className="input mt-1" />
           </div>
           <div>
             <label className="block text-sm font-medium">Téléphone</label>

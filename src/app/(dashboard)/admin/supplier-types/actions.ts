@@ -40,7 +40,7 @@ export type CreateSupplierTypeState =
 
 export async function createSupplierTypeAction(
   _prev: CreateSupplierTypeState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateSupplierTypeState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -132,7 +132,7 @@ export async function deleteSupplierTypeAction(formData: FormData): Promise<void
   const total = (suppliersCount?.n ?? 0) + (docTypesCount?.n ?? 0);
   if (total > 0) {
     throw new Error(
-      `Type utilisé par ${suppliersCount?.n ?? 0} fournisseur(s) et ${docTypesCount?.n ?? 0} type(s) de document. Désactive-le plutôt (toggle "Type actif") pour préserver l'historique.`
+      `Type utilisé par ${suppliersCount?.n ?? 0} fournisseur(s) et ${docTypesCount?.n ?? 0} type(s) de document. Désactive-le plutôt (toggle "Type actif") pour préserver l'historique.`,
     );
   }
 

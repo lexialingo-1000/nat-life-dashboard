@@ -57,7 +57,7 @@ export function SupplierComptaRowActions({
   const handleDelete = () => {
     if (
       !confirm(
-        `Supprimer le document compta "${docName}" ? Cette action est irréversible et supprime aussi le fichier MinIO.`
+        `Supprimer le document compta "${docName}" ? Cette action est irréversible et supprime aussi le fichier MinIO.`,
       )
     )
       return;

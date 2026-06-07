@@ -30,7 +30,7 @@ function buildMarcheLabel(
   name: string,
   propertyName: string,
   description: string | null,
-  lotNames: string[]
+  lotNames: string[],
 ): string {
   if (description && description.trim().length > 0) {
     const lotsLabel = lotNames.length > 0 ? ` ${lotNames.join(', ')}` : '';
@@ -51,8 +51,8 @@ export default async function EditAccountingDocPage({
     .where(
       and(
         eq(companyAccountingDocuments.id, params.docId),
-        eq(companyAccountingDocuments.companyId, params.id)
-      )
+        eq(companyAccountingDocuments.companyId, params.id),
+      ),
     )
     .limit(1);
   if (rows.length === 0) notFound();
@@ -81,9 +81,7 @@ export default async function EditAccountingDocPage({
     .orderBy(asc(suppliers.companyName), asc(suppliers.lastName));
   const supplierList = supplierRows.map((s) => ({
     id: s.id,
-    label:
-      (s.companyName ??
-        `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
+    label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
   }));
 
   // V1.10 §3 — Marchés enrichis (description + property + lots affectés)
@@ -121,12 +119,7 @@ export default async function EditAccountingDocPage({
   }
   const marcheList: MarcheOpt[] = marcheRows.map((m) => ({
     id: m.id,
-    label: buildMarcheLabel(
-      m.name,
-      m.propertyName,
-      m.description,
-      lotsByMarche.get(m.id) ?? []
-    ),
+    label: buildMarcheLabel(m.name, m.propertyName, m.description, lotsByMarche.get(m.id) ?? []),
     supplierId: m.supplierId,
   }));
 
@@ -144,8 +137,8 @@ export default async function EditAccountingDocPage({
     .where(
       and(
         eq(companyAccountingDocuments.companyId, params.id),
-        ne(companyAccountingDocuments.id, params.docId)
-      )
+        ne(companyAccountingDocuments.id, params.docId),
+      ),
     );
 
   const formatParent = (p: { kind: Kind | string; name: string; documentDate: string | null }) =>

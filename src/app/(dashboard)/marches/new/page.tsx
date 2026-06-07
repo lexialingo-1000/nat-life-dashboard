@@ -79,7 +79,10 @@ export default async function NewMarchePage({
             <Link href={`/biens/properties/${property.id}`} className="link-cell-soft">
               {property.name}
             </Link>
-            . <Link href="/marches/new" className="text-zinc-400 hover:text-zinc-700">Changer de bien</Link>
+            .{' '}
+            <Link href="/marches/new" className="text-zinc-400 hover:text-zinc-700">
+              Changer de bien
+            </Link>
           </p>
         </div>
 
@@ -122,9 +125,7 @@ export default async function NewMarchePage({
       </div>
 
       <form method="get" className="card space-y-5 p-6">
-        {prefillSupplierId && (
-          <input type="hidden" name="supplierId" value={prefillSupplierId} />
-        )}
+        {prefillSupplierId && <input type="hidden" name="supplierId" value={prefillSupplierId} />}
         <div>
           <label className="block text-sm font-medium text-zinc-700">
             Bien immobilier <span className="text-red-500">*</span>

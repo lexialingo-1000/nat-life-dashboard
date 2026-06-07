@@ -220,8 +220,8 @@ export default async function EditDocumentPage({
           <span className="display-serif">Modifier</span> · {doc.name}
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">
-          Type : <span className="font-medium text-zinc-700">{doc.typeLabel}</span> (verrouillé après
-          upload). Le fichier source n'est pas modifiable — réuploade un nouveau document pour
+          Type : <span className="font-medium text-zinc-700">{doc.typeLabel}</span> (verrouillé
+          après upload). Le fichier source n'est pas modifiable — réuploade un nouveau document pour
           remplacer.
         </p>
       </header>

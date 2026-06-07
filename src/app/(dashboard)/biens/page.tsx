@@ -70,9 +70,7 @@ export default async function BiensPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-sm text-blue-700">
-          Connexion DB indisponible : {dbError}
-        </div>
+        <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
       )}
 
       {!dbError && (

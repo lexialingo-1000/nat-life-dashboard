@@ -40,7 +40,7 @@ export type CreateMarcheTypeState =
 
 export async function createMarcheTypeAction(
   _prev: CreateMarcheTypeState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateMarcheTypeState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -137,7 +137,7 @@ export async function deleteMarcheTypeAction(formData: FormData): Promise<void> 
   const totalUsages = (marchesCount?.n ?? 0) + (sousLotsCount?.n ?? 0);
   if (totalUsages > 0) {
     throw new Error(
-      `Type utilisé par ${marchesCount?.n ?? 0} marché(s) et ${sousLotsCount?.n ?? 0} sous-lot(s). Désactive-le plutôt (toggle "Type actif") pour préserver l'historique.`
+      `Type utilisé par ${marchesCount?.n ?? 0} marché(s) et ${sousLotsCount?.n ?? 0} sous-lot(s). Désactive-le plutôt (toggle "Type actif") pour préserver l'historique.`,
     );
   }
 

@@ -25,9 +25,7 @@ export function PlaceholderPage({
 
       <div className="card p-12 text-center">
         <Construction className="mx-auto h-10 w-10 text-zinc-300" strokeWidth={1.5} />
-        <p className="mt-4 text-[13px] font-medium text-zinc-700">
-          Cette section arrive en {lot}
-        </p>
+        <p className="mt-4 text-[13px] font-medium text-zinc-700">Cette section arrive en {lot}</p>
       </div>
     </div>
   );

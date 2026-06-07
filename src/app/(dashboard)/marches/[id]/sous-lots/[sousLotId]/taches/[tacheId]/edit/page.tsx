@@ -118,7 +118,11 @@ export default async function EditTachePage({
   // V1.13 R4 — liste des sous-lots du marché pour le Select "Sous-lot rattaché"
   // à droite de "Lot rattaché" (Remarques client dashboard-17).
   const sousLotsRows = await db
-    .select({ id: marcheSousLots.id, name: marcheSousLots.name, sortOrder: marcheSousLots.sortOrder })
+    .select({
+      id: marcheSousLots.id,
+      name: marcheSousLots.name,
+      sortOrder: marcheSousLots.sortOrder,
+    })
     .from(marcheSousLots)
     .where(eq(marcheSousLots.marcheId, t.marcheId))
     .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
@@ -204,9 +208,7 @@ export default async function EditTachePage({
         />
 
         <div>
-          <label className="block text-[12px] font-medium text-zinc-700">
-            Contact fournisseur
-          </label>
+          <label className="block text-[12px] font-medium text-zinc-700">Contact fournisseur</label>
           <select
             name="supplierContactId"
             defaultValue={t.supplierContactId ?? ''}

@@ -59,7 +59,11 @@ function formatDateFr(value: string | null): string | null {
   // marcheTaches.dueDate est une date Postgres → string "YYYY-MM-DD" ou Date.
   const d = typeof value === 'string' ? new Date(value) : value;
   if (Number.isNaN((d as Date).getTime())) return null;
-  return (d as Date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return (d as Date).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 export interface SousLotNode {
@@ -103,12 +107,7 @@ export function MarchesTree({ marches, returnTo }: Props) {
   return (
     <div className="space-y-2">
       {marches.map((m) => (
-        <MarcheBranch
-          key={m.id}
-          marche={m}
-          returnTo={returnTo}
-          onOpenPhotos={setPhotosTache}
-        />
+        <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
       ))}
       {photosTache && (
         <TachePhotosDialog
@@ -277,7 +276,7 @@ function TacheRow({
       </div>
       <div className="flex items-center gap-3 text-[11px] text-zinc-500">
         {/* V1.13 R3 — Pièce / Niveau (depuis JOIN rooms→levels) ; fallback sur locationDescription legacy. */}
-        {(tache.roomName || tache.levelName) ? (
+        {tache.roomName || tache.levelName ? (
           <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
             <MapPin className="h-3 w-3" strokeWidth={1.75} />
             <span className="max-w-[180px] truncate">
@@ -312,9 +311,7 @@ function TacheRow({
           title="Voir / ajouter des photos"
         >
           <Camera className="h-3 w-3" strokeWidth={1.75} />
-          {tache.photos.length > 0 && (
-            <span className="tabular-nums">{tache.photos.length}</span>
-          )}
+          {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
         </button>
         {/* V12bis PR9 §6 — modifier la tâche. */}
         <Link
@@ -333,11 +330,24 @@ function TacheRow({
 
 // V12bis PR4 J1 — boutons de suppression inline sur sous-lot + tâche.
 
-function DeleteSousLotButton({ id, name, marcheId }: { id: string; name: string; marcheId: string }) {
+function DeleteSousLotButton({
+  id,
+  name,
+  marcheId,
+}: {
+  id: string;
+  name: string;
+  marcheId: string;
+}) {
   const [pending, startTransition] = useTransition();
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm(`Supprimer le sous-lot "${name}" ? Cette action supprime aussi toutes ses tâches associées.`)) return;
+    if (
+      !confirm(
+        `Supprimer le sous-lot "${name}" ? Cette action supprime aussi toutes ses tâches associées.`,
+      )
+    )
+      return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set('id', id);

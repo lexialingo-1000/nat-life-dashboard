@@ -14,8 +14,7 @@ export default async function ClientsPage() {
     const raw = await db.select().from(customers).orderBy(asc(customers.companyName));
     rows = raw.map((c) => ({
       id: c.id,
-      displayName:
-        c.companyName ?? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() ?? '—',
+      displayName: c.companyName ?? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() ?? '—',
       email: c.email,
       phone: c.phone,
       address: c.address,
@@ -48,9 +47,7 @@ export default async function ClientsPage() {
       </header>
 
       {dbError && (
-        <div className="card p-6 text-sm text-blue-700">
-          Connexion DB indisponible : {dbError}
-        </div>
+        <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
       )}
 
       {!dbError && (

@@ -137,9 +137,7 @@ export function DocumentTypesSortableList({ rows, categoriesById }: Props) {
               {SCOPE_LABELS[t.scope] ?? t.scope}
             </span>
           </td>
-          <td className="font-medium text-zinc-900">
-            {t.label}
-          </td>
+          <td className="font-medium text-zinc-900">{t.label}</td>
           <td>
             {/* V1.13 R1 — priorité au label dynamique via categoryId (source de
                 vérité, edit admin/document-categories propagé). Fallback sur

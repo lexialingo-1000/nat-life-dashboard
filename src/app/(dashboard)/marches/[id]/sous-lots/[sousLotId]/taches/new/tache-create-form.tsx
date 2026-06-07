@@ -4,10 +4,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { AlertCircle, Loader2, Save } from 'lucide-react';
 import { TacheLotLocationFieldset } from '@/components/tache-lot-location-fieldset';
-import {
-  createTacheAction,
-  type CreateTacheState,
-} from '@/app/(dashboard)/marches/actions';
+import { createTacheAction, type CreateTacheState } from '@/app/(dashboard)/marches/actions';
 
 // V1.13 R5 — 'en_attente' ajouté en tête (Remarques client dashboard-17).
 const STATUS_OPTIONS = [
@@ -86,10 +83,7 @@ export function TacheCreateForm({
 
       {state.status === 'error' && (
         <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
-          <AlertCircle
-            className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
-            strokeWidth={2}
-          />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" strokeWidth={2} />
           <div className="text-[13px] text-red-800">{state.message}</div>
         </div>
       )}
@@ -109,9 +103,7 @@ export function TacheCreateForm({
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Échéance</label>
           <input type="date" name="dueDate" className="input mt-1" autoComplete="off" />
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Date limite prévue pour la tâche.
-          </p>
+          <p className="mt-1 text-[11px] text-zinc-500">Date limite prévue pour la tâche.</p>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Description</label>
@@ -128,11 +120,7 @@ export function TacheCreateForm({
         </div>
       </div>
 
-      <TacheLotLocationFieldset
-        lotOptions={lotOptions}
-        lotsStructure={lotsStructure}
-        required
-      />
+      <TacheLotLocationFieldset lotOptions={lotOptions} lotsStructure={lotsStructure} required />
 
       <div>
         <label className="block text-[12px] font-medium text-zinc-700">Statut initial</label>
@@ -146,9 +134,7 @@ export function TacheCreateForm({
       </div>
 
       <div>
-        <label className="block text-[12px] font-medium text-zinc-700">
-          Contact fournisseur
-        </label>
+        <label className="block text-[12px] font-medium text-zinc-700">Contact fournisseur</label>
         <select name="supplierContactId" defaultValue="" className="input mt-1">
           <option value="">— Aucun contact spécifique —</option>
           {contacts.map((c) => {
@@ -168,9 +154,9 @@ export function TacheCreateForm({
       </div>
 
       <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3 text-[12px] text-zinc-500">
-        📷 <strong>Photos</strong> — l&apos;upload est différé en V1.8.5 (drag-drop multi-photos
-        via MinIO). Pour l&apos;instant, ajoute la tâche puis uploade les photos depuis la fiche
-        tâche quand l&apos;UI sera prête.
+        📷 <strong>Photos</strong> — l&apos;upload est différé en V1.8.5 (drag-drop multi-photos via
+        MinIO). Pour l&apos;instant, ajoute la tâche puis uploade les photos depuis la fiche tâche
+        quand l&apos;UI sera prête.
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

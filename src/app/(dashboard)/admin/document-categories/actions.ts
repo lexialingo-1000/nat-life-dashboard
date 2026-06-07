@@ -40,7 +40,7 @@ export type CreateDocumentCategoryState =
 
 export async function createDocumentCategoryAction(
   _prev: CreateDocumentCategoryState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateDocumentCategoryState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -154,7 +154,7 @@ export async function deleteDocumentCategoryAction(formData: FormData): Promise<
 
   if ((docTypesCount?.n ?? 0) > 0) {
     throw new Error(
-      `Catégorie utilisée par ${docTypesCount.n} type(s) de document. Désactive-la plutôt (toggle "Catégorie active") pour préserver l'historique.`
+      `Catégorie utilisée par ${docTypesCount.n} type(s) de document. Désactive-la plutôt (toggle "Catégorie active") pour préserver l'historique.`,
     );
   }
 

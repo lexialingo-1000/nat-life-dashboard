@@ -1,4 +1,14 @@
-import { pgTable, uuid, text, timestamp, date, integer, numeric, primaryKey, boolean } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  date,
+  integer,
+  numeric,
+  primaryKey,
+  boolean,
+} from 'drizzle-orm/pg-core';
 import { marcheStatusEnum } from './enums';
 import { properties, lots } from './properties';
 import { suppliers } from './suppliers';
@@ -52,7 +62,7 @@ export const marcheLotAffectations = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.marcheId, t.lotId] }),
-  })
+  }),
 );
 
 /**

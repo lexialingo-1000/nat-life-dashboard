@@ -77,14 +77,7 @@ type DocumentType = {
 type ServerAction<R = void> = (formData: FormData) => Promise<R>;
 
 interface Props {
-  scope:
-    | 'companies'
-    | 'suppliers'
-    | 'customers'
-    | 'properties'
-    | 'lots'
-    | 'marches'
-    | 'locations';
+  scope: 'companies' | 'suppliers' | 'customers' | 'properties' | 'lots' | 'marches' | 'locations';
   parentId: string;
   parentSlug: string;
   parentIdFieldName: string;
@@ -166,7 +159,7 @@ export function DocumentsManager({
     setIsDragging(false);
     if (availableTypes.length === 0) {
       setError(
-        'Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de documents ».'
+        'Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de documents ».',
       );
       return;
     }
@@ -352,8 +345,8 @@ export function DocumentsManager({
                     exp.color === 'red'
                       ? 'bg-red-100 text-red-800'
                       : exp.color === 'orange'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-blue-100 text-blue-800'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-blue-100 text-blue-800'
                   }`}
                 >
                   {exp.text}
@@ -403,15 +396,15 @@ export function DocumentsManager({
         },
       },
     ],
-    [pendingTransition, scope]
+    [pendingTransition, scope],
   );
 
   const sortedDocuments = useMemo(
     () =>
       [...documents].sort(
-        (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
       ),
-    [documents]
+    [documents],
   );
 
   return (
@@ -421,9 +414,7 @@ export function DocumentsManager({
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       className={`relative space-y-4 rounded-md transition-colors ${
-        isDragging
-          ? 'bg-blue-50/40 outline outline-2 outline-dashed outline-blue-500/70'
-          : ''
+        isDragging ? 'bg-blue-50/40 outline outline-2 outline-dashed outline-blue-500/70' : ''
       }`}
     >
       {isDragging && (
@@ -445,11 +436,7 @@ export function DocumentsManager({
       </div>
 
       {!showForm && availableTypes.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="btn-secondary w-full"
-        >
+        <button type="button" onClick={() => setShowForm(true)} className="btn-secondary w-full">
           <Plus className="mr-2 h-4 w-4" />
           Ajouter un document
           <span className="ml-2 hidden text-[11px] font-normal text-zinc-400 sm:inline">
@@ -460,8 +447,8 @@ export function DocumentsManager({
 
       {availableTypes.length === 0 && (
         <p className="rounded-md bg-blue-50 p-3 text-xs text-blue-800">
-          Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de
-          documents ».
+          Aucun type de document configuré pour ce scope. Ajoute-en via la page « Types de documents
+          ».
         </p>
       )}
 
@@ -493,10 +480,7 @@ export function DocumentsManager({
                   ...(grouped.has('__none__') ? ['__none__' as const] : []),
                 ];
                 return orderedKeys.map((key) => (
-                  <optgroup
-                    key={key}
-                    label={key === '__none__' ? 'Sans catégorie' : labelFor(key)}
-                  >
+                  <optgroup key={key} label={key === '__none__' ? 'Sans catégorie' : labelFor(key)}>
                     {grouped.get(key)!.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.label}

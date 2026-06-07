@@ -14,7 +14,7 @@ const lotStatusSchema = z.enum(['vacant', 'loue_annuel', 'loue_saisonnier', 'tra
 const surfaceSchema = z
   .preprocess(
     (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-    z.number().nonnegative().nullable()
+    z.number().nonnegative().nullable(),
   )
   .optional();
 
@@ -116,7 +116,7 @@ export async function deleteLotAction(formData: FormData): Promise<void> {
     const msg = e instanceof Error ? e.message : String(e);
     if (code === '23503' || /foreign key|violates/i.test(msg)) {
       throw new Error(
-        `Suppression impossible : ce lot est utilisé par une location ou un marché de travaux. Supprime d'abord ces dépendances.`
+        `Suppression impossible : ce lot est utilisé par une location ou un marché de travaux. Supprime d'abord ces dépendances.`,
       );
     }
     throw new Error(msg || 'Erreur lors de la suppression du lot.');
@@ -176,7 +176,7 @@ const roomCreateSchema = z.object({
   surfaceM2: z
     .preprocess(
       (v) => (v === '' || v == null ? null : Number(v)),
-      z.number().nonnegative().nullable()
+      z.number().nonnegative().nullable(),
     )
     .optional(),
 });
@@ -274,7 +274,7 @@ export async function deleteLotDocumentAction(formData: FormData): Promise<void>
 }
 
 export async function getLotDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

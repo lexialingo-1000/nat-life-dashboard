@@ -80,11 +80,7 @@ const columns: ColumnDef<LotMarcheRow>[] = [
     header: 'Statut',
     cell: ({ getValue }) => {
       const s = String(getValue());
-      return (
-        <span className={STATUS_BADGE[s] ?? 'badge-neutral'}>
-          {STATUS_LABELS[s] ?? s}
-        </span>
-      );
+      return <span className={STATUS_BADGE[s] ?? 'badge-neutral'}>{STATUS_LABELS[s] ?? s}</span>;
     },
     filterFn: (row, _id, value) => {
       const v = String(value).toLowerCase().trim();

@@ -4,11 +4,7 @@ interface SearchParams {
   returnTo?: string;
 }
 
-export default function NewClientPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default function NewClientPage({ searchParams }: { searchParams: SearchParams }) {
   const returnTo = searchParams.returnTo ?? '';
   const fromLocations = returnTo === '/locations';
   const cancelHref = fromLocations ? '/locations' : '/clients';
@@ -84,7 +80,9 @@ export default function NewClientPage({
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <a href={cancelHref} className="btn-secondary">Annuler</a>
+          <a href={cancelHref} className="btn-secondary">
+            Annuler
+          </a>
           <button type="submit" className="btn-primary">
             {fromLocations ? 'Créer le locataire' : 'Créer le client'}
           </button>

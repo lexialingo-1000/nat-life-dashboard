@@ -32,11 +32,7 @@ interface SearchParams {
   returnTo?: string;
 }
 
-export default async function NewTachePage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function NewTachePage({ searchParams }: { searchParams: SearchParams }) {
   const { lotId, supplierId, propertyId } = searchParams;
   const returnTo = searchParams.returnTo ?? '/biens';
 
@@ -66,13 +62,13 @@ export default async function NewTachePage({
       .from(marchesTravaux)
       .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId));
     if (supplierId) {
-      marcheRows = await base.where(eq(marchesTravaux.supplierId, supplierId)).orderBy(
-        asc(marchesTravaux.name)
-      );
+      marcheRows = await base
+        .where(eq(marchesTravaux.supplierId, supplierId))
+        .orderBy(asc(marchesTravaux.name));
     } else if (propertyId) {
-      marcheRows = await base.where(eq(marchesTravaux.propertyId, propertyId)).orderBy(
-        asc(marchesTravaux.name)
-      );
+      marcheRows = await base
+        .where(eq(marchesTravaux.propertyId, propertyId))
+        .orderBy(asc(marchesTravaux.name));
     } else {
       marcheRows = await base.orderBy(asc(marchesTravaux.name));
     }

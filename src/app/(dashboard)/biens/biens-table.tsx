@@ -75,7 +75,9 @@ const baseColumns: ColumnDef<BienLotRow>[] = [
       );
     },
     sortingFn: (a, b) =>
-      (a.original.lotName ?? '').localeCompare(b.original.lotName ?? '', 'fr', { sensitivity: 'base' }),
+      (a.original.lotName ?? '').localeCompare(b.original.lotName ?? '', 'fr', {
+        sensitivity: 'base',
+      }),
   },
   {
     accessorKey: 'propertyName',
@@ -125,9 +127,7 @@ const baseColumns: ColumnDef<BienLotRow>[] = [
     header: 'Surface',
     cell: ({ getValue }) => {
       const v = getValue() as string | null;
-      return (
-        <span className="tnum text-[12px] text-zinc-600">{v ? `${v} m²` : '—'}</span>
-      );
+      return <span className="tnum text-[12px] text-zinc-600">{v ? `${v} m²` : '—'}</span>;
     },
   },
   {
@@ -136,11 +136,7 @@ const baseColumns: ColumnDef<BienLotRow>[] = [
     cell: ({ getValue }) => {
       const v = getValue() as string | null;
       if (!v) return <span className="text-[12px] text-zinc-300">—</span>;
-      return (
-        <span className={STATUS_BADGES[v] ?? 'badge-neutral'}>
-          {STATUS_LABELS[v] ?? v}
-        </span>
-      );
+      return <span className={STATUS_BADGES[v] ?? 'badge-neutral'}>{STATUS_LABELS[v] ?? v}</span>;
     },
   },
 ];

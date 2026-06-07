@@ -13,7 +13,7 @@ const KIND_VALUES = ['devis', 'commande', 'facture'] as const;
 const moneyField = z
   .preprocess(
     (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.'))),
-    z.number().nonnegative().nullable()
+    z.number().nonnegative().nullable(),
   )
   .optional();
 
@@ -49,7 +49,7 @@ function toNumericString(n: number | null | undefined): string | null {
 function enforceParentByKind(
   kind: (typeof KIND_VALUES)[number],
   parentDevisId: string | null | undefined,
-  parentCommandeId: string | null | undefined
+  parentCommandeId: string | null | undefined,
 ): { parentDevisId: string | null; parentCommandeId: string | null } {
   if (kind === 'devis') {
     return { parentDevisId: null, parentCommandeId: null };
@@ -185,7 +185,7 @@ export async function updateAccountingDocAction(formData: FormData): Promise<voi
 }
 
 export async function getAccountingDocUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
 import { suppliers, supplierTypes } from '@/db/schema';
-import { and, asc, eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
@@ -35,7 +35,8 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
           <span className="display-serif">Modifier le fournisseur</span>
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">
-          Mettre à jour les informations générales. Les contacts et documents se gèrent depuis la fiche.
+          Mettre à jour les informations générales. Les contacts et documents se gèrent depuis la
+          fiche.
         </p>
       </header>
 
@@ -71,12 +72,7 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">Email</label>
-            <input
-              name="email"
-              type="email"
-              defaultValue={s.email ?? ''}
-              className="input mt-1"
-            />
+            <input name="email" type="email" defaultValue={s.email ?? ''} className="input mt-1" />
           </div>
           <div>
             <label className="block text-sm font-medium">Téléphone</label>
@@ -87,11 +83,7 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">Type de fournisseur</label>
-            <select
-              name="typeId"
-              defaultValue={s.typeId ?? ''}
-              className="input mt-1"
-            >
+            <select name="typeId" defaultValue={s.typeId ?? ''} className="input mt-1">
               <option value="">— Aucun —</option>
               {typeOptions.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -102,11 +94,7 @@ export default async function EditFournisseurPage({ params }: { params: { id: st
           </div>
           <div>
             <label className="block text-sm font-medium">Mode de facturation</label>
-            <select
-              name="invoicingType"
-              defaultValue={s.invoicingType}
-              className="input mt-1"
-            >
+            <select name="invoicingType" defaultValue={s.invoicingType} className="input mt-1">
               <option value="manual_upload">Upload manuel</option>
               <option value="email_forward">Email forwardé</option>
               <option value="pennylane">Pennylane (PA)</option>

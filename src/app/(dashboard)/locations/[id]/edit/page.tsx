@@ -11,11 +11,7 @@ import { LocationFormFields } from '../../location-form-fields';
 export const dynamic = 'force-dynamic';
 
 export default async function EditLocationPage({ params }: { params: { id: string } }) {
-  const rows = await db
-    .select()
-    .from(locations)
-    .where(eq(locations.id, params.id))
-    .limit(1);
+  const rows = await db.select().from(locations).where(eq(locations.id, params.id)).limit(1);
   if (rows.length === 0) notFound();
   const loc = rows[0];
 
@@ -43,10 +39,7 @@ export default async function EditLocationPage({ params }: { params: { id: strin
   }));
   const customerOptions = customerRows.map((c) => ({
     id: c.id,
-    label:
-      c.companyName ||
-      `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() ||
-      'client',
+    label: c.companyName || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'client',
     hint: c.email ?? undefined,
   }));
 

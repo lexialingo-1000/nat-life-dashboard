@@ -27,7 +27,8 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 // Detect UUID/CUID/numeric ID segments — hide them from breadcrumb (the H1 already
 // shows the entity name, repeating an opaque id adds noise).
-const ID_REGEX = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9]+|c[a-z0-9]{20,})$/i;
+const ID_REGEX =
+  /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9]+|c[a-z0-9]{20,})$/i;
 
 function labelFor(segment: string): string | null {
   if (ID_REGEX.test(segment)) return null;

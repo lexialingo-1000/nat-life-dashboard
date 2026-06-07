@@ -32,7 +32,12 @@ export default async function MarchesPage({
   let dbError: string | null = null;
   try {
     const rawSuppliers = await db
-      .select({ id: suppliers.id, companyName: suppliers.companyName, firstName: suppliers.firstName, lastName: suppliers.lastName })
+      .select({
+        id: suppliers.id,
+        companyName: suppliers.companyName,
+        firstName: suppliers.firstName,
+        lastName: suppliers.lastName,
+      })
       .from(suppliers)
       .orderBy(asc(suppliers.companyName));
     supplierList = rawSuppliers.map((s) => ({
@@ -180,15 +185,16 @@ export default async function MarchesPage({
       )}
 
       {dbError && (
-        <div className="card p-6 text-sm text-blue-700">
-          Connexion DB indisponible : {dbError}
-        </div>
+        <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
       )}
 
       {!dbError && rows.length === 0 && (
         <div className="card p-12 text-center text-sm text-zinc-500">
           Aucun marché pour l'instant. La création de marchés se fait depuis la fiche d'un{' '}
-          <Link href="/biens" className="text-blue-600 hover:underline">bien</Link>.
+          <Link href="/biens" className="text-blue-600 hover:underline">
+            bien
+          </Link>
+          .
         </div>
       )}
 

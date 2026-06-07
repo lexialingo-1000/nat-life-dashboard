@@ -2,7 +2,6 @@ import { db } from '@/db/client';
 import { properties, lots, suppliers, marcheTypes } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { createMarcheAction } from '@/app/(dashboard)/marches/actions';
 import { createSupplierInlineAction } from '@/app/(dashboard)/fournisseurs/actions';
@@ -39,8 +38,7 @@ export default async function NewMarchePage({ params }: { params: { id: string }
 
   const supplierOptions = supplierRows.map((s) => ({
     id: s.id,
-    label:
-      s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur',
+    label: s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() ?? 'Fournisseur',
   }));
 
   const marcheTypeRows = await db

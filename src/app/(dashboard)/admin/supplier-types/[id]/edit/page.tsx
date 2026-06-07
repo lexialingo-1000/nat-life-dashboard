@@ -41,7 +41,11 @@ export default async function EditSupplierTypePage({ params }: { params: { id: s
 
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Code (verrouillé)</label>
-          <input value={t.code} readOnly className="input mt-1 font-mono bg-zinc-50 text-zinc-500" />
+          <input
+            value={t.code}
+            readOnly
+            className="input mt-1 font-mono bg-zinc-50 text-zinc-500"
+          />
         </div>
 
         <div>
@@ -88,7 +92,9 @@ export default async function EditSupplierTypePage({ params }: { params: { id: s
             description={`Supprimer le type "${t.label}" ? Refusé si utilisé par au moins un fournisseur ou type de document.`}
           />
           <div className="flex gap-3">
-            <Link href="/admin/supplier-types" className="btn-secondary">Annuler</Link>
+            <Link href="/admin/supplier-types" className="btn-secondary">
+              Annuler
+            </Link>
             <button type="submit" className="btn-primary">
               <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
               Enregistrer

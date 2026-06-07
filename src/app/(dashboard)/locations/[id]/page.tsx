@@ -170,7 +170,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           </Row>
           <Row label="Date de début">{formatDate(loc.dateDebut)}</Row>
           <Row label="Date de fin">
-            {loc.dateFin ? formatDate(loc.dateFin) : <span className="italic text-zinc-400">en cours</span>}
+            {loc.dateFin ? (
+              formatDate(loc.dateFin)
+            ) : (
+              <span className="italic text-zinc-400">en cours</span>
+            )}
           </Row>
           <Row label="Bien">
             <Link href={`/biens/properties/${loc.propertyId}`} className="link-cell-soft">
@@ -232,7 +236,8 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={locationDocTypes}
@@ -329,8 +334,8 @@ function Kpi({
           variant === 'good'
             ? 'text-blue-700'
             : variant === 'warn'
-            ? 'text-zinc-500'
-            : 'text-zinc-900'
+              ? 'text-zinc-500'
+              : 'text-zinc-900'
         }`}
       >
         {value}

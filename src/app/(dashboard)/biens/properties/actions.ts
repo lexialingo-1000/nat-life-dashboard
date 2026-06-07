@@ -14,7 +14,14 @@ const propertyCreateSchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
   statut: z
-    .enum(['en_cours_acquisition', 'en_portefeuille', 'en_cours_de_vente', 'vendu', 'loue', 'vacant'])
+    .enum([
+      'en_cours_acquisition',
+      'en_portefeuille',
+      'en_cours_de_vente',
+      'vendu',
+      'loue',
+      'vacant',
+    ])
     .default('en_portefeuille'),
   address: z.string().optional().or(z.literal('')),
   city: z.string().optional().or(z.literal('')),
@@ -34,11 +41,32 @@ export async function createPropertyAction(formData: FormData): Promise<void> {
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
-  const { companyId, name, type, statut, address, city, postalCode, purchaseDate, purchasePrice, cadastre, notaireName, notaireEtude, notairePhone, notaireEmail, notes } = parsed.data;
+  const {
+    companyId,
+    name,
+    type,
+    statut,
+    address,
+    city,
+    postalCode,
+    purchaseDate,
+    purchasePrice,
+    cadastre,
+    notaireName,
+    notaireEtude,
+    notairePhone,
+    notaireEmail,
+    notes,
+  } = parsed.data;
 
   const notaire =
     notaireName || notaireEtude || notairePhone || notaireEmail
-      ? { name: notaireName || undefined, etude: notaireEtude || undefined, phone: notairePhone || undefined, email: notaireEmail || undefined }
+      ? {
+          name: notaireName || undefined,
+          etude: notaireEtude || undefined,
+          phone: notairePhone || undefined,
+          email: notaireEmail || undefined,
+        }
       : null;
 
   const inserted = await db
@@ -68,7 +96,14 @@ const propertySchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(['appartement', 'maison', 'garage', 'immeuble', 'terrain']),
   statut: z
-    .enum(['en_cours_acquisition', 'en_portefeuille', 'en_cours_de_vente', 'vendu', 'loue', 'vacant'])
+    .enum([
+      'en_cours_acquisition',
+      'en_portefeuille',
+      'en_cours_de_vente',
+      'vendu',
+      'loue',
+      'vacant',
+    ])
     .default('en_portefeuille'),
   address: z.string().optional().or(z.literal('')),
   city: z.string().optional().or(z.literal('')),
@@ -88,7 +123,17 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
-  const { id, statut, notaireName, notaireEtude, notairePhone, notaireEmail, purchasePrice, purchaseDate, ...rest } = parsed.data;
+  const {
+    id,
+    statut,
+    notaireName,
+    notaireEtude,
+    notairePhone,
+    notaireEmail,
+    purchasePrice,
+    purchaseDate,
+    ...rest
+  } = parsed.data;
 
   const notaire =
     notaireName || notaireEtude || notairePhone || notaireEmail
@@ -121,9 +166,7 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
   redirect(`/biens/properties/${id}`);
 }
 
-export async function deletePropertyAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deletePropertyAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -215,7 +258,7 @@ export async function deletePropertyDocumentAction(formData: FormData): Promise<
 }
 
 export async function getPropertyDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };

@@ -23,8 +23,13 @@ export function SupplierTypesSortableList({ rows }: Props) {
   const [isPending, startTransition] = useTransition();
   const dragIndex = useRef<number | null>(null);
 
-  const handleDragStart = (i: number) => { dragIndex.current = i; };
-  const handleDragOver = (e: React.DragEvent, i: number) => { e.preventDefault(); setDragOverIndex(i); };
+  const handleDragStart = (i: number) => {
+    dragIndex.current = i;
+  };
+  const handleDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    setDragOverIndex(i);
+  };
   const handleDragLeave = () => setDragOverIndex(null);
   const handleDrop = (targetIndex: number) => {
     setDragOverIndex(null);
@@ -39,7 +44,10 @@ export function SupplierTypesSortableList({ rows }: Props) {
       await reorderSupplierTypesAction(next.map((r) => r.id));
     });
   };
-  const handleDragEnd = () => { setDragOverIndex(null); dragIndex.current = null; };
+  const handleDragEnd = () => {
+    setDragOverIndex(null);
+    dragIndex.current = null;
+  };
 
   return (
     <tbody className={isPending ? 'opacity-60' : ''}>
@@ -86,7 +94,10 @@ export function SupplierTypesSortableList({ rows }: Props) {
               </Link>
               <form action={toggleSupplierTypeActiveAction} className="inline-block">
                 <input type="hidden" name="id" value={t.id} />
-                <button type="submit" className="text-[12px] text-zinc-500 transition hover:text-blue-700">
+                <button
+                  type="submit"
+                  className="text-[12px] text-zinc-500 transition hover:text-blue-700"
+                >
                   {t.isActive ? 'Désactiver' : 'Réactiver'}
                 </button>
               </form>

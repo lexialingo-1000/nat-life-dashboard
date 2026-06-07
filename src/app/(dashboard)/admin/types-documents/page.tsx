@@ -20,8 +20,14 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 const SCOPE_KEYS = Object.keys({
-  company: 1, supplier: 1, customer: 1, property: 1,
-  lot: 1, marche: 1, marche_lot: 1, location: 1,
+  company: 1,
+  supplier: 1,
+  customer: 1,
+  property: 1,
+  lot: 1,
+  marche: 1,
+  marche_lot: 1,
+  location: 1,
 });
 
 export default async function TypesDocumentsPage({
@@ -29,7 +35,9 @@ export default async function TypesDocumentsPage({
 }: {
   searchParams: { scope?: string };
 }) {
-  const activeScope = SCOPE_KEYS.includes(searchParams.scope ?? '') ? searchParams.scope : undefined;
+  const activeScope = SCOPE_KEYS.includes(searchParams.scope ?? '')
+    ? searchParams.scope
+    : undefined;
 
   let rows: any[] = [];
   let categories: { id: string; label: string }[] = [];
@@ -39,7 +47,9 @@ export default async function TypesDocumentsPage({
   try {
     const base = db.select().from(documentTypes);
     const filtered = activeScope
-      ? base.where(eq(documentTypes.scope, activeScope as any))
+      ? base.where(
+          eq(documentTypes.scope, activeScope as (typeof documentTypes.$inferSelect)['scope']),
+        )
       : base;
     rows = await filtered.orderBy(
       asc(documentTypes.scope),
@@ -81,10 +91,10 @@ export default async function TypesDocumentsPage({
           <span className="ml-2 font-mono text-[13px] tnum text-zinc-400">{rows.length}</span>
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-zinc-500">
-          Catalogue extensible — ajoute, désactive ou crée des types pour les sociétés, fournisseurs,
-          clients, biens et marchés. Les types marqués obligatoires alimentent le widget « Documents
-          requis manquants » sur la fiche concernée. Les types avec date d'expiration alimentent le
-          widget de vigilance.
+          Catalogue extensible — ajoute, désactive ou crée des types pour les sociétés,
+          fournisseurs, clients, biens et marchés. Les types marqués obligatoires alimentent le
+          widget « Documents requis manquants » sur la fiche concernée. Les types avec date
+          d'expiration alimentent le widget de vigilance.
         </p>
       </header>
 
@@ -99,11 +109,7 @@ export default async function TypesDocumentsPage({
           <label className="text-[12px] font-medium uppercase tracking-[0.12em] text-zinc-500">
             Scope
           </label>
-          <select
-            name="scope"
-            defaultValue={activeScope ?? ''}
-            className="input w-44 text-[13px]"
-          >
+          <select name="scope" defaultValue={activeScope ?? ''} className="input w-44 text-[13px]">
             <option value="">Tous les scopes</option>
             {Object.entries(SCOPE_LABELS).map(([key, label]) => (
               <option key={key} value={key}>
@@ -115,7 +121,10 @@ export default async function TypesDocumentsPage({
             Filtrer
           </button>
           {activeScope && (
-            <Link href="/admin/types-documents" className="text-[12px] text-zinc-400 hover:text-zinc-700">
+            <Link
+              href="/admin/types-documents"
+              className="text-[12px] text-zinc-400 hover:text-zinc-700"
+            >
               Réinitialiser
             </Link>
           )}

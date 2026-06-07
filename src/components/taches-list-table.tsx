@@ -1,17 +1,8 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import {
-  Calendar,
-  MapPin,
-  Pencil,
-  Camera,
-  ArrowUp,
-  ArrowDown,
-  Filter,
-  X,
-} from 'lucide-react';
+import { Calendar, MapPin, Pencil, Camera, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 
@@ -71,14 +62,7 @@ interface Props {
   firstColumn?: 'marche' | 'fournisseur';
 }
 
-type SortKey =
-  | 'marche'
-  | 'sousLot'
-  | 'title'
-  | 'status'
-  | 'lot'
-  | 'emplacement'
-  | 'dueDate';
+type SortKey = 'marche' | 'sousLot' | 'title' | 'status' | 'lot' | 'emplacement' | 'dueDate';
 type SortDir = 'asc' | 'desc';
 
 function formatDateFr(value: string | null): string {
@@ -123,9 +107,7 @@ export function TachesListTable({
     dueDate: '',
   });
   // V20 §5 — filtre statut multi (cases à cocher). Défaut : tout sauf "Terminé".
-  const [statusSet, setStatusSet] = useState<Set<string>>(
-    () => new Set(DEFAULT_VISIBLE_STATUS)
-  );
+  const [statusSet, setStatusSet] = useState<Set<string>>(() => new Set(DEFAULT_VISIBLE_STATUS));
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: 'dueDate',
     dir: 'asc',
@@ -144,9 +126,7 @@ export function TachesListTable({
         if (!norm(lotLabel).includes(norm(filters.lot))) return false;
       }
       if (filters.emplacement) {
-        const empLabel = [r.levelName, r.roomName, r.locationDescription]
-          .filter(Boolean)
-          .join(' ');
+        const empLabel = [r.levelName, r.roomName, r.locationDescription].filter(Boolean).join(' ');
         if (!norm(empLabel).includes(norm(filters.emplacement))) return false;
       }
       if (filters.dueDate) {
@@ -245,15 +225,10 @@ export function TachesListTable({
   };
 
   const statusFilterActive = statusSet.size !== ALL_STATUS_VALUES.length;
-  const hasActiveFilters =
-    Object.values(filters).some((v) => v !== '') || statusFilterActive;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== '') || statusFilterActive;
 
   if (rows.length === 0) {
-    return (
-      <div className="card p-8 text-center text-sm text-zinc-500">
-        Aucune tâche.
-      </div>
-    );
+    return <div className="card p-8 text-center text-sm text-zinc-500">Aucune tâche.</div>;
   }
 
   const colCount = (hideLotColumn ? 6 : 7) + 2; // +photos +edit
@@ -358,10 +333,7 @@ export function TachesListTable({
                     </label>
                   ))}
                   <div className="status-filter-actions">
-                    <button
-                      type="button"
-                      onClick={() => setStatusSet(new Set(ALL_STATUS_VALUES))}
-                    >
+                    <button type="button" onClick={() => setStatusSet(new Set(ALL_STATUS_VALUES))}>
                       Tout
                     </button>
                     <button type="button" onClick={() => setStatusSet(new Set())}>
@@ -406,10 +378,7 @@ export function TachesListTable({
         <tbody className="divide-y divide-zinc-100">
           {sorted.length === 0 ? (
             <tr>
-              <td
-                colSpan={colCount}
-                className="px-3 py-8 text-center text-sm text-zinc-500"
-              >
+              <td colSpan={colCount} className="px-3 py-8 text-center text-sm text-zinc-500">
                 Aucune tâche ne correspond aux filtres.
               </td>
             </tr>
@@ -530,11 +499,12 @@ function Th({
         className="inline-flex items-center gap-1 hover:text-zinc-900"
       >
         {children}
-        {active && (sort.dir === 'asc' ? (
-          <ArrowUp className="h-3 w-3" strokeWidth={2} />
-        ) : (
-          <ArrowDown className="h-3 w-3" strokeWidth={2} />
-        ))}
+        {active &&
+          (sort.dir === 'asc' ? (
+            <ArrowUp className="h-3 w-3" strokeWidth={2} />
+          ) : (
+            <ArrowDown className="h-3 w-3" strokeWidth={2} />
+          ))}
       </button>
     </th>
   );

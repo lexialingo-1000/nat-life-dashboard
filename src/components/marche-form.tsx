@@ -58,7 +58,7 @@ interface Props {
   /** Server action pour créer un fournisseur à la volée depuis le combobox.
    * Si fourni, expose un bouton "+ Créer un fournisseur" dans la liste déroulante. */
   createSupplierAction?: (
-    formData: FormData
+    formData: FormData,
   ) => Promise<{ id: string; label: string } | { error: string }>;
 }
 
@@ -76,7 +76,7 @@ export function MarcheForm({
   createSupplierAction,
 }: Props) {
   const [selectedLotIds, setSelectedLotIds] = useState<Set<string>>(
-    new Set(defaultValues.lotIds ?? [])
+    new Set(defaultValues.lotIds ?? []),
   );
 
   const toggleLot = (lotId: string) => {
@@ -252,8 +252,8 @@ export function MarcheForm({
           </ul>
         )}
         <p className="mt-2 text-xs text-zinc-500">
-          Laisse vide pour un marché de parties communes (toiture, façade, ascenseur…). Coche un
-          ou plusieurs lots si les travaux sont localisés.
+          Laisse vide pour un marché de parties communes (toiture, façade, ascenseur…). Coche un ou
+          plusieurs lots si les travaux sont localisés.
         </p>
       </div>
 

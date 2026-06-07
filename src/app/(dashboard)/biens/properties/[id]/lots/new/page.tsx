@@ -9,7 +9,10 @@ import { createLotAction } from '@/app/(dashboard)/biens/actions';
 
 export const dynamic = 'force-dynamic';
 
-const TYPE_OPTIONS: { value: 'appartement' | 'maison' | 'garage' | 'immeuble' | 'terrain'; label: string }[] = [
+const TYPE_OPTIONS: {
+  value: 'appartement' | 'maison' | 'garage' | 'immeuble' | 'terrain';
+  label: string;
+}[] = [
   { value: 'appartement', label: 'Appartement' },
   { value: 'maison', label: 'Maison' },
   { value: 'garage', label: 'Garage' },
@@ -17,7 +20,10 @@ const TYPE_OPTIONS: { value: 'appartement' | 'maison' | 'garage' | 'immeuble' | 
   { value: 'terrain', label: 'Terrain' },
 ];
 
-const STATUS_OPTIONS: { value: 'vacant' | 'loue_annuel' | 'loue_saisonnier' | 'travaux'; label: string }[] = [
+const STATUS_OPTIONS: {
+  value: 'vacant' | 'loue_annuel' | 'loue_saisonnier' | 'travaux';
+  label: string;
+}[] = [
   { value: 'vacant', label: 'Vacant' },
   { value: 'loue_annuel', label: 'Loué annuel' },
   { value: 'loue_saisonnier', label: 'Loué saisonnier' },
@@ -67,9 +73,7 @@ export default async function NewLotPage({ params }: { params: { id: string } })
             className="input mt-1"
             placeholder="RDC Appartement, Garage Bocage…"
           />
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Identifie ce lot au sein de l'immeuble.
-          </p>
+          <p className="mt-1 text-[11px] text-zinc-500">Identifie ce lot au sein de l'immeuble.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

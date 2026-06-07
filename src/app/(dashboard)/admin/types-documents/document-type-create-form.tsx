@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { Plus, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import {
-  createDocumentTypeAction,
-  type CreateDocumentTypeState,
-} from './actions';
+import { createDocumentTypeAction, type CreateDocumentTypeState } from './actions';
 
 const SCOPE_LABELS: Record<string, string> = {
   company: 'Société',
@@ -82,24 +79,14 @@ export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Code (slug)</label>
-          <input
-            name="code"
-            required
-            className="input mt-1 font-mono"
-            placeholder="qualibat"
-          />
+          <input name="code" required className="input mt-1 font-mono" placeholder="qualibat" />
           <p className="mt-1 text-[11px] text-zinc-500">
             Minuscules, chiffres, underscores uniquement.
           </p>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Libellé</label>
-          <input
-            name="label"
-            required
-            className="input mt-1"
-            placeholder="Attestation Qualibat"
-          />
+          <input name="label" required className="input mt-1" placeholder="Attestation Qualibat" />
         </div>
       </div>
 
@@ -133,7 +120,8 @@ export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
             ))}
           </select>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Paramétrable via <span className="font-mono">Paramètres → Catégories de documents</span>.
+            Paramétrable via <span className="font-mono">Paramètres → Catégories de documents</span>
+            .
           </p>
         </div>
       </div>
@@ -143,21 +131,29 @@ export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
           <label className="block text-[12px] font-medium text-zinc-700">
             Type de locataire (scope client uniquement)
           </label>
-          <select name="appliesToTenantType" className="input mt-1" defaultValue="" disabled={scope !== 'customer'}>
+          <select
+            name="appliesToTenantType"
+            className="input mt-1"
+            defaultValue=""
+            disabled={scope !== 'customer'}
+          >
             <option value="">— Non applicable / tous —</option>
             <option value="LT">Locataires LT (long terme)</option>
             <option value="CT">Locataires CT (court terme)</option>
             <option value="all">Tous les locataires</option>
           </select>
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Ignoré si le scope n'est pas « Client ».
-          </p>
+          <p className="mt-1 text-[11px] text-zinc-500">Ignoré si le scope n'est pas « Client ».</p>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">
             Type de fournisseur (scope fournisseur uniquement)
           </label>
-          <select name="supplierTypeId" className="input mt-1" defaultValue="" disabled={scope !== 'supplier'}>
+          <select
+            name="supplierTypeId"
+            className="input mt-1"
+            defaultValue=""
+            disabled={scope !== 'supplier'}
+          >
             <option value="">— Tous les fournisseurs —</option>
             {supplierTypes.map((st) => (
               <option key={st.id} value={st.id}>

@@ -27,13 +27,7 @@ interface Props {
   createAction?: (formData: FormData) => Promise<CreateResult>;
   /** Champs à demander dans le mini-form de création. Default = name+contact. */
   createFields?: Array<
-    | 'companyName'
-    | 'firstName'
-    | 'lastName'
-    | 'email'
-    | 'phone'
-    | 'name'
-    | 'description'
+    'companyName' | 'firstName' | 'lastName' | 'email' | 'phone' | 'name' | 'description'
   >;
   /** Mode requis (l'input caché doit avoir une valeur). */
   required?: boolean;
@@ -92,9 +86,7 @@ export function EntityCombobox({
     const q = search.trim().toLowerCase();
     if (!q) return options;
     return options.filter(
-      (o) =>
-        o.label.toLowerCase().includes(q) ||
-        (o.hint ?? '').toLowerCase().includes(q)
+      (o) => o.label.toLowerCase().includes(q) || (o.hint ?? '').toLowerCase().includes(q),
     );
   }, [options, search]);
 
@@ -197,9 +189,7 @@ export function EntityCombobox({
                   }`}
                 >
                   <span>{o.label}</span>
-                  {o.hint && (
-                    <span className="ml-2 text-[11px] text-zinc-400">{o.hint}</span>
-                  )}
+                  {o.hint && <span className="ml-2 text-[11px] text-zinc-400">{o.hint}</span>}
                 </button>
               </li>
             ))}
@@ -207,115 +197,118 @@ export function EntityCombobox({
         </div>
       )}
 
-      {showCreate && createAction && mounted && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4"
-          onClick={() => !creating && setShowCreate(false)}
-        >
-          <form
-            onSubmit={handleCreate}
-            onClick={(e) => e.stopPropagation()}
-            className="card w-full max-w-md space-y-3 p-6"
+      {showCreate &&
+        createAction &&
+        mounted &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4"
+            onClick={() => !creating && setShowCreate(false)}
           >
-            <h3 className="text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-700">
-              {createLabel.replace(/^\+\s*/, '')}
-            </h3>
+            <form
+              onSubmit={handleCreate}
+              onClick={(e) => e.stopPropagation()}
+              className="card w-full max-w-md space-y-3 p-6"
+            >
+              <h3 className="text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-700">
+                {createLabel.replace(/^\+\s*/, '')}
+              </h3>
 
-            {createFields.includes('name') && (
-              <div>
-                <label className="block text-[11px] font-medium text-zinc-600">Nom *</label>
-                <input
-                  name="name"
-                  required
-                  className="input mt-1"
-                  placeholder="Ex : Réfection toiture Brunet"
-                />
-              </div>
-            )}
-
-            {createFields.includes('description') && (
-              <div>
-                <label className="block text-[11px] font-medium text-zinc-600">Description</label>
-                <textarea
-                  name="description"
-                  rows={2}
-                  className="input mt-1"
-                  placeholder="(optionnel)"
-                />
-              </div>
-            )}
-
-            {createFields.includes('companyName') && (
-              <div>
-                <label className="block text-[11px] font-medium text-zinc-600">
-                  Raison sociale
-                </label>
-                <input
-                  name="companyName"
-                  className="input mt-1"
-                  placeholder="(optionnel si prénom/nom renseignés)"
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              {createFields.includes('firstName') && (
+              {createFields.includes('name') && (
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-600">Prénom</label>
-                  <input name="firstName" className="input mt-1" />
+                  <label className="block text-[11px] font-medium text-zinc-600">Nom *</label>
+                  <input
+                    name="name"
+                    required
+                    className="input mt-1"
+                    placeholder="Ex : Réfection toiture Brunet"
+                  />
                 </div>
               )}
-              {createFields.includes('lastName') && (
+
+              {createFields.includes('description') && (
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-600">Nom</label>
-                  <input name="lastName" className="input mt-1" />
+                  <label className="block text-[11px] font-medium text-zinc-600">Description</label>
+                  <textarea
+                    name="description"
+                    rows={2}
+                    className="input mt-1"
+                    placeholder="(optionnel)"
+                  />
                 </div>
               )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {createFields.includes('email') && (
+              {createFields.includes('companyName') && (
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-600">Email</label>
-                  <input type="email" name="email" className="input mt-1" />
+                  <label className="block text-[11px] font-medium text-zinc-600">
+                    Raison sociale
+                  </label>
+                  <input
+                    name="companyName"
+                    className="input mt-1"
+                    placeholder="(optionnel si prénom/nom renseignés)"
+                  />
                 </div>
               )}
-              {createFields.includes('phone') && (
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-600">Téléphone</label>
-                  <input name="phone" className="input mt-1" />
-                </div>
-              )}
-            </div>
 
-            {createError && (
-              <p className="rounded bg-red-50 p-2 text-[12px] text-red-800">{createError}</p>
-            )}
-
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => !creating && setShowCreate(false)}
-                disabled={creating}
-                className="btn-secondary"
-              >
-                Annuler
-              </button>
-              <button type="submit" disabled={creating} className="btn-primary">
-                {creating ? (
-                  <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    Création…
-                  </>
-                ) : (
-                  'Créer et sélectionner'
+              <div className="grid grid-cols-2 gap-3">
+                {createFields.includes('firstName') && (
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600">Prénom</label>
+                    <input name="firstName" className="input mt-1" />
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
+                {createFields.includes('lastName') && (
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600">Nom</label>
+                    <input name="lastName" className="input mt-1" />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {createFields.includes('email') && (
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600">Email</label>
+                    <input type="email" name="email" className="input mt-1" />
+                  </div>
+                )}
+                {createFields.includes('phone') && (
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600">Téléphone</label>
+                    <input name="phone" className="input mt-1" />
+                  </div>
+                )}
+              </div>
+
+              {createError && (
+                <p className="rounded bg-red-50 p-2 text-[12px] text-red-800">{createError}</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => !creating && setShowCreate(false)}
+                  disabled={creating}
+                  className="btn-secondary"
+                >
+                  Annuler
+                </button>
+                <button type="submit" disabled={creating} className="btn-primary">
+                  {creating ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Création…
+                    </>
+                  ) : (
+                    'Créer et sélectionner'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

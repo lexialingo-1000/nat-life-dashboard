@@ -1,6 +1,7 @@
 'use server';
 
 import { getMinio, getPresignedDownloadUrl, BUCKET } from './minio';
+import { logger } from '@/lib/logger';
 
 /**
  * Génère une URL signée GET pour télécharger un document.
@@ -17,6 +18,6 @@ export async function deleteObject(storageKey: string): Promise<void> {
   try {
     await getMinio().removeObject(BUCKET, storageKey);
   } catch (e) {
-    console.warn(`[minio] removeObject ${storageKey} failed:`, e);
+    logger.warn(`[minio] removeObject ${storageKey} failed:`, e);
   }
 }

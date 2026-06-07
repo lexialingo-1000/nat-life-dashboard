@@ -65,6 +65,9 @@ export async function getPresignedUploadUrl(key: string, expiresInSeconds = 600)
 /**
  * Génère une URL signée pour télécharger un fichier (GET).
  */
-export async function getPresignedDownloadUrl(key: string, expiresInSeconds = 3600): Promise<string> {
+export async function getPresignedDownloadUrl(
+  key: string,
+  expiresInSeconds = 3600,
+): Promise<string> {
   return getMinio().presignedGetObject(BUCKET, key, expiresInSeconds);
 }

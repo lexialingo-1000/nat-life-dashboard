@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, boolean, integer, timestamp, varchar, unique } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  boolean,
+  integer,
+  timestamp,
+  varchar,
+  unique,
+} from 'drizzle-orm/pg-core';
 import { documentScopeEnum, documentCategoryEnum } from './enums';
 
 export const documentTypes = pgTable(
@@ -25,7 +34,7 @@ export const documentTypes = pgTable(
   },
   (table) => ({
     codeScopeUnique: unique('document_types_code_scope_unique').on(table.code, table.scope),
-  })
+  }),
 );
 
 export type DocumentType = typeof documentTypes.$inferSelect;

@@ -164,7 +164,9 @@ export function TachePhotosDialog({ tacheId, tacheTitle, photos: initialPhotos, 
               <span>
                 <strong className="text-zinc-900">Cliquer pour uploader</strong> ou glisser-déposer
               </span>
-              <span className="text-[11px] text-zinc-400">JPG / PNG / HEIC — plusieurs fichiers OK</span>
+              <span className="text-[11px] text-zinc-400">
+                JPG / PNG / HEIC — plusieurs fichiers OK
+              </span>
             </>
           )}
           <input
@@ -186,7 +188,9 @@ export function TachePhotosDialog({ tacheId, tacheTitle, photos: initialPhotos, 
         {/* Galerie */}
         <div className="mt-4">
           {photos.length === 0 ? (
-            <p className="py-4 text-center text-[13px] text-zinc-400">Aucune photo pour l'instant.</p>
+            <p className="py-4 text-center text-[13px] text-zinc-400">
+              Aucune photo pour l'instant.
+            </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {photos.map((key) => (
@@ -202,7 +206,7 @@ export function TachePhotosDialog({ tacheId, tacheTitle, photos: initialPhotos, 
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 

@@ -120,8 +120,8 @@ export default async function NewTachePage({
           <span className="display-serif">Nouvelle tâche</span>
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">
-          Tâche concrète à exécuter dans le cadre du sous-lot. Photos, contact et emplacement
-          précis renseignables.
+          Tâche concrète à exécuter dans le cadre du sous-lot. Photos, contact et emplacement précis
+          renseignables.
         </p>
       </header>
 

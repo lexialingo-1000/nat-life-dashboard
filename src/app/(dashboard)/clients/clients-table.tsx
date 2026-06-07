@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -52,7 +51,8 @@ const baseColumns: ColumnDef<ClientRow>[] = [
       if (!v) return true;
       const t = row.original.tenantType;
       if (v === 'lt' || 'long terme'.startsWith(v) || 'bail'.startsWith(v)) return t === 'LT';
-      if (v === 'ct' || 'court terme'.startsWith(v) || 'saisonnier'.startsWith(v)) return t === 'CT';
+      if (v === 'ct' || 'court terme'.startsWith(v) || 'saisonnier'.startsWith(v))
+        return t === 'CT';
       if ('b2b'.startsWith(v) || v === 'aucun' || v === '—') return t === null;
       return true;
     },
@@ -109,7 +109,6 @@ interface Props {
 }
 
 export function ClientsTable({ rows, deleteAction }: Props) {
-  const router = useRouter();
   const columns = useMemo<ColumnDef<ClientRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -136,13 +135,5 @@ export function ClientsTable({ rows, deleteAction }: Props) {
     ];
   }, [deleteAction]);
 
-  return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      emptyMessage="Aucun client."
-      enableSelection
-      onRowClick={(r) => router.push(`/clients/${r.id}`)}
-    />
-  );
+  return <DataTable columns={columns} data={rows} emptyMessage="Aucun client." enableSelection />;
 }

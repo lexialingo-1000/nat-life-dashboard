@@ -6,18 +6,11 @@ import Link from 'next/link';
 import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { DeleteButton } from '@/components/delete-button';
-import {
-  updateDocumentCategoryAction,
-  deleteDocumentCategoryAction,
-} from '../../actions';
+import { updateDocumentCategoryAction, deleteDocumentCategoryAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditDocumentCategoryPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditDocumentCategoryPage({ params }: { params: { id: string } }) {
   const rows = await db
     .select()
     .from(documentCategories)
@@ -44,7 +37,11 @@ export default async function EditDocumentCategoryPage({
 
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Code (verrouillé)</label>
-          <input value={t.code} readOnly className="input mt-1 font-mono bg-zinc-50 text-zinc-500" />
+          <input
+            value={t.code}
+            readOnly
+            className="input mt-1 font-mono bg-zinc-50 text-zinc-500"
+          />
         </div>
 
         <div>
@@ -91,7 +88,9 @@ export default async function EditDocumentCategoryPage({
             description={`Supprimer la catégorie "${t.label}" ? Refusé si utilisée par au moins un type de document.`}
           />
           <div className="flex gap-3">
-            <Link href="/admin/document-categories" className="btn-secondary">Annuler</Link>
+            <Link href="/admin/document-categories" className="btn-secondary">
+              Annuler
+            </Link>
             <button type="submit" className="btn-primary">
               <Save className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
               Enregistrer

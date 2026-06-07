@@ -12,9 +12,15 @@ function SubmitButton() {
   return (
     <button type="submit" disabled={pending} className="btn-primary">
       {pending ? (
-        <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Création…</>
+        <>
+          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          Création…
+        </>
       ) : (
-        <><Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />Créer le type</>
+        <>
+          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+          Créer le type
+        </>
       )}
     </button>
   );
@@ -49,7 +55,9 @@ export function SupplierTypeCreateForm() {
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Code (slug)</label>
           <input name="code" required className="input mt-1 font-mono" placeholder="huissier" />
-          <p className="mt-1 text-[11px] text-zinc-500">Minuscules, chiffres, underscores uniquement.</p>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Minuscules, chiffres, underscores uniquement.
+          </p>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Libellé</label>

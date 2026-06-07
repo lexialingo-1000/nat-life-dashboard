@@ -1,10 +1,18 @@
 'use server';
 
 import { db } from '@/db/client';
-import { marchesTravaux, marcheLotAffectations, marcheDocuments, marcheSousLots, marcheTaches, suppliers } from '@/db/schema';
+import {
+  marchesTravaux,
+  marcheLotAffectations,
+  marcheDocuments,
+  marcheSousLots,
+  marcheTaches,
+  suppliers,
+} from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -28,13 +36,13 @@ const marcheBaseSchema = z.object({
   amountHt: z
     .preprocess(
       (v) => (v === '' || v == null ? null : Number(v)),
-      z.number().nonnegative().nullable()
+      z.number().nonnegative().nullable(),
     )
     .optional(),
   amountTtc: z
     .preprocess(
       (v) => (v === '' || v == null ? null : Number(v)),
-      z.number().nonnegative().nullable()
+      z.number().nonnegative().nullable(),
     )
     .optional(),
   dateDevis: z.string().optional().or(z.literal('')),
@@ -43,7 +51,9 @@ const marcheBaseSchema = z.object({
   dateFinPrevu: z.string().optional().or(z.literal('')),
   status: z.enum(marcheStatusValues).default('devis_recu'),
   // V1.11 R1 — ETAT du marché (ACTIF/INACTIF). Default true à la création.
-  isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()).default(true),
+  isActive: z
+    .preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean())
+    .default(true),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -65,7 +75,11 @@ function parseLotIds(formData: FormData): string[] {
 
 async function resolveSupplierName(supplierId: string): Promise<string> {
   const rows = await db
-    .select({ companyName: suppliers.companyName, firstName: suppliers.firstName, lastName: suppliers.lastName })
+    .select({
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+    })
     .from(suppliers)
     .where(eq(suppliers.id, supplierId))
     .limit(1);
@@ -82,7 +96,7 @@ async function resolveSupplierName(supplierId: string): Promise<string> {
  * /marches/[id]/edit.
  */
 export async function createMarcheInlineAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ id: string; label: string } | { error: string }> {
   const propertyId = String(formData.get('propertyId') ?? '');
   const supplierId = String(formData.get('supplierId') ?? '');
@@ -112,7 +126,7 @@ export async function createMarcheInlineAction(
 // V12.1 — création inline d'un sous-lot depuis /taches/new (retourne l'id pour
 // alimenter le select sans rechargement). Mirror de createMarcheInlineAction.
 export async function createSousLotInlineAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ id: string; name: string } | { error: string }> {
   const marcheId = String(formData.get('marcheId') ?? '');
   const name = String(formData.get('name') ?? '').trim();
@@ -184,7 +198,7 @@ export async function createMarcheAction(formData: FormData): Promise<void> {
       lotIds.map((lotId) => ({
         marcheId,
         lotId,
-      }))
+      })),
     );
   }
 
@@ -253,7 +267,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
       lotIds.map((lotId) => ({
         marcheId: id,
         lotId,
-      }))
+      })),
     );
   }
 
@@ -263,9 +277,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
   redirect(`/marches/${id}`);
 }
 
-export async function deleteMarcheAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deleteMarcheAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -341,7 +353,7 @@ export async function deleteMarcheDocumentAction(formData: FormData): Promise<vo
 }
 
 export async function getMarcheDocumentUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };
@@ -359,16 +371,13 @@ export async function createSousLotAction(formData: FormData): Promise<void> {
   if (!marcheId || !name) throw new Error('Champs obligatoires manquants');
 
   const amountHtRaw = formData.get('amountHt');
-  const amountHt =
-    amountHtRaw !== '' && amountHtRaw != null ? String(Number(amountHtRaw)) : null;
+  const amountHt = amountHtRaw !== '' && amountHtRaw != null ? String(Number(amountHtRaw)) : null;
 
   await db.insert(marcheSousLots).values({ marcheId, name, amountHt });
   revalidatePath(`/marches/${marcheId}`);
 }
 
-export async function deleteSousLotAction(
-  formData: FormData
-): Promise<void | { error: string }> {
+export async function deleteSousLotAction(formData: FormData): Promise<void | { error: string }> {
   const id = String(formData.get('id') ?? '');
   const marcheId = String(formData.get('marcheId') ?? '');
   if (!id) return { error: 'ID manquant' };
@@ -396,13 +405,13 @@ const sousLotUpdateSchema = z.object({
   amountHt: z
     .preprocess(
       (v) => (v === '' || v == null ? null : v),
-      z.union([z.string(), z.number()]).nullable()
+      z.union([z.string(), z.number()]).nullable(),
     )
     .optional(),
   amountTtc: z
     .preprocess(
       (v) => (v === '' || v == null ? null : v),
-      z.union([z.string(), z.number()]).nullable()
+      z.union([z.string(), z.number()]).nullable(),
     )
     .optional(),
   status: z
@@ -462,14 +471,10 @@ const tacheCreateSchema = z.object({
   title: z.string().min(1).max(255),
   // V1.10 hotfix — preprocess null (FormData.get retourne null si champ absent du form).
   // Pré-existant : z.string().optional().or(z.literal('')) rejetait null → "Invalid input".
-  description: z
-    .preprocess((v) => (v == null ? '' : v), z.string())
-    .optional(),
+  description: z.preprocess((v) => (v == null ? '' : v), z.string()).optional(),
   // V12bis umbrella §7 — locationDescription remplacé par roomId dans le form.
   // Le schema le garde pour compat ancienne UI / API, mais accepte null/absent.
-  locationDescription: z
-    .preprocess((v) => (v == null ? '' : v), z.string())
-    .optional(),
+  locationDescription: z.preprocess((v) => (v == null ? '' : v), z.string()).optional(),
   // V12bis umbrella §7 — FK pièce (niveau via JOIN rooms→levels) remplace
   // l'ancien champ libre `locationDescription`. Optionnel.
   roomId: z
@@ -492,13 +497,11 @@ const tacheUpdateSchema = tacheCreateSchema.extend({
 // V1.10 §9 — useFormState pattern : retourne {status, message} en cas d'erreur
 // (Zod ou DB), throw redirect en cas de succès. Évite le digest opaque Next.js
 // quand le throw nu était capturé par l'error boundary.
-export type CreateTacheState =
-  | { status: 'idle' }
-  | { status: 'error'; message: string };
+export type CreateTacheState = { status: 'idle' } | { status: 'error'; message: string };
 
 export async function createTacheAction(
   _prev: CreateTacheState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateTacheState> {
   const parsed = tacheCreateSchema.safeParse({
     marcheSousLotId: formData.get('marcheSousLotId'),
@@ -515,7 +518,7 @@ export async function createTacheAction(
     const message = parsed.error.errors
       .map((e) => `${e.path.join('.') || 'champ'} : ${e.message}`)
       .join(' · ');
-    console.error('[createTacheAction] validation error:', message);
+    logger.error('[createTacheAction] validation error:', message);
     return { status: 'error', message };
   }
   const data = parsed.data;
@@ -535,7 +538,7 @@ export async function createTacheAction(
   } catch (err) {
     const code = (err as { code?: string })?.code;
     const detail = err instanceof Error ? err.message : String(err);
-    console.error('[createTacheAction] DB insert error:', { code, detail });
+    logger.error('[createTacheAction] DB insert error:', { code, detail });
     let message = `Erreur création tâche : ${detail}`;
     if (code === '23503') {
       message =
@@ -670,7 +673,7 @@ export async function deleteTachePhotoAction(formData: FormData): Promise<void> 
 }
 
 export async function getTachePhotoUrlAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!storageKey) return { error: 'Clé manquante' };
@@ -690,7 +693,7 @@ export async function updateTacheStatusAction(formData: FormData): Promise<void>
   const id = String(formData.get('id') ?? '');
   const status = String(formData.get('status') ?? '');
   if (!id) throw new Error('ID manquant');
-  if (!tacheStatusValues.includes(status as any)) {
+  if (!(tacheStatusValues as readonly string[]).includes(status)) {
     throw new Error(`Statut invalide : ${status}`);
   }
 
@@ -698,7 +701,8 @@ export async function updateTacheStatusAction(formData: FormData): Promise<void>
     .update(marcheTaches)
     .set({
       status: status as (typeof tacheStatusValues)[number],
-      completedAt: status === 'termine' || status === 'valide' ? new Date().toISOString().slice(0, 10) : null,
+      completedAt:
+        status === 'termine' || status === 'valide' ? new Date().toISOString().slice(0, 10) : null,
       updatedAt: new Date(),
     })
     .where(eq(marcheTaches.id, id));

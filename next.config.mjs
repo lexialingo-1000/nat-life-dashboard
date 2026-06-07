@@ -23,6 +23,9 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // Le lint est un gate séparé (npm run lint + pre-commit), pas un bloqueur de build.
+  // Évite qu'une règle ESLint (ex: react/no-unescaped-entities) casse le build Coolify.
+  eslint: { ignoreDuringBuilds: true },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'minio.fka-holding.com' },

@@ -78,9 +78,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   if (!company) {
     return (
-      <div className="card p-6 text-sm text-blue-700">
-        Connexion DB indisponible : {dbError}
-      </div>
+      <div className="card p-6 text-sm text-blue-700">Connexion DB indisponible : {dbError}</div>
     );
   }
 
@@ -143,7 +141,9 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
             <span className="font-mono tnum">{company.siren ?? '—'}</span>
           </Row>
           <Row label="N° TVA intracom">
-            <span className="font-mono tnum">{(company as any).tvaIntracom ?? '—'}</span>
+            <span className="font-mono tnum">
+              {(company as { tvaIntracom?: string | null }).tvaIntracom ?? '—'}
+            </span>
           </Row>
           {/* V1.11 R8 — affichage fréquence TVA. */}
           <Row label="TVA">
@@ -228,7 +228,8 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
           storageKey: d.storageKey,
           documentDate: d.documentDate,
           expiresAt: d.expiresAt,
-          uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
           category: d.category,
         }))}
         availableTypes={companyDocTypes}
@@ -311,7 +312,9 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     companyName: company.name,
     supplierId: d.supplierId,
     supplierLabel:
-      d.supplierCompanyName ?? `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ?? 'Fournisseur',
+      d.supplierCompanyName ??
+      `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
+      'Fournisseur',
     marcheId: d.marcheId ?? null,
     marcheLabel: d.marcheName ?? null,
     parentDevisLabel: formatParentLabel(d.parentDevisId),
@@ -320,11 +323,11 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
 
   const accountingTotalHt = accountingRows.reduce(
     (acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0),
-    0
+    0,
   );
   const accountingTotalTtc = accountingRows.reduce(
     (acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0),
-    0
+    0,
   );
 
   // V1.10 §4 §5 — devis et commandes existants (pour dropdowns parents du form upload)
@@ -527,8 +530,8 @@ function Kpi({
           variant === 'good'
             ? 'text-blue-700'
             : variant === 'warn'
-            ? 'text-blue-700'
-            : 'text-zinc-900'
+              ? 'text-blue-700'
+              : 'text-zinc-900'
         }`}
       >
         {value}

@@ -56,24 +56,14 @@ export function MarcheTypeCreateForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Code (slug)</label>
-          <input
-            name="code"
-            required
-            className="input mt-1 font-mono"
-            placeholder="charpente"
-          />
+          <input name="code" required className="input mt-1 font-mono" placeholder="charpente" />
           <p className="mt-1 text-[11px] text-zinc-500">
             Minuscules, chiffres, underscores uniquement.
           </p>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Libellé</label>
-          <input
-            name="label"
-            required
-            className="input mt-1"
-            placeholder="Charpente"
-          />
+          <input name="label" required className="input mt-1" placeholder="Charpente" />
         </div>
       </div>
 

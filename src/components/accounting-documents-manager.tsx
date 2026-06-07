@@ -214,7 +214,7 @@ export function AccountingDocumentsManager({
 
   const selectedCompany = useMemo(
     () => companies.find((c) => c.id === companyId),
-    [companies, companyId]
+    [companies, companyId],
   );
 
   // Marchés filtrés par fournisseur sélectionné (sans masquer les autres)
@@ -232,7 +232,7 @@ export function AccountingDocumentsManager({
         .filter((d) => !supplierId || d.supplierId === supplierId)
         .filter((d) => !marcheId || !d.marcheId || d.marcheId === marcheId)
         .filter((d) => !companyId || d.companyId === companyId),
-    [devisOptions, supplierId, marcheId, companyId]
+    [devisOptions, supplierId, marcheId, companyId],
   );
   const visibleCommandes = useMemo(
     () =>
@@ -240,7 +240,7 @@ export function AccountingDocumentsManager({
         .filter((c) => !supplierId || c.supplierId === supplierId)
         .filter((c) => !marcheId || !c.marcheId || c.marcheId === marcheId)
         .filter((c) => !companyId || c.companyId === companyId),
-    [commandeOptions, supplierId, marcheId, companyId]
+    [commandeOptions, supplierId, marcheId, companyId],
   );
 
   const resetForm = () => {
@@ -296,7 +296,7 @@ export function AccountingDocumentsManager({
     const label = row.originalFilename ?? row.name;
     if (
       !confirm(
-        `Supprimer ${KIND_LABEL[row.kind].toLowerCase()} "${label}" ? Cette action est irréversible.`
+        `Supprimer ${KIND_LABEL[row.kind].toLowerCase()} "${label}" ? Cette action est irréversible.`,
       )
     )
       return;
@@ -397,14 +397,12 @@ export function AccountingDocumentsManager({
   }, [rows, filterKinds, filterSupplierId, filterMarcheId, filterCompanyId]);
 
   const filteredTotalHt = useMemo(
-    () =>
-      filteredRows.reduce((acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0), 0),
-    [filteredRows]
+    () => filteredRows.reduce((acc, r) => acc + (r.amountHt ? Number(r.amountHt) : 0), 0),
+    [filteredRows],
   );
   const filteredTotalTtc = useMemo(
-    () =>
-      filteredRows.reduce((acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0), 0),
-    [filteredRows]
+    () => filteredRows.reduce((acc, r) => acc + (r.amountTtc ? Number(r.amountTtc) : 0), 0),
+    [filteredRows],
   );
 
   // v19-2b — Groupement par LOT immo (sur scope=supplier). Si groupByLot=false
@@ -489,10 +487,7 @@ export function AccountingDocumentsManager({
         accessorKey: 'companyName',
         header: 'Société',
         cell: ({ row }) => (
-          <Link
-            href={`/societes/${row.original.companyId}`}
-            className="link-cell-soft text-[12px]"
-          >
+          <Link href={`/societes/${row.original.companyId}`} className="link-cell-soft text-[12px]">
             {row.original.companyName}
           </Link>
         ),
@@ -519,10 +514,7 @@ export function AccountingDocumentsManager({
       header: 'Marché',
       cell: ({ row }) =>
         row.original.marcheId && row.original.marcheLabel ? (
-          <Link
-            href={`/marches/${row.original.marcheId}`}
-            className="link-cell-soft text-[12px]"
-          >
+          <Link href={`/marches/${row.original.marcheId}`} className="link-cell-soft text-[12px]">
             {row.original.marcheLabel}
           </Link>
         ) : (
@@ -549,8 +541,7 @@ export function AccountingDocumentsManager({
       cell: ({ row }) => {
         const badges: string[] = [];
         if (row.original.parentDevisLabel) badges.push(`→ ${row.original.parentDevisLabel}`);
-        if (row.original.parentCommandeLabel)
-          badges.push(`→ ${row.original.parentCommandeLabel}`);
+        if (row.original.parentCommandeLabel) badges.push(`→ ${row.original.parentCommandeLabel}`);
         if (badges.length === 0) return <span className="text-zinc-300">—</span>;
         return (
           <div className="flex flex-col gap-0.5 text-[11px] text-zinc-600">
@@ -748,9 +739,7 @@ export function AccountingDocumentsManager({
               )}
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-zinc-700">
-                Fournisseur *
-              </label>
+              <label className="block text-[12px] font-medium text-zinc-700">Fournisseur *</label>
               {scope === 'supplier' ? (
                 <input value={parentLabel} readOnly className="input mt-1 bg-zinc-100" />
               ) : createSupplierAction ? (
@@ -867,9 +856,7 @@ export function AccountingDocumentsManager({
               />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-zinc-700">
-                Montant HT (€)
-              </label>
+              <label className="block text-[12px] font-medium text-zinc-700">Montant HT (€)</label>
               <input
                 type="number"
                 step="0.01"
@@ -880,9 +867,7 @@ export function AccountingDocumentsManager({
               />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-zinc-700">
-                Montant TTC (€)
-              </label>
+              <label className="block text-[12px] font-medium text-zinc-700">Montant TTC (€)</label>
               <input
                 type="number"
                 step="0.01"
@@ -999,9 +984,7 @@ export function AccountingDocumentsManager({
                     type="button"
                     onClick={() => toggleKindFilter(k)}
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] transition ${
-                      active
-                        ? KIND_BADGE[k]
-                        : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
+                      active ? KIND_BADGE[k] : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
                     }`}
                   >
                     {KIND_LABEL[k]}
@@ -1064,10 +1047,7 @@ export function AccountingDocumentsManager({
               </div>
             )}
             {/* Reset filtres si actifs */}
-            {(filterKinds.size > 0 ||
-              filterSupplierId ||
-              filterMarcheId ||
-              filterCompanyId) && (
+            {(filterKinds.size > 0 || filterSupplierId || filterMarcheId || filterCompanyId) && (
               <button
                 type="button"
                 onClick={() => {
@@ -1121,11 +1101,7 @@ export function AccountingDocumentsManager({
           ))}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredRows}
-          emptyMessage="Aucun document compta."
-        />
+        <DataTable columns={columns} data={filteredRows} emptyMessage="Aucun document compta." />
       )}
     </div>
   );
