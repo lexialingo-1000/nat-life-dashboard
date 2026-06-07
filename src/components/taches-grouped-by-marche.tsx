@@ -126,23 +126,23 @@ export function TachesGroupedByMarche({ rows, returnTo }: Props) {
                               {formatDateFr(t.dueDate)}
                             </span>
                           )}
-                          {t.photos.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setPhotosTache(t)}
-                              title="Voir / ajouter des photos"
-                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] text-blue-700 hover:bg-blue-50 hover:text-blue-800"
-                            >
-                              <Camera className="h-3.5 w-3.5" strokeWidth={1.75} />
-                              {t.photos.length}
-                            </button>
-                          )}
-                          <Link
-                            href={`/taches/${t.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
-                            className="text-zinc-400 hover:text-zinc-700"
-                            title="Modifier"
+                          <button
+                            type="button"
+                            onClick={() => setPhotosTache(t)}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
+                            title="Voir / ajouter des photos"
                           >
-                            <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+                            <Camera className="h-3 w-3" strokeWidth={1.75} />
+                            {t.photos.length > 0 && (
+                              <span className="tabular-nums">{t.photos.length}</span>
+                            )}
+                          </button>
+                          <Link
+                            href={`/marches/${t.marcheId}/sous-lots/${t.sousLotId}/taches/${t.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                            title="Modifier la tâche"
+                          >
+                            <Pencil className="h-3 w-3" strokeWidth={2} />
                           </Link>
                         </div>
                       );

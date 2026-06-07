@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
-import { EntityLink } from '@/components/entity-link';
 
 export type ClientRow = {
   id: string;
@@ -27,13 +26,9 @@ const baseColumns: ColumnDef<ClientRow>[] = [
     accessorKey: 'displayName',
     header: 'Client',
     cell: ({ row }) => (
-      <EntityLink
-        href={`/clients/${row.original.id}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Voir la fiche"
-      >
+      <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em]">
         {row.original.displayName}
-      </EntityLink>
+      </span>
     ),
   },
   {
@@ -144,7 +139,7 @@ export function ClientsTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun client."
       enableSelection
       onRowClick={(r) => router.push(`/clients/${r.id}`)}
-      rowClickIgnoreColumnIds={['displayName', 'select', 'actions']}
+      rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:clients-table"
     />
   );

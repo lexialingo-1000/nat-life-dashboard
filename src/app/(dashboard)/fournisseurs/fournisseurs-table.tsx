@@ -47,13 +47,9 @@ const baseColumns: ColumnDef<FournisseurRow>[] = [
     accessorKey: 'displayName',
     header: 'Fournisseur',
     cell: ({ row }) => (
-      <EntityLink
-        href={`/fournisseurs/${row.original.id}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Voir la fiche"
-      >
+      <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em]">
         {row.original.displayName}
-      </EntityLink>
+      </span>
     ),
   },
   {
@@ -134,7 +130,7 @@ export function FournisseursTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun fournisseur."
       enableSelection
       onRowClick={(r) => router.push(`/fournisseurs/${r.id}`)}
-      rowClickIgnoreColumnIds={['displayName', 'select', 'actions']}
+      rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:fournisseurs-table"
     />
   );

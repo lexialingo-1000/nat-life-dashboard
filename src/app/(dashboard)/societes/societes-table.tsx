@@ -21,13 +21,9 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
     accessorKey: 'name',
     header: 'Société',
     cell: ({ row }) => (
-      <EntityLink
-        href={`/societes/${row.original.id}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Voir la fiche"
-      >
+      <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em]">
         {row.original.name}
-      </EntityLink>
+      </span>
     ),
   },
   {
@@ -130,7 +126,7 @@ export function SocietesTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucune société."
       enableSelection
       onRowClick={(r) => router.push(`/societes/${r.id}`)}
-      rowClickIgnoreColumnIds={['name', 'select', 'actions']}
+      rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:societes-table"
     />
   );
