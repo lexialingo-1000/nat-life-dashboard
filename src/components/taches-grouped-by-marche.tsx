@@ -130,9 +130,10 @@ export function TachesGroupedByMarche({ rows, returnTo }: Props) {
                             <button
                               type="button"
                               onClick={() => setPhotosTache(t)}
-                              className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-700"
+                              title="Voir / ajouter des photos"
+                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] text-blue-700 hover:bg-blue-50 hover:text-blue-800"
                             >
-                              <Camera className="h-3 w-3" strokeWidth={1.5} />
+                              <Camera className="h-3.5 w-3.5" strokeWidth={1.75} />
                               {t.photos.length}
                             </button>
                           )}
