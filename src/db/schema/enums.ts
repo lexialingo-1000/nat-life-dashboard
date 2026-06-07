@@ -1,6 +1,11 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
-export const companyTypeEnum = pgEnum('company_type', ['commerciale', 'immobiliere']);
+export const companyTypeEnum = pgEnum('company_type', [
+  'commerciale_bilan',
+  'commerciale_sans_bilan',
+  'immobiliere_bilan',
+  'immobiliere_sans_bilan',
+]);
 
 export const formeJuridiqueEnum = pgEnum('forme_juridique', [
   'sas',
@@ -61,7 +66,6 @@ export const lotStatusEnum = pgEnum('lot_status', [
 ]);
 
 export const marcheStatusEnum = pgEnum('marche_status', [
-  'devis_recu',
   'signe',
   'en_cours',
   'livre',

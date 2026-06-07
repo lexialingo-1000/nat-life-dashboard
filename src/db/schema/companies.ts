@@ -7,6 +7,9 @@ export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   siren: varchar('siren', { length: 9 }),
+  // dashboard-22 — sociétés étrangères : immatriculation locale (hors SIREN)
+  immatriculation: text('immatriculation'),
+  pays: text('pays').default('FR'),
   type: companyTypeEnum('type').notNull(),
   formeJuridique: formeJuridiqueEnum('forme_juridique'),
   address: text('address'),

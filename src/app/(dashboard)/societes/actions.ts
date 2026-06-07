@@ -27,7 +27,14 @@ const createSchema = z.object({
         .or(z.literal('')),
     )
     .optional(),
-  type: z.enum(['commerciale', 'immobiliere']),
+  type: z.enum([
+    'commerciale_bilan',
+    'commerciale_sans_bilan',
+    'immobiliere_bilan',
+    'immobiliere_sans_bilan',
+  ]),
+  pays: z.string().max(4).optional().or(z.literal('')),
+  immatriculation: z.string().optional().or(z.literal('')),
   formeJuridique: z
     .enum(['sas', 'sarl', 'sci', 'indivision', 'eurl', 'sa', 'auto_entrepreneur', 'autre'])
     .optional(),
@@ -109,6 +116,8 @@ export async function createSocieteAction(formData: FormData) {
   const parsed = createSchema.safeParse({
     name: formData.get('name'),
     siren: formData.get('siren'),
+    immatriculation: formData.get('immatriculation'),
+    pays: formData.get('pays'),
     type: formData.get('type'),
     formeJuridique: formData.get('formeJuridique') || undefined,
     address: formData.get('address'),
@@ -136,6 +145,8 @@ export async function createSocieteAction(formData: FormData) {
   await db.insert(companies).values({
     ...rest,
     siren: siren || null,
+    immatriculation: (rest as any).immatriculation || null,
+    pays: (rest as any).pays || 'FR',
     formeJuridique: formeJuridique ?? null,
     address: address || null,
     activitePrincipale: activitePrincipale || null,
@@ -158,6 +169,8 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     id: formData.get('id'),
     name: formData.get('name'),
     siren: formData.get('siren'),
+    immatriculation: formData.get('immatriculation'),
+    pays: formData.get('pays'),
     type: formData.get('type'),
     formeJuridique: formData.get('formeJuridique') || undefined,
     address: formData.get('address'),
@@ -190,6 +203,8 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     .set({
       ...rest,
       siren: siren || null,
+      immatriculation: (rest as any).immatriculation || null,
+      pays: (rest as any).pays || 'FR',
       formeJuridique: formeJuridique ?? null,
       address: address || null,
       activitePrincipale: activitePrincipale || null,

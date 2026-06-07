@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -99,6 +100,7 @@ interface Props {
 }
 
 export function FournisseursTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<FournisseurRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -126,6 +128,14 @@ export function FournisseursTable({ rows, deleteAction }: Props) {
   }, [deleteAction]);
 
   return (
-    <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." enableSelection />
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyMessage="Aucun fournisseur."
+      enableSelection
+      onRowClick={(r) => router.push(`/fournisseurs/${r.id}`)}
+      rowClickIgnoreColumnIds={['displayName', 'select', 'actions']}
+      columnVisibilityKey="natlife:fournisseurs-table"
+    />
   );
 }

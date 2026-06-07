@@ -254,9 +254,8 @@ export function DocumentsManager({
         a.href = res.url;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
-        // download attribute : MinIO presigned URL inclut response-content-disposition,
-        // mais on l'override pour compat navigateurs.
-        a.download = '';
+        // Pas de download attribute : les PDF/plans s'ouvrent inline sur mobile.
+        // MinIO presigned URL gère response-content-disposition côté serveur.
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

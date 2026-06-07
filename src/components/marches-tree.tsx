@@ -19,7 +19,6 @@ import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marche
  */
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',
@@ -28,7 +27,6 @@ const MARCHE_STATUS_LABELS: Record<string, string> = {
 };
 
 const MARCHE_STATUS_BADGE: Record<string, string> = {
-  devis_recu: 'bg-zinc-100 text-zinc-700',
   signe: 'bg-blue-100 text-blue-700',
   en_cours: 'bg-amber-100 text-amber-700',
   livre: 'bg-emerald-100 text-emerald-700',
@@ -147,7 +145,7 @@ function MarcheBranch({
           </Link>
           <span
             className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${
-              MARCHE_STATUS_BADGE[marche.status] ?? MARCHE_STATUS_BADGE.devis_recu
+              MARCHE_STATUS_BADGE[marche.status] ?? MARCHE_STATUS_BADGE.signe
             }`}
           >
             {MARCHE_STATUS_LABELS[marche.status] ?? marche.status}

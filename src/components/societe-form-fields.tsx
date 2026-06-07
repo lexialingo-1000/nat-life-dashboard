@@ -22,7 +22,13 @@ export type TvaFrequency = 'non_assujettie' | 'mensuelle' | 'trimestrielle' | 'a
 export interface SocieteFormValues {
   name?: string;
   siren?: string | null;
-  type?: 'commerciale' | 'immobiliere';
+  immatriculation?: string | null;
+  pays?: string | null;
+  type?:
+    | 'commerciale_bilan'
+    | 'commerciale_sans_bilan'
+    | 'immobiliere_bilan'
+    | 'immobiliere_sans_bilan';
   formeJuridique?: string | null;
   address?: string | null;
   activitePrincipale?: string | null;
@@ -46,11 +52,13 @@ export function SocieteFormFields({
   enableSirenLookup = false,
   showActiveToggle = false,
 }: Props) {
+  const [pays, setPays] = useState(defaultValues.pays ?? 'FR');
   const [siren, setSiren] = useState(defaultValues.siren ?? '');
+  const [immatriculation, setImmatriculation] = useState(defaultValues.immatriculation ?? '');
   const [name, setName] = useState(defaultValues.name ?? '');
-  const [type, setType] = useState<'commerciale' | 'immobiliere'>(
-    defaultValues.type ?? 'commerciale',
-  );
+  const [type, setType] = useState<
+    'commerciale_bilan' | 'commerciale_sans_bilan' | 'immobiliere_bilan' | 'immobiliere_sans_bilan'
+  >(defaultValues.type ?? 'commerciale_bilan');
   const [formeJuridique, setFormeJuridique] = useState(defaultValues.formeJuridique ?? '');
   const [address, setAddress] = useState(defaultValues.address ?? '');
   const [activitePrincipale, setActivitePrincipale] = useState(
@@ -119,12 +127,22 @@ export function SocieteFormFields({
           <select
             name="type"
             value={type}
-            onChange={(e) => setType(e.target.value as 'commerciale' | 'immobiliere')}
+            onChange={(e) =>
+              setType(
+                e.target.value as
+                  | 'commerciale_bilan'
+                  | 'commerciale_sans_bilan'
+                  | 'immobiliere_bilan'
+                  | 'immobiliere_sans_bilan',
+              )
+            }
             required
             className="input mt-1"
           >
-            <option value="commerciale">Commerciale</option>
-            <option value="immobiliere">Immobilière</option>
+            <option value="commerciale_bilan">Commerciale (bilan)</option>
+            <option value="commerciale_sans_bilan">Commerciale (sans bilan)</option>
+            <option value="immobiliere_bilan">Immobilière (bilan)</option>
+            <option value="immobiliere_sans_bilan">Immobilière (sans bilan)</option>
           </select>
         </div>
         <div>
@@ -146,41 +164,66 @@ export function SocieteFormFields({
       </div>
 
       <div>
-        <label className="block text-sm font-medium">SIREN ou SIRET</label>
-        <div className="mt-1 flex gap-2">
-          <input
-            type="text"
-            name="siren"
-            value={siren}
-            onChange={(e) => setSiren(e.target.value)}
-            className="input flex-1 font-mono text-sm"
-            placeholder="123456789 (SIREN) ou 12345678900012 (SIRET)"
-            maxLength={20}
-            autoComplete="off"
-            data-form-type="other"
-            data-lpignore="true"
-          />
-          {enableSirenLookup && (
-            <button
-              type="button"
-              onClick={handleLookup}
-              disabled={lookupLoading}
-              className="btn-secondary whitespace-nowrap"
-              title="Auto-remplir depuis l'API gouvernementale"
-            >
-              {lookupLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Sparkles className="mr-1.5 h-4 w-4" />
-                  Auto-remplir
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        {lookupError && <p className="mt-1 text-xs text-red-600">{lookupError}</p>}
+        <label className="block text-sm font-medium">Pays</label>
+        <input
+          name="pays"
+          value={pays}
+          onChange={(e) => setPays(e.target.value.toUpperCase())}
+          className="input mt-1 w-24 font-mono"
+          placeholder="FR"
+          maxLength={4}
+        />
       </div>
+
+      {pays === 'FR' || pays === '' ? (
+        <div>
+          <label className="block text-sm font-medium">SIREN ou SIRET</label>
+          <div className="mt-1 flex gap-2">
+            <input
+              type="text"
+              name="siren"
+              value={siren}
+              onChange={(e) => setSiren(e.target.value)}
+              className="input flex-1 font-mono text-sm"
+              placeholder="123456789 (SIREN) ou 12345678900012 (SIRET)"
+              maxLength={20}
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+            />
+            {enableSirenLookup && (
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={lookupLoading}
+                className="btn-secondary whitespace-nowrap"
+                title="Auto-remplir depuis l'API gouvernementale"
+              >
+                {lookupLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="mr-1.5 h-4 w-4" />
+                    Auto-remplir
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          {lookupError && <p className="mt-1 text-xs text-red-600">{lookupError}</p>}
+        </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium">Immatriculation locale</label>
+          <input
+            name="immatriculation"
+            value={immatriculation}
+            onChange={(e) => setImmatriculation(e.target.value)}
+            className="input mt-1 font-mono text-sm"
+            placeholder="Numéro d'immatriculation étranger"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium">Adresse</label>

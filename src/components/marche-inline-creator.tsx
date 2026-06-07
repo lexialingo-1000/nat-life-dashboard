@@ -30,6 +30,8 @@ interface Props {
   }) => void;
   /** Désactivé tant que pas de supplier sélectionné (contexte compta). */
   disabled?: boolean;
+  /** Lot courant à affilier automatiquement au marché créé (contexte /taches/new). */
+  lotId?: string;
 }
 
 /**
@@ -43,6 +45,7 @@ export function MarcheInlineCreator({
   createAction,
   onCreated,
   disabled = false,
+  lotId,
 }: Props) {
   const pickSupplier = !!suppliers; // mode /taches/new : fournisseur choisi dans le dialog
   const [open, setOpen] = useState(false);
@@ -83,6 +86,7 @@ export function MarcheInlineCreator({
     fd.set('supplierId', effectiveSupplierId);
     fd.set('propertyId', propertyId);
     fd.set('name', name.trim());
+    if (lotId) fd.set('lotId', lotId);
     const res = await createAction(fd);
     if ('error' in res) {
       setError(res.error);
@@ -191,7 +195,7 @@ export function MarcheInlineCreator({
               </div>
 
               <p className="text-[11px] text-zinc-500">
-                Le marché sera créé avec statut <strong>Devis reçu</strong>. Tu pourras le compléter
+                Le marché sera créé avec statut <strong>Signé</strong>. Tu pourras le compléter
                 ensuite (montants, dates, lots affectés) depuis sa fiche.
               </p>
 

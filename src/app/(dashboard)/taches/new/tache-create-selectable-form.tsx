@@ -190,6 +190,7 @@ export function TacheCreateSelectableForm({
             suppliers={suppliers}
             properties={properties}
             createAction={createMarcheAction}
+            lotId={defaultLotId}
             onCreated={({ id, label, propertyId }) => {
               const propertyName = properties.find((p) => p.id === propertyId)?.label ?? '';
               setMarcheList((prev) => [

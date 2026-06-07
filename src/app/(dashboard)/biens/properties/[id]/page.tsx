@@ -47,7 +47,6 @@ import { PropertyStructureTree, type PropertyTree } from '@/components/property-
 import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',

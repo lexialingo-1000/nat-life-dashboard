@@ -10,7 +10,6 @@ import { updateSousLotAction } from '@/app/(dashboard)/marches/actions';
 export const dynamic = 'force-dynamic';
 
 const STATUS_OPTIONS = [
-  { value: 'devis_recu', label: 'Devis reçu' },
   { value: 'signe', label: 'Signé' },
   { value: 'en_cours', label: 'En cours' },
   { value: 'livre', label: 'Livré' },

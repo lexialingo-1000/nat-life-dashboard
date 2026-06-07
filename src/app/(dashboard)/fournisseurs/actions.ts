@@ -84,6 +84,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     .where(eq(suppliers.id, data.id));
   revalidatePath('/fournisseurs');
   revalidatePath(`/fournisseurs/${data.id}`);
+  revalidatePath('/');
   redirect(`/fournisseurs/${data.id}`);
 }
 
