@@ -5,10 +5,16 @@ import Link from 'next/link';
 import { Calendar, MapPin, Pencil, Camera, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
+import { useColumnVisibility, type ColumnVisibility } from './use-column-visibility';
+import { ColumnPickerButton, MobileCard, type PickerColumn } from './column-picker-button';
 
 /**
  * V1.14 M-1 + F-1 + F-2 — Liste de tâches filtrable, triable, avec rupture
  * optionnelle par lot immo.
+ *
+ * dashboard-22 mobile — sous 640px, la table bascule en vue carte (Tâche +
+ * Statut toujours visibles, le reste empilé). Le bouton « Colonnes » pilote à la
+ * fois les colonnes du tableau desktop et les champs des cartes mobiles.
  *
  * Sources :
  * - Remarques client dashboard-18 §"LISTE DES TACHES DANS MARCHE DE TRAVAUX" :
@@ -65,6 +71,18 @@ interface Props {
 type SortKey = 'marche' | 'sousLot' | 'title' | 'status' | 'lot' | 'emplacement' | 'dueDate';
 type SortDir = 'asc' | 'desc';
 
+// Clés de visibilité des colonnes basculables (title/status = primaires non
+// masquables ; photos/edit = actions). Convention : visible sauf si === false.
+const VIS_KEY = 'natlife:taches-list';
+// dashboard-22 mobile — colonnes masquées par défaut sur portable (la carte
+// garde Tâche + Statut + Échéance, le reste est rappelable via « Colonnes »).
+const MOBILE_DEFAULTS: ColumnVisibility = {
+  marche: false,
+  sousLot: false,
+  lot: false,
+  emplacement: false,
+};
+
 function formatDateFr(value: string | null): string {
   if (!value) return '';
   const d = new Date(value);
@@ -113,6 +131,10 @@ export function TachesListTable({
     dir: 'asc',
   });
   const [photosTache, setPhotosTache] = useState<TacheListRow | null>(null);
+  // dashboard-22 mobile — visibilité des colonnes (desktop + champs carte mobile).
+  const [vis, setVis] = useColumnVisibility(VIS_KEY, MOBILE_DEFAULTS);
+  const show = (id: string) => vis[id] !== false;
+  const toggleCol = (id: string) => setVis({ ...vis, [id]: vis[id] === false });
 
   const filtered = useMemo(() => {
     const norm = (s: string) => s.toLowerCase().trim();
@@ -231,18 +253,72 @@ export function TachesListTable({
     return <div className="card p-8 text-center text-sm text-zinc-500">Aucune tâche.</div>;
   }
 
-  const colCount = (hideLotColumn ? 6 : 7) + 2; // +photos +edit
+  // Colonnes basculables exposées dans le picker (title/status primaires et
+  // photos/edit actions ne sont pas listés).
+  const firstColLabel = firstColumn === 'fournisseur' ? 'Fournisseur' : 'Marché';
+  const pickerColumns: PickerColumn[] = [
+    { id: 'marche', label: firstColLabel },
+    { id: 'sousLot', label: 'Sous-lot' },
+    ...(!hideLotColumn ? [{ id: 'lot', label: 'Bien · Lot' }] : []),
+    { id: 'emplacement', label: 'Emplacement' },
+    { id: 'dueDate', label: 'Échéance' },
+  ].map((c) => ({ ...c, visible: show(c.id), toggle: () => toggleCol(c.id) }));
 
-  return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-[#fbf8f0]/60 px-3 py-2 text-[12px] text-zinc-600">
-        <div className="inline-flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5" strokeWidth={1.75} />
-          <span>
-            {sorted.length} tâche{sorted.length !== 1 ? 's' : ''}
-            {hasActiveFilters && ` (filtré sur ${rows.length})`}
-          </span>
+  // Nombre de colonnes visibles (pour le colSpan de l'état vide desktop).
+  const visibleColCount =
+    [
+      show('marche'),
+      show('sousLot'),
+      true,
+      true,
+      ...(!hideLotColumn ? [show('lot')] : []),
+      show('emplacement'),
+      show('dueDate'),
+    ].filter(Boolean).length + 2; // +photos +edit
+
+  const statusFilter = (
+    <details className="status-filter">
+      <summary className="filter-input status-filter-summary">
+        {statusSet.size === ALL_STATUS_VALUES.length
+          ? 'Tous'
+          : statusSet.size === 0
+            ? 'Aucun'
+            : `${statusSet.size} statut${statusSet.size > 1 ? 's' : ''}`}
+      </summary>
+      <div className="status-filter-panel">
+        {STATUS_FILTER_OPTIONS.map((o) => (
+          <label key={o.value} className="status-filter-option">
+            <input
+              type="checkbox"
+              checked={statusSet.has(o.value)}
+              onChange={() => toggleStatus(o.value)}
+            />
+            <span>{o.label}</span>
+          </label>
+        ))}
+        <div className="status-filter-actions">
+          <button type="button" onClick={() => setStatusSet(new Set(ALL_STATUS_VALUES))}>
+            Tout
+          </button>
+          <button type="button" onClick={() => setStatusSet(new Set())}>
+            Aucun
+          </button>
         </div>
+      </div>
+    </details>
+  );
+
+  const countBar = (
+    <div className="flex items-center justify-between gap-3 text-[12px] text-zinc-600">
+      <div className="inline-flex items-center gap-2">
+        <Filter className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <span>
+          {sorted.length} tâche{sorted.length !== 1 ? 's' : ''}
+          {hasActiveFilters && ` (filtré sur ${rows.length})`}
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <ColumnPickerButton columns={pickerColumns} />
         {hasActiveFilters && (
           <button
             type="button"
@@ -254,150 +330,191 @@ export function TachesListTable({
           </button>
         )}
       </div>
+    </div>
+  );
 
-      <table className="w-full text-[13px]">
-        <thead className="border-b border-zinc-100 bg-[#fbf8f0]/40 text-left text-[11px] uppercase tracking-[0.04em] text-zinc-500">
-          <tr>
-            <Th sortKey="marche" sort={sort} onSort={toggleSort}>
-              {firstColumn === 'fournisseur' ? 'Fournisseur' : 'Marché'}
-            </Th>
-            <Th sortKey="sousLot" sort={sort} onSort={toggleSort}>
-              Sous-lot
-            </Th>
-            <Th sortKey="title" sort={sort} onSort={toggleSort}>
-              Tâche
-            </Th>
-            <Th sortKey="status" sort={sort} onSort={toggleSort}>
-              Statut
-            </Th>
-            {!hideLotColumn && (
-              <Th sortKey="lot" sort={sort} onSort={toggleSort}>
-                Bien · Lot
-              </Th>
-            )}
-            <Th sortKey="emplacement" sort={sort} onSort={toggleSort}>
-              Emplacement
-            </Th>
-            <Th sortKey="dueDate" sort={sort} onSort={toggleSort}>
-              Échéance
-            </Th>
-            <th className="px-3 py-2 font-medium">Photos</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-          <tr className="bg-white">
-            <FilterTh>
-              <input
-                type="text"
-                value={filters.marche}
-                onChange={(e) => setFilters((f) => ({ ...f, marche: e.target.value }))}
-                placeholder="Filtrer…"
-                className="filter-input"
-              />
-            </FilterTh>
-            <FilterTh>
-              <input
-                type="text"
-                value={filters.sousLot}
-                onChange={(e) => setFilters((f) => ({ ...f, sousLot: e.target.value }))}
-                placeholder="Filtrer…"
-                className="filter-input"
-              />
-            </FilterTh>
-            <FilterTh>
-              <input
-                type="text"
-                value={filters.title}
-                onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
-                placeholder="Filtrer…"
-                className="filter-input"
-              />
-            </FilterTh>
-            <FilterTh>
-              <details className="status-filter">
-                <summary className="filter-input status-filter-summary">
-                  {statusSet.size === ALL_STATUS_VALUES.length
-                    ? 'Tous'
-                    : statusSet.size === 0
-                      ? 'Aucun'
-                      : `${statusSet.size} statut${statusSet.size > 1 ? 's' : ''}`}
-                </summary>
-                <div className="status-filter-panel">
-                  {STATUS_FILTER_OPTIONS.map((o) => (
-                    <label key={o.value} className="status-filter-option">
-                      <input
-                        type="checkbox"
-                        checked={statusSet.has(o.value)}
-                        onChange={() => toggleStatus(o.value)}
-                      />
-                      <span>{o.label}</span>
-                    </label>
-                  ))}
-                  <div className="status-filter-actions">
-                    <button type="button" onClick={() => setStatusSet(new Set(ALL_STATUS_VALUES))}>
-                      Tout
-                    </button>
-                    <button type="button" onClick={() => setStatusSet(new Set())}>
-                      Aucun
-                    </button>
-                  </div>
-                </div>
-              </details>
-            </FilterTh>
-            {!hideLotColumn && (
-              <FilterTh>
-                <input
-                  type="text"
-                  value={filters.lot}
-                  onChange={(e) => setFilters((f) => ({ ...f, lot: e.target.value }))}
-                  placeholder="Filtrer…"
-                  className="filter-input"
-                />
-              </FilterTh>
-            )}
-            <FilterTh>
-              <input
-                type="text"
-                value={filters.emplacement}
-                onChange={(e) => setFilters((f) => ({ ...f, emplacement: e.target.value }))}
-                placeholder="Filtrer…"
-                className="filter-input"
-              />
-            </FilterTh>
-            <FilterTh>
-              <input
-                type="month"
-                value={filters.dueDate}
-                onChange={(e) => setFilters((f) => ({ ...f, dueDate: e.target.value }))}
-                className="filter-input"
-              />
-            </FilterTh>
-            <FilterTh></FilterTh>
-            <FilterTh></FilterTh>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100">
-          {sorted.length === 0 ? (
-            <tr>
-              <td colSpan={colCount} className="px-3 py-8 text-center text-sm text-zinc-500">
-                Aucune tâche ne correspond aux filtres.
-              </td>
-            </tr>
-          ) : (
-            groups.map((g) => (
-              <GroupBlock
-                key={g.key}
-                label={g.label}
-                rows={g.rows}
-                returnTo={returnTo}
-                hideLotColumn={hideLotColumn}
-                firstColumn={firstColumn}
-                colCount={colCount}
-                onOpenPhotos={(t) => setPhotosTache(t)}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+  return (
+    <div>
+      {/* ===== Desktop (≥sm) : tableau ===== */}
+      <div className="card hidden overflow-hidden sm:block">
+        <div className="border-b border-zinc-100 bg-[#fbf8f0]/60 px-3 py-2">{countBar}</div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className="border-b border-zinc-100 bg-[#fbf8f0]/40 text-left text-[11px] uppercase tracking-[0.04em] text-zinc-500">
+              <tr>
+                {show('marche') && (
+                  <Th sortKey="marche" sort={sort} onSort={toggleSort}>
+                    {firstColLabel}
+                  </Th>
+                )}
+                {show('sousLot') && (
+                  <Th sortKey="sousLot" sort={sort} onSort={toggleSort}>
+                    Sous-lot
+                  </Th>
+                )}
+                <Th sortKey="title" sort={sort} onSort={toggleSort}>
+                  Tâche
+                </Th>
+                <Th sortKey="status" sort={sort} onSort={toggleSort}>
+                  Statut
+                </Th>
+                {!hideLotColumn && show('lot') && (
+                  <Th sortKey="lot" sort={sort} onSort={toggleSort}>
+                    Bien · Lot
+                  </Th>
+                )}
+                {show('emplacement') && (
+                  <Th sortKey="emplacement" sort={sort} onSort={toggleSort}>
+                    Emplacement
+                  </Th>
+                )}
+                {show('dueDate') && (
+                  <Th sortKey="dueDate" sort={sort} onSort={toggleSort}>
+                    Échéance
+                  </Th>
+                )}
+                <th className="px-3 py-2 font-medium">Photos</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+              <tr className="bg-white">
+                {show('marche') && (
+                  <FilterTh>
+                    <input
+                      type="text"
+                      value={filters.marche}
+                      onChange={(e) => setFilters((f) => ({ ...f, marche: e.target.value }))}
+                      placeholder="Filtrer…"
+                      className="filter-input"
+                    />
+                  </FilterTh>
+                )}
+                {show('sousLot') && (
+                  <FilterTh>
+                    <input
+                      type="text"
+                      value={filters.sousLot}
+                      onChange={(e) => setFilters((f) => ({ ...f, sousLot: e.target.value }))}
+                      placeholder="Filtrer…"
+                      className="filter-input"
+                    />
+                  </FilterTh>
+                )}
+                <FilterTh>
+                  <input
+                    type="text"
+                    value={filters.title}
+                    onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="Filtrer…"
+                    className="filter-input"
+                  />
+                </FilterTh>
+                <FilterTh>{statusFilter}</FilterTh>
+                {!hideLotColumn && show('lot') && (
+                  <FilterTh>
+                    <input
+                      type="text"
+                      value={filters.lot}
+                      onChange={(e) => setFilters((f) => ({ ...f, lot: e.target.value }))}
+                      placeholder="Filtrer…"
+                      className="filter-input"
+                    />
+                  </FilterTh>
+                )}
+                {show('emplacement') && (
+                  <FilterTh>
+                    <input
+                      type="text"
+                      value={filters.emplacement}
+                      onChange={(e) => setFilters((f) => ({ ...f, emplacement: e.target.value }))}
+                      placeholder="Filtrer…"
+                      className="filter-input"
+                    />
+                  </FilterTh>
+                )}
+                {show('dueDate') && (
+                  <FilterTh>
+                    <input
+                      type="month"
+                      value={filters.dueDate}
+                      onChange={(e) => setFilters((f) => ({ ...f, dueDate: e.target.value }))}
+                      className="filter-input"
+                    />
+                  </FilterTh>
+                )}
+                <FilterTh></FilterTh>
+                <FilterTh></FilterTh>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {sorted.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={visibleColCount}
+                    className="px-3 py-8 text-center text-sm text-zinc-500"
+                  >
+                    Aucune tâche ne correspond aux filtres.
+                  </td>
+                </tr>
+              ) : (
+                groups.map((g) => (
+                  <GroupBlock
+                    key={g.key}
+                    label={g.label}
+                    rows={g.rows}
+                    returnTo={returnTo}
+                    hideLotColumn={hideLotColumn}
+                    firstColumn={firstColumn}
+                    colCount={visibleColCount}
+                    show={show}
+                    onOpenPhotos={(t) => setPhotosTache(t)}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ===== Mobile (<sm) : vue carte ===== */}
+      <div className="sm:hidden">
+        <div className="mb-2">{countBar}</div>
+        <div className="mb-2 flex items-center gap-2 text-[12px] text-zinc-600">
+          <span className="text-zinc-400">Statut :</span>
+          {statusFilter}
+        </div>
+        {sorted.length === 0 ? (
+          <div className="card p-8 text-center text-sm text-zinc-500">
+            Aucune tâche ne correspond aux filtres.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {groups.map((g) => (
+              <div key={g.key} className="space-y-2">
+                {g.label && (
+                  <p className="px-1 text-[11px] font-medium uppercase tracking-[0.04em] text-zinc-700">
+                    {g.label}
+                    <span className="ml-2 font-normal normal-case text-zinc-400">
+                      ({g.rows.length} tâche{g.rows.length !== 1 ? 's' : ''})
+                    </span>
+                  </p>
+                )}
+                {g.rows.map((t) => (
+                  <TacheCard
+                    key={t.id}
+                    tache={t}
+                    returnTo={returnTo}
+                    hideLotColumn={hideLotColumn}
+                    firstColumn={firstColumn}
+                    show={show}
+                    onOpenPhotos={() => setPhotosTache(t)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <style jsx>{`
         :global(.filter-input) {
@@ -521,6 +638,7 @@ function GroupBlock({
   hideLotColumn,
   firstColumn,
   colCount,
+  show,
   onOpenPhotos,
 }: {
   label: string;
@@ -529,6 +647,7 @@ function GroupBlock({
   hideLotColumn: boolean;
   firstColumn: 'marche' | 'fournisseur';
   colCount: number;
+  show: (id: string) => boolean;
   onOpenPhotos: (t: TacheListRow) => void;
 }) {
   return (
@@ -553,6 +672,7 @@ function GroupBlock({
           returnTo={returnTo}
           hideLotColumn={hideLotColumn}
           firstColumn={firstColumn}
+          show={show}
           onOpenPhotos={() => onOpenPhotos(t)}
         />
       ))}
@@ -565,12 +685,14 @@ function RowItem({
   returnTo,
   hideLotColumn,
   firstColumn,
+  show,
   onOpenPhotos,
 }: {
   tache: TacheListRow;
   returnTo: string;
   hideLotColumn: boolean;
   firstColumn: 'marche' | 'fournisseur';
+  show: (id: string) => boolean;
   onOpenPhotos: () => void;
 }) {
   const location = [tache.levelName, tache.roomName].filter(Boolean).join(' · ');
@@ -579,20 +701,22 @@ function RowItem({
     firstColumn === 'fournisseur' ? (tache.supplierName ?? '—') : tache.marcheName;
   return (
     <tr className="hover:bg-[#fbf8f0]/40">
-      <td className="px-3 py-2">
-        <Link
-          href={`/marches/${tache.marcheId}?tab=suivi`}
-          className="text-blue-700 hover:underline"
-        >
-          {firstColText}
-        </Link>
-      </td>
-      <td className="px-3 py-2 text-zinc-600">{tache.sousLotName}</td>
+      {show('marche') && (
+        <td className="px-3 py-2">
+          <Link
+            href={`/marches/${tache.marcheId}?tab=suivi`}
+            className="text-blue-700 hover:underline"
+          >
+            {firstColText}
+          </Link>
+        </td>
+      )}
+      {show('sousLot') && <td className="px-3 py-2 text-zinc-600">{tache.sousLotName}</td>}
       <td className="px-3 py-2 font-medium text-zinc-900">{tache.title}</td>
       <td className="px-3 py-2">
         <TacheStatusSelect tacheId={tache.id} currentStatus={tache.status} />
       </td>
-      {!hideLotColumn && (
+      {!hideLotColumn && show('lot') && (
         <td className="px-3 py-2 text-zinc-600">
           <Link
             href={`/biens/lots/${tache.lotId}`}
@@ -603,31 +727,35 @@ function RowItem({
           </Link>
         </td>
       )}
-      <td className="px-3 py-2 text-zinc-600">
-        {location ? (
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            {location}
-          </span>
-        ) : tache.locationDescription ? (
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            {tache.locationDescription}
-          </span>
-        ) : (
-          <span className="text-zinc-400">—</span>
-        )}
-      </td>
-      <td className="px-3 py-2 tabular-nums text-zinc-600">
-        {tache.dueDate ? (
-          <span className="inline-flex items-center gap-1">
-            <Calendar className="h-3 w-3" strokeWidth={1.75} />
-            {formatDateFr(tache.dueDate)}
-          </span>
-        ) : (
-          <span className="text-zinc-400">—</span>
-        )}
-      </td>
+      {show('emplacement') && (
+        <td className="px-3 py-2 text-zinc-600">
+          {location ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              {location}
+            </span>
+          ) : tache.locationDescription ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              {tache.locationDescription}
+            </span>
+          ) : (
+            <span className="text-zinc-400">—</span>
+          )}
+        </td>
+      )}
+      {show('dueDate') && (
+        <td className="px-3 py-2 tabular-nums text-zinc-600">
+          {tache.dueDate ? (
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="h-3 w-3" strokeWidth={1.75} />
+              {formatDateFr(tache.dueDate)}
+            </span>
+          ) : (
+            <span className="text-zinc-400">—</span>
+          )}
+        </td>
+      )}
       <td className="px-3 py-2">
         <button
           type="button"
@@ -650,5 +778,93 @@ function RowItem({
         </Link>
       </td>
     </tr>
+  );
+}
+
+/**
+ * dashboard-22 mobile — carte d'une tâche (<sm). Tâche + Statut toujours en
+ * tête ; Échéance / Emplacement / Bien·Lot / Marché empilés selon la map de
+ * visibilité (bouton « Colonnes »). Photos + edit en rangée d'actions.
+ */
+function TacheCard({
+  tache,
+  returnTo,
+  hideLotColumn,
+  firstColumn,
+  show,
+  onOpenPhotos,
+}: {
+  tache: TacheListRow;
+  returnTo: string;
+  hideLotColumn: boolean;
+  firstColumn: 'marche' | 'fournisseur';
+  show: (id: string) => boolean;
+  onOpenPhotos: () => void;
+}) {
+  const location = [tache.levelName, tache.roomName].filter(Boolean).join(' · ');
+  const emplacement = location || tache.locationDescription || '—';
+  const firstColText =
+    firstColumn === 'fournisseur' ? (tache.supplierName ?? '—') : tache.marcheName;
+  const firstColLabel = firstColumn === 'fournisseur' ? 'Fournisseur' : 'Marché';
+
+  return (
+    <MobileCard
+      primary={
+        <>
+          <span className="min-w-0 flex-1 font-medium text-zinc-900">{tache.title}</span>
+          <TacheStatusSelect tacheId={tache.id} currentStatus={tache.status} />
+        </>
+      }
+      fields={[
+        {
+          label: 'Échéance',
+          value: tache.dueDate ? formatDateFr(tache.dueDate) : '—',
+          visible: show('dueDate'),
+        },
+        { label: 'Emplacement', value: emplacement, visible: show('emplacement') },
+        {
+          label: 'Bien · Lot',
+          value: (
+            <Link href={`/biens/lots/${tache.lotId}`} className="text-blue-700 hover:underline">
+              {tache.propertyName} · {tache.lotName}
+            </Link>
+          ),
+          visible: !hideLotColumn && show('lot'),
+        },
+        {
+          label: firstColLabel,
+          value: (
+            <Link
+              href={`/marches/${tache.marcheId}?tab=suivi`}
+              className="text-blue-700 hover:underline"
+            >
+              {firstColText}
+            </Link>
+          ),
+          visible: show('marche'),
+        },
+      ]}
+      actions={
+        <>
+          <button
+            type="button"
+            onClick={onOpenPhotos}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] text-blue-700 hover:bg-blue-50"
+            title="Voir / ajouter des photos"
+          >
+            <Camera className="h-3.5 w-3.5" strokeWidth={1.75} />
+            {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
+          </button>
+          <Link
+            href={`/marches/${tache.marcheId}/sous-lots/${tache.sousLotId}/taches/${tache.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+            title="Modifier la tâche"
+            aria-label="Modifier la tâche"
+          >
+            <Pencil className="h-3 w-3" strokeWidth={2} />
+          </Link>
+        </>
+      }
+    />
   );
 }
