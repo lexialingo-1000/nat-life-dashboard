@@ -1,11 +1,26 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil, Calendar } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
+import { useColumnVisibility, type ColumnVisibility } from './use-column-visibility';
+import { ColumnPickerButton, type PickerColumn } from './column-picker-button';
+
+/**
+ * dashboard-22 mobile — gestion des colonnes des lignes de tâches de l'arbre
+ * (bouton « Colonnes », mémorisé localStorage). Même primitive que la liste
+ * `TachesListTable`. Statut + Titre + actions toujours visibles ; Emplacement /
+ * Échéance / Contact / Photos masquables pour alléger l'arbre.
+ */
+const TREE_VIS_KEY = 'natlife:marches-tree';
+// Sur mobile, masquer par défaut les 2 champs les plus longs (Échéance + Photos
+// restent visibles). Desktop = tout visible. Ajustable.
+const TREE_MOBILE_DEFAULTS: ColumnVisibility = { emplacement: false, contact: false };
+// Propage `show(colId)` jusqu'à TacheRow sans prop-drilling (3 niveaux).
+const ColumnVisCtx = createContext<(id: string) => boolean>(() => true);
 
 /**
  * Vue cascade Marché > Sous-lot > Tâches dépliable, pattern `<details>` HTML
@@ -89,6 +104,16 @@ interface Props {
 export function MarchesTree({ marches, returnTo }: Props) {
   // V1.x dashboard-21 §2 — caméra cliquable par tâche (comme TachesListTable).
   const [photosTache, setPhotosTache] = useState<TacheNode | null>(null);
+  // dashboard-22 mobile — visibilité des champs de ligne de tâche.
+  const [vis, setVis] = useColumnVisibility(TREE_VIS_KEY, TREE_MOBILE_DEFAULTS);
+  const show = (id: string) => vis[id] !== false;
+  const toggleCol = (id: string) => setVis({ ...vis, [id]: vis[id] === false });
+  const pickerColumns: PickerColumn[] = [
+    { id: 'emplacement', label: 'Emplacement' },
+    { id: 'dueDate', label: 'Échéance' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'photos', label: 'Photos' },
+  ].map((c) => ({ ...c, visible: show(c.id), toggle: () => toggleCol(c.id) }));
 
   if (marches.length === 0) {
     return (
@@ -103,19 +128,24 @@ export function MarchesTree({ marches, returnTo }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      {marches.map((m) => (
-        <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
-      ))}
-      {photosTache && (
-        <TachePhotosDialog
-          tacheId={photosTache.id}
-          tacheTitle={photosTache.title}
-          photos={photosTache.photos}
-          onClose={() => setPhotosTache(null)}
-        />
-      )}
-    </div>
+    <ColumnVisCtx.Provider value={show}>
+      <div className="mb-2 flex justify-end">
+        <ColumnPickerButton columns={pickerColumns} />
+      </div>
+      <div className="space-y-2">
+        {marches.map((m) => (
+          <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
+        ))}
+        {photosTache && (
+          <TachePhotosDialog
+            tacheId={photosTache.id}
+            tacheTitle={photosTache.title}
+            photos={photosTache.photos}
+            onClose={() => setPhotosTache(null)}
+          />
+        )}
+      </div>
+    </ColumnVisCtx.Provider>
   );
 }
 
@@ -266,6 +296,8 @@ function TacheRow({
   returnTo: string;
   onOpenPhotos: (t: TacheNode) => void;
 }) {
+  // dashboard-22 mobile — visibilité des champs pilotée par le picker « Colonnes ».
+  const show = useContext(ColumnVisCtx);
   return (
     <li className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] hover:bg-[#fbf8f0]/60">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -274,27 +306,28 @@ function TacheRow({
       </div>
       <div className="flex items-center gap-3 text-[11px] text-zinc-500">
         {/* V1.13 R3 — Pièce / Niveau (depuis JOIN rooms→levels) ; fallback sur locationDescription legacy. */}
-        {tache.roomName || tache.levelName ? (
-          <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            <span className="max-w-[180px] truncate">
-              {[tache.levelName, tache.roomName].filter(Boolean).join(' · ')}
+        {show('emplacement') &&
+          (tache.roomName || tache.levelName ? (
+            <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              <span className="max-w-[180px] truncate">
+                {[tache.levelName, tache.roomName].filter(Boolean).join(' · ')}
+              </span>
             </span>
-          </span>
-        ) : tache.locationDescription ? (
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            <span className="max-w-[180px] truncate">{tache.locationDescription}</span>
-          </span>
-        ) : null}
+          ) : tache.locationDescription ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              <span className="max-w-[180px] truncate">{tache.locationDescription}</span>
+            </span>
+          ) : null)}
         {/* V1.13 R3 — Échéance. */}
-        {tache.dueDate && (
+        {show('dueDate') && tache.dueDate && (
           <span className="inline-flex items-center gap-1 tabular-nums" title="Échéance">
             <Calendar className="h-3 w-3" strokeWidth={1.75} />
             {formatDateFr(tache.dueDate)}
           </span>
         )}
-        {tache.supplierContactName && (
+        {show('contact') && tache.supplierContactName && (
           <span className="inline-flex items-center gap-1">
             <User className="h-3 w-3" strokeWidth={1.75} />
             {tache.supplierContactName}
@@ -302,15 +335,17 @@ function TacheRow({
         )}
         {/* V1.x dashboard-21 §2 — caméra cliquable (voir/ajouter photos), comme
             le tableau du bas. Toujours visible, même sans photo. */}
-        <button
-          type="button"
-          onClick={() => onOpenPhotos(tache)}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
-          title="Voir / ajouter des photos"
-        >
-          <Camera className="h-3 w-3" strokeWidth={1.75} />
-          {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
-        </button>
+        {show('photos') && (
+          <button
+            type="button"
+            onClick={() => onOpenPhotos(tache)}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
+            title="Voir / ajouter des photos"
+          >
+            <Camera className="h-3 w-3" strokeWidth={1.75} />
+            {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
+          </button>
+        )}
         {/* V12bis PR9 §6 — modifier la tâche. */}
         <Link
           href={`/marches/${marcheId}/sous-lots/${sousLotId}/taches/${tache.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
