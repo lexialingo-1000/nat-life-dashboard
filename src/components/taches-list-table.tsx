@@ -246,8 +246,14 @@ export function TachesListTable({
     });
   };
 
-  const statusFilterActive = statusSet.size !== ALL_STATUS_VALUES.length;
-  const hasActiveFilters = Object.values(filters).some((v) => v !== '') || statusFilterActive;
+  // « Filtre actif » = état différent du DÉFAUT métier (tout sauf Terminé), pas
+  // de « tous ». Sinon le bouton « Effacer les filtres » serait affiché en
+  // permanence et son clic (qui remet au défaut) ne changerait rien visiblement.
+  const statusIsDefault =
+    statusSet.size === DEFAULT_VISIBLE_STATUS.length &&
+    DEFAULT_VISIBLE_STATUS.every((v) => statusSet.has(v));
+  const hasActiveFilters =
+    Object.values(filters).some((v) => v !== '') || !statusIsDefault;
 
   if (rows.length === 0) {
     return <div className="card p-8 text-center text-sm text-zinc-500">Aucune tâche.</div>;
@@ -314,7 +320,7 @@ export function TachesListTable({
         <Filter className="h-3.5 w-3.5" strokeWidth={1.75} />
         <span>
           {sorted.length} tâche{sorted.length !== 1 ? 's' : ''}
-          {hasActiveFilters && ` (filtré sur ${rows.length})`}
+          {sorted.length !== rows.length && ` (sur ${rows.length})`}
         </span>
       </div>
       <div className="flex items-center gap-3">
