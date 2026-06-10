@@ -17,6 +17,9 @@ export const companies = pgTable('companies', {
   nafCode: varchar('naf_code', { length: 10 }),
   // V12bis PR5 A1 — numéro TVA intracom
   tvaIntracom: varchar('tva_intracom', { length: 20 }),
+  // dashboard-22 (retour JC 2026-06-10) — N° TVA international, distinct de l'intracom,
+  // pour sociétés étrangères. Optionnel.
+  tvaInternational: varchar('tva_international', { length: 30 }),
   // V1.11 R8 — fréquence TVA (cf. enum). Null = info non renseignée.
   tvaFrequency: tvaFrequencyEnum('tva_frequency'),
   isActive: boolean('is_active').notNull().default(true),

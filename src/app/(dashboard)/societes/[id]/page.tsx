@@ -145,6 +145,11 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
               {(company as { tvaIntracom?: string | null }).tvaIntracom ?? '—'}
             </span>
           </Row>
+          <Row label="N° TVA international">
+            <span className="font-mono tnum">
+              {(company as { tvaInternational?: string | null }).tvaInternational ?? '—'}
+            </span>
+          </Row>
           {/* V1.11 R8 — affichage fréquence TVA. */}
           <Row label="TVA">
             {(() => {

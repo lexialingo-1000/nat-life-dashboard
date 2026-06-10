@@ -47,6 +47,8 @@ const createSchema = z.object({
     .regex(/^[A-Z0-9 ]*$/i, 'Format invalide')
     .optional()
     .or(z.literal('')),
+  // dashboard-22 (retour JC 2026-06-10) — N° TVA international (sociétés étrangères).
+  tvaInternational: z.string().max(30).optional().or(z.literal('')),
   // V1.11 R8 — fréquence TVA. UI envoie 'non_assujettie' si checkbox décochée,
   // ou une des 3 fréquences si cochée. Empty string = info non renseignée (legacy).
   tvaFrequency: z
@@ -124,6 +126,7 @@ export async function createSocieteAction(formData: FormData) {
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
     tvaIntracom: formData.get('tvaIntracom'),
+    tvaInternational: formData.get('tvaInternational'),
     tvaFrequency: formData.get('tvaFrequency'),
   });
 
@@ -137,6 +140,7 @@ export async function createSocieteAction(formData: FormData) {
     activitePrincipale,
     nafCode,
     tvaIntracom,
+    tvaInternational,
     tvaFrequency,
     formeJuridique,
     ...rest
@@ -152,6 +156,7 @@ export async function createSocieteAction(formData: FormData) {
     activitePrincipale: activitePrincipale || null,
     nafCode: nafCode || null,
     tvaIntracom: tvaIntracom || null,
+    tvaInternational: tvaInternational || null,
     tvaFrequency: tvaFrequency || null,
   });
 
@@ -177,6 +182,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     activitePrincipale: formData.get('activitePrincipale'),
     nafCode: formData.get('nafCode'),
     tvaIntracom: formData.get('tvaIntracom'),
+    tvaInternational: formData.get('tvaInternational'),
     tvaFrequency: formData.get('tvaFrequency'),
     isActive: formData.get('isActive'),
   });
@@ -192,6 +198,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     activitePrincipale,
     nafCode,
     tvaIntracom,
+    tvaInternational,
     tvaFrequency,
     formeJuridique,
     isActive,
@@ -210,6 +217,7 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
       activitePrincipale: activitePrincipale || null,
       nafCode: nafCode || null,
       tvaIntracom: tvaIntracom || null,
+      tvaInternational: tvaInternational || null,
       tvaFrequency: tvaFrequency || null,
       isActive,
       updatedAt: new Date(),
