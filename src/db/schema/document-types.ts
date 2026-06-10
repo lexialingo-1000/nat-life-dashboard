@@ -29,6 +29,9 @@ export const documentTypes = pgTable(
     hasExpiration: boolean('has_expiration').notNull().default(false),
     isRequired: boolean('is_required').notNull().default(false),
     appliesToTenantType: text('applies_to_tenant_type'),
+    // dashboard-22 #8b — typage par type de société (scope=company uniquement).
+    // NULL = toutes les sociétés ; sinon = une des valeurs de company_type.
+    appliesToCompanyType: text('applies_to_company_type'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

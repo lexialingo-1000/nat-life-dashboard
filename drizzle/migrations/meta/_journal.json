@@ -225,6 +225,13 @@
       "when": 1780880000000,
       "tag": "0031_companies_tva_international",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1780890000000,
+      "tag": "0032_document_types_company_type",
+      "breakpoints": true
     }
   ]
 }

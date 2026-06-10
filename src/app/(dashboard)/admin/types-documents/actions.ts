@@ -39,6 +39,19 @@ const tenantPreprocess = z.preprocess(
   z.enum(['LT', 'CT', 'all']).nullable(),
 );
 
+// dashboard-22 #8b — type de société (scope=company). NULL = toutes.
+const companyTypePreprocess = z.preprocess(
+  (v) => (v === '' || v == null || v === undefined ? null : v),
+  z
+    .enum([
+      'commerciale_bilan',
+      'commerciale_sans_bilan',
+      'immobiliere_bilan',
+      'immobiliere_sans_bilan',
+    ])
+    .nullable(),
+);
+
 const uuidOrNull = z.preprocess(
   (v) => (v === '' || v == null || v === undefined ? null : v),
   z.string().uuid().nullable(),
@@ -59,6 +72,7 @@ const createSchema = z.object({
   hasExpiration: checkboxToBool.optional(),
   isRequired: checkboxToBool.optional(),
   appliesToTenantType: tenantPreprocess.optional(),
+  appliesToCompanyType: companyTypePreprocess.optional(),
 });
 
 const updateSchema = z.object({
@@ -69,6 +83,7 @@ const updateSchema = z.object({
   hasExpiration: checkboxToBool,
   isRequired: checkboxToBool,
   appliesToTenantType: tenantPreprocess,
+  appliesToCompanyType: companyTypePreprocess,
   sortOrder: z.preprocess((v) => Number(v ?? 0), z.number().int().min(0).max(9999)),
   isActive: checkboxToBool,
 });
@@ -124,10 +139,12 @@ export async function createDocumentTypeAction(
     hasExpiration,
     isRequired,
     appliesToTenantType,
+    appliesToCompanyType,
   } = parsed.data;
 
   const finalAppliesTo = scope === 'customer' ? (appliesToTenantType ?? null) : null;
   const finalSupplierTypeId = scope === 'supplier' ? (supplierTypeId ?? null) : null;
+  const finalCompanyType = scope === 'company' ? (appliesToCompanyType ?? null) : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(categoryId ?? null);
 
   try {
@@ -141,6 +158,7 @@ export async function createDocumentTypeAction(
       hasExpiration: hasExpiration ?? false,
       isRequired: isRequired ?? false,
       appliesToTenantType: finalAppliesTo,
+      appliesToCompanyType: finalCompanyType,
       isActive: true,
       sortOrder: 100,
     });
@@ -167,6 +185,8 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
 
   const finalAppliesTo = current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
   const finalSupplierTypeId = current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
+  const finalCompanyType =
+    current[0].scope === 'company' ? parsed.data.appliesToCompanyType : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(parsed.data.categoryId);
 
   await db
@@ -179,6 +199,7 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
       hasExpiration: parsed.data.hasExpiration,
       isRequired: parsed.data.isRequired,
       appliesToTenantType: finalAppliesTo,
+      appliesToCompanyType: finalCompanyType,
       sortOrder: parsed.data.sortOrder,
       isActive: parsed.data.isActive,
       updatedAt: new Date(),
