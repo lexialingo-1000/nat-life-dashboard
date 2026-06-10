@@ -118,7 +118,9 @@ export async function createSocieteAction(formData: FormData) {
   const parsed = createSchema.safeParse({
     name: formData.get('name'),
     siren: formData.get('siren'),
-    immatriculation: formData.get('immatriculation'),
+    // Champ rendu uniquement si pays != FR → absent (null) pour les sociétés FR.
+    // `?? ''` évite l'échec Zod "Invalid input" (string().optional() rejette null).
+    immatriculation: formData.get('immatriculation') ?? '',
     pays: formData.get('pays'),
     type: formData.get('type'),
     formeJuridique: formData.get('formeJuridique') || undefined,
@@ -174,7 +176,9 @@ export async function updateSocieteAction(formData: FormData): Promise<void> {
     id: formData.get('id'),
     name: formData.get('name'),
     siren: formData.get('siren'),
-    immatriculation: formData.get('immatriculation'),
+    // Champ rendu uniquement si pays != FR → absent (null) pour les sociétés FR.
+    // `?? ''` évite l'échec Zod "Invalid input" (string().optional() rejette null).
+    immatriculation: formData.get('immatriculation') ?? '',
     pays: formData.get('pays'),
     type: formData.get('type'),
     formeJuridique: formData.get('formeJuridique') || undefined,
