@@ -1,0 +1,692 @@
+import { db } from '@/db/client';
+import {
+  marchesTravaux,
+  marcheLotAffectations,
+  marcheDocuments,
+  marcheSousLots,
+  marcheTaches,
+  marcheTypes,
+  lots,
+  properties,
+  companies,
+  suppliers,
+  supplierContacts,
+  documentTypes,
+  companyAccountingDocuments,
+  rooms,
+  levels,
+} from '@/db/schema';
+import { eq, asc, and, desc, inArray } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { Pencil } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
+import { SectionTitle } from '@/components/section-title';
+import { DeleteButton } from '@/components/delete-button';
+import {
+  deleteMarcheAction,
+  uploadMarcheDocumentAction,
+  deleteMarcheDocumentAction,
+  getMarcheDocumentUrlAction,
+} from '../actions';
+import { Tabs, type TabItem } from '@/components/tabs';
+import { DocumentsManager } from '@/components/documents-manager';
+import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
+import { NotesCard } from '@/components/notes-card';
+import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
+import { InlineSousLotForm } from '@/components/inline-sous-lot-form';
+import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
+import {
+  AccountingDocumentsManager,
+  type AccountingDocKind,
+  type AccountingRow,
+} from '@/components/accounting-documents-manager';
+import {
+  uploadAccountingDocAction,
+  deleteAccountingDocAction,
+  getAccountingDocUrlAction,
+} from '../../societes/accounting-actions';
+import { createSupplierInlineAction } from '../../fournisseurs/actions';
+import { slugify } from '@/lib/storage/minio';
+
+export const dynamic = 'force-dynamic';
+
+const STATUS_LABELS: Record<string, string> = {
+  devis_recu: 'Devis reçu',
+  signe: 'Signé',
+  en_cours: 'En cours',
+  livre: 'Livré',
+  conteste: 'Contesté',
+  annule: 'Annulé',
+};
+
+const STATUS_VARIANT: Record<string, 'good' | 'warn' | 'default'> = {
+  devis_recu: 'default',
+  signe: 'default',
+  en_cours: 'warn',
+  livre: 'good',
+  conteste: 'warn',
+  annule: 'default',
+};
+
+export default async function MarcheDetailPage({ params }: { params: { id: string } }) {
+  const rows = await db
+    .select({
+      id: marchesTravaux.id,
+      name: marchesTravaux.name,
+      description: marchesTravaux.description,
+      amountHt: marchesTravaux.amountHt,
+      amountTtc: marchesTravaux.amountTtc,
+      dateDevis: marchesTravaux.dateDevis,
+      dateSignature: marchesTravaux.dateSignature,
+      dateDebutPrevu: marchesTravaux.dateDebutPrevu,
+      dateFinPrevu: marchesTravaux.dateFinPrevu,
+      dateDebutReel: marchesTravaux.dateDebutReel,
+      dateFinReelle: marchesTravaux.dateFinReelle,
+      status: marchesTravaux.status,
+      // V1.11 R1 — isActive pour afficher le badge "Inactif" dans le header.
+      isActive: marchesTravaux.isActive,
+      notes: marchesTravaux.notes,
+      marcheTypeId: marchesTravaux.marcheTypeId,
+      propertyId: properties.id,
+      propertyName: properties.name,
+      companyId: companies.id,
+      companyName: companies.name,
+      supplierId: suppliers.id,
+      supplierName: suppliers.companyName,
+      supplierFirstName: suppliers.firstName,
+      supplierLastName: suppliers.lastName,
+    })
+    .from(marchesTravaux)
+    .innerJoin(properties, eq(marchesTravaux.propertyId, properties.id))
+    .innerJoin(companies, eq(properties.companyId, companies.id))
+    .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
+    .where(eq(marchesTravaux.id, params.id))
+    .limit(1);
+
+  if (rows.length === 0) notFound();
+  const marche = rows[0];
+
+  const affectedLots = await db
+    .select({ id: lots.id, name: lots.name })
+    .from(marcheLotAffectations)
+    .innerJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
+    .where(eq(marcheLotAffectations.marcheId, marche.id))
+    .orderBy(asc(lots.name));
+
+  const docs = await db
+    .select({
+      id: marcheDocuments.id,
+      name: marcheDocuments.name,
+      typeLabel: documentTypes.label,
+      storageKey: marcheDocuments.storageKey,
+      expiresAt: marcheDocuments.expiresAt,
+      documentDate: marcheDocuments.documentDate,
+      uploadedAt: marcheDocuments.uploadedAt,
+      // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
+      category: documentTypes.category,
+    })
+    .from(marcheDocuments)
+    .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))
+    .where(eq(marcheDocuments.marcheId, marche.id))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  const marcheDocTypes = await db
+    .select({
+      id: documentTypes.id,
+      label: documentTypes.label,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(and(eq(documentTypes.scope, 'marche'), eq(documentTypes.isActive, true)))
+    .orderBy(asc(documentTypes.sortOrder));
+
+  // Query sous-lots + tâches pour l'onglet Suivi (V1.9 M2)
+  const sousLotsRows = await db
+    .select({
+      id: marcheSousLots.id,
+      name: marcheSousLots.name,
+      status: marcheSousLots.status,
+      sortOrder: marcheSousLots.sortOrder,
+      marcheTypeLabel: marcheTypes.label,
+    })
+    .from(marcheSousLots)
+    .leftJoin(marcheTypes, eq(marcheSousLots.marcheTypeId, marcheTypes.id))
+    .where(eq(marcheSousLots.marcheId, marche.id))
+    .orderBy(asc(marcheSousLots.sortOrder), asc(marcheSousLots.name));
+
+  const sousLotIds = sousLotsRows.map((s) => s.id);
+  // V1.13 R3 — JOIN rooms + levels pour afficher Pièce + Niveau sur la liste tâches.
+  const tachesRows =
+    sousLotIds.length > 0
+      ? await db
+          .select({
+            id: marcheTaches.id,
+            title: marcheTaches.title,
+            status: marcheTaches.status,
+            locationDescription: marcheTaches.locationDescription,
+            dueDate: marcheTaches.dueDate,
+            photos: marcheTaches.photos,
+            lotId: marcheTaches.lotId,
+            marcheSousLotId: marcheTaches.marcheSousLotId,
+            supplierContactFirstName: supplierContacts.firstName,
+            supplierContactLastName: supplierContacts.lastName,
+            roomName: rooms.name,
+            levelName: levels.name,
+          })
+          .from(marcheTaches)
+          .leftJoin(supplierContacts, eq(marcheTaches.supplierContactId, supplierContacts.id))
+          .leftJoin(rooms, eq(marcheTaches.roomId, rooms.id))
+          .leftJoin(levels, eq(rooms.levelId, levels.id))
+          .where(inArray(marcheTaches.marcheSousLotId, sousLotIds))
+      : [];
+
+  const tachesBySousLot = new Map<string, typeof tachesRows>();
+  for (const t of tachesRows) {
+    if (!t.marcheSousLotId) continue;
+    const list = tachesBySousLot.get(t.marcheSousLotId) ?? [];
+    list.push(t);
+    tachesBySousLot.set(t.marcheSousLotId, list);
+  }
+
+  const marcheTypeRow = marche.marcheTypeId
+    ? await db
+        .select({ label: marcheTypes.label })
+        .from(marcheTypes)
+        .where(eq(marcheTypes.id, marche.marcheTypeId))
+        .limit(1)
+    : [];
+  const marcheTypeLabel = marcheTypeRow[0]?.label ?? null;
+
+  // V12bis umbrella §5 + V1.10 §7 §8 — Onglet COMPTA du marché.
+  // V1.10 refactor — utilise le composant compta unifié <AccountingDocumentsManager scope="marche">.
+  const marcheAccountingDocs = await db
+    .select({
+      id: companyAccountingDocuments.id,
+      kind: companyAccountingDocuments.kind,
+      name: companyAccountingDocuments.name,
+      originalFilename: companyAccountingDocuments.originalFilename,
+      storageKey: companyAccountingDocuments.storageKey,
+      documentDate: companyAccountingDocuments.documentDate,
+      amountHt: companyAccountingDocuments.amountHt,
+      amountTtc: companyAccountingDocuments.amountTtc,
+      uploadedAt: companyAccountingDocuments.uploadedAt,
+      parentDevisId: companyAccountingDocuments.parentDevisId,
+      parentCommandeId: companyAccountingDocuments.parentCommandeId,
+      companyId: companies.id,
+      companyName: companies.name,
+      supplierId: suppliers.id,
+      supplierCompanyName: suppliers.companyName,
+      supplierFirstName: suppliers.firstName,
+      supplierLastName: suppliers.lastName,
+    })
+    .from(companyAccountingDocuments)
+    .innerJoin(companies, eq(companies.id, companyAccountingDocuments.companyId))
+    .innerJoin(suppliers, eq(suppliers.id, companyAccountingDocuments.supplierId))
+    .where(eq(companyAccountingDocuments.marcheId, marche.id))
+    .orderBy(desc(companyAccountingDocuments.documentDate));
+
+  // V1.10 §4 §5 — résolution labels parents (devis et commandes liés).
+  const marcheParentIds = new Set<string>();
+  for (const d of marcheAccountingDocs) {
+    if (d.parentDevisId) marcheParentIds.add(d.parentDevisId);
+    if (d.parentCommandeId) marcheParentIds.add(d.parentCommandeId);
+  }
+  const marcheParentRows =
+    marcheParentIds.size > 0
+      ? await db
+          .select({
+            id: companyAccountingDocuments.id,
+            kind: companyAccountingDocuments.kind,
+            name: companyAccountingDocuments.name,
+            documentDate: companyAccountingDocuments.documentDate,
+          })
+          .from(companyAccountingDocuments)
+          .where(inArray(companyAccountingDocuments.id, Array.from(marcheParentIds)))
+      : [];
+  const marcheParentById = new Map(marcheParentRows.map((p) => [p.id, p]));
+  const formatMarcheParentLabel = (id: string | null): string | null => {
+    if (!id) return null;
+    const p = marcheParentById.get(id);
+    if (!p) return null;
+    const kindLabel = p.kind === 'devis' ? 'Devis' : p.kind === 'commande' ? 'Commande' : 'Facture';
+    return `${kindLabel} ${p.name}${p.documentDate ? ` (${p.documentDate})` : ''}`;
+  };
+
+  const marcheComptaTotalHt = marcheAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountHt ? Number(d.amountHt) : 0),
+    0,
+  );
+  const marcheComptaTotalTtc = marcheAccountingDocs.reduce(
+    (acc, d) => acc + (d.amountTtc ? Number(d.amountTtc) : 0),
+    0,
+  );
+
+  const marcheTreeNode: MarcheNode = {
+    id: marche.id,
+    supplierName:
+      marche.supplierName ??
+      `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
+      'Marché',
+    status: marche.status,
+    amountHt: marche.amountHt,
+    sousLots: sousLotsRows.map((sl) => ({
+      id: sl.id,
+      name: sl.name,
+      status: sl.status,
+      marcheTypeLabel: sl.marcheTypeLabel,
+      // V1.x dashboard-21 §3 — la cascade masque les tâches terminées (vue "à
+      // faire") ; le tableau bas (TachesListTable) garde tout via son filtre statut.
+      taches: (tachesBySousLot.get(sl.id) ?? [])
+        .filter((t) => t.status !== 'termine')
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          locationDescription: t.locationDescription,
+          // V1.13 R3 — échéance + pièce + niveau exposés sur la liste tâches.
+          dueDate: t.dueDate,
+          roomName: t.roomName,
+          levelName: t.levelName,
+          supplierContactName:
+            t.supplierContactFirstName || t.supplierContactLastName
+              ? `${t.supplierContactFirstName ?? ''} ${t.supplierContactLastName ?? ''}`.trim()
+              : null,
+          photosCount: Array.isArray(t.photos) ? t.photos.length : 0,
+          // V1.x dashboard-21 §2 — photos[] pour la caméra cliquable du tree.
+          photos: Array.isArray(t.photos) ? t.photos : [],
+          lotId: t.lotId,
+        })),
+    })),
+  };
+
+  const supplierLabel =
+    marche.supplierName ??
+    `${marche.supplierFirstName ?? ''} ${marche.supplierLastName ?? ''}`.trim() ??
+    '—';
+
+  const overviewTab = (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Kpi
+          label="Montant HT"
+          value={marche.amountHt ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €` : '—'}
+        />
+        <Kpi label="Lots concernés" value={affectedLots.length || 'communs'} />
+        <Kpi
+          label="Statut"
+          value={STATUS_LABELS[marche.status] ?? marche.status}
+          variant={STATUS_VARIANT[marche.status] ?? 'default'}
+        />
+      </div>
+      <NotesCard notes={marche.notes} />
+    </div>
+  );
+
+  const identityTab = (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="card p-5">
+        <SectionTitle>Identité</SectionTitle>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="Bien">
+            <Link href={`/biens/properties/${marche.propertyId}`} className="hover:text-blue-700">
+              {marche.propertyName}
+            </Link>
+          </Row>
+          <Row label="Fournisseur">
+            <Link href={`/fournisseurs/${marche.supplierId}`} className="hover:text-blue-700">
+              {supplierLabel}
+            </Link>
+          </Row>
+          <Row label="Type de travaux">
+            {marcheTypeLabel ?? <span className="text-zinc-400">—</span>}
+          </Row>
+          <Row label="Description">{marche.description ?? '—'}</Row>
+        </dl>
+      </div>
+      <div className="card p-5">
+        <SectionTitle>Montants &amp; dates</SectionTitle>
+        <dl className="space-y-2 text-[13px]">
+          <Row label="HT">
+            <span className="tnum">
+              {marche.amountHt ? `${Number(marche.amountHt).toLocaleString('fr-FR')} €` : '—'}
+            </span>
+          </Row>
+          <Row label="TTC">
+            <span className="tnum">
+              {marche.amountTtc ? `${Number(marche.amountTtc).toLocaleString('fr-FR')} €` : '—'}
+            </span>
+          </Row>
+          <Row label="Début prévu">{marche.dateDebutPrevu ?? '—'}</Row>
+          <Row label="Fin prévue">{marche.dateFinPrevu ?? '—'}</Row>
+          <Row label="Début réel">{marche.dateDebutReel ?? '—'}</Row>
+          <Row label="Fin réelle">{marche.dateFinReelle ?? '—'}</Row>
+        </dl>
+      </div>
+    </div>
+  );
+
+  // V1.13 R1 — labels catégories dynamiques (renames admin propagés).
+  const docCategoriesMap = await loadDocumentCategoriesMap();
+
+  const documentsTab = (
+    <div className="card p-6">
+      <DocumentsManager
+        scope="marches"
+        parentId={marche.id}
+        parentSlug={slugify(marche.name)}
+        parentIdFieldName="marcheId"
+        documents={docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          typeLabel: d.typeLabel,
+          storageKey: d.storageKey,
+          documentDate: d.documentDate,
+          expiresAt: d.expiresAt,
+          uploadedAt:
+            d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+          category: d.category,
+        }))}
+        availableTypes={marcheDocTypes}
+        uploadAction={uploadMarcheDocumentAction}
+        deleteAction={deleteMarcheDocumentAction}
+        getUrlAction={getMarcheDocumentUrlAction}
+        categoriesMap={docCategoriesMap}
+      />
+    </div>
+  );
+
+  // V1.14 M-1 — flat list filtrable/triable pour Emplacement + Échéance.
+  // Source : Remarques client dashboard-18 §"LISTE DES TACHES DANS MARCHE DE
+  // TRAVAUX". Co-existe avec la cascade ci-dessous (structure visuelle).
+  const tacheListRows: TacheListRow[] = tachesRows
+    .filter((t) => t.marcheSousLotId !== null)
+    .map((t) => {
+      const sl = sousLotsRows.find((s) => s.id === t.marcheSousLotId);
+      return {
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        dueDate: t.dueDate,
+        marcheId: marche.id,
+        marcheName: marche.name,
+        // V1.x dashboard-21 §4 — colonne "Fournisseur" sur la fiche marché.
+        supplierName: supplierLabel,
+        sousLotId: t.marcheSousLotId!,
+        sousLotName: sl?.name ?? '—',
+        lotId: t.lotId,
+        lotName: marche.propertyName ?? '—',
+        propertyId: marche.propertyId ?? '',
+        propertyName: marche.propertyName ?? '—',
+        roomName: t.roomName,
+        levelName: t.levelName,
+        locationDescription: t.locationDescription,
+        photos: Array.isArray(t.photos) ? t.photos : [],
+      };
+    });
+
+  const suiviTab = (
+    <div className="space-y-3">
+      <div className="rounded-md border border-blue-100 bg-blue-50/50 p-4 text-[13px] text-blue-900">
+        <p className="font-medium">Comment fonctionne le suivi&nbsp;?</p>
+        <p className="mt-1 text-blue-800">
+          Un marché se découpe en <strong>sous-lots</strong> (corps d&apos;état&nbsp;: plomberie,
+          électricité, peinture…). Chaque sous-lot regroupe des <strong>tâches</strong> (statut à
+          faire / en cours / terminé / validé) que tu peux modifier directement depuis cette vue.
+          Crée d&apos;abord un sous-lot ci-dessous, puis ajoute-lui des tâches via le bouton
+          «&nbsp;Ajouter&nbsp;» à droite de chaque sous-lot.
+        </p>
+      </div>
+      <InlineSousLotForm marcheId={marche.id} />
+      <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}?tab=suivi`} />
+      {tacheListRows.length > 0 && (
+        <div className="space-y-2 pt-3">
+          <SectionTitle className="mb-0">Toutes les tâches (filtrable)</SectionTitle>
+          <TachesListTable
+            rows={tacheListRows}
+            returnTo={`/marches/${marche.id}?tab=suivi`}
+            hideLotColumn
+            firstColumn="fournisseur"
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  const totalTaches = marcheTreeNode.sousLots.reduce((acc, sl) => acc + sl.taches.length, 0);
+
+  // V1.10 refactor — mapping AccountingRow pour le composant compta unifié.
+  const marcheAccountingRows: AccountingRow[] = marcheAccountingDocs.map((d) => ({
+    id: d.id,
+    kind: d.kind as AccountingDocKind,
+    name: d.name,
+    originalFilename: d.originalFilename ?? null,
+    storageKey: d.storageKey,
+    documentDate: d.documentDate,
+    amountHt: d.amountHt,
+    amountTtc: d.amountTtc,
+    uploadedAt: d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : String(d.uploadedAt),
+    companyId: d.companyId,
+    companyName: d.companyName,
+    supplierId: d.supplierId,
+    supplierLabel:
+      d.supplierCompanyName ??
+      `${d.supplierFirstName ?? ''} ${d.supplierLastName ?? ''}`.trim() ??
+      'Fournisseur',
+    marcheId: marche.id,
+    marcheLabel: marche.description ?? marche.name,
+    parentDevisLabel: formatMarcheParentLabel(d.parentDevisId),
+    parentCommandeLabel: formatMarcheParentLabel(d.parentCommandeId),
+  }));
+
+  // V1.10 ext — options pour bouton "+ Nouveau" inline sur onglet compta marché.
+  const companyOptionsList = await db
+    .select({ id: companies.id, name: companies.name })
+    .from(companies)
+    .where(eq(companies.isActive, true))
+    .orderBy(asc(companies.name));
+  const companyOpts = companyOptionsList.map((c) => ({
+    id: c.id,
+    label: c.name,
+    slug: slugify(c.name),
+  }));
+
+  const supplierOptionsList = await db
+    .select({
+      id: suppliers.id,
+      companyName: suppliers.companyName,
+      firstName: suppliers.firstName,
+      lastName: suppliers.lastName,
+    })
+    .from(suppliers)
+    .where(eq(suppliers.isActive, true))
+    .orderBy(asc(suppliers.companyName));
+  const supplierOpts = supplierOptionsList.map((s) => ({
+    id: s.id,
+    label: (s.companyName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim()) || 'Fournisseur',
+  }));
+
+  // Devis/commandes déjà liés à ce marché (pour parent dropdowns)
+  const devisOptsForMarche = marcheAccountingDocs
+    .filter((d) => d.kind === 'devis')
+    .map((d) => ({
+      id: d.id,
+      label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
+      companyId: d.companyId,
+      supplierId: d.supplierId,
+      marcheId: marche.id as string | null,
+    }));
+  const commandeOptsForMarche = marcheAccountingDocs
+    .filter((d) => d.kind === 'commande')
+    .map((d) => ({
+      id: d.id,
+      label: `${d.name}${d.documentDate ? ` (${d.documentDate})` : ''}`,
+      companyId: d.companyId,
+      supplierId: d.supplierId,
+      marcheId: marche.id as string | null,
+    }));
+
+  // Liste de marchés pour le composant unifié (on n'a besoin que de ce marché
+  // courant en scope=marche, le combobox marché est caché car parentId verrouillé).
+  const marcheOptsForUnified = [
+    {
+      id: marche.id,
+      label: marche.description ?? marche.name,
+      supplierId: marche.supplierId,
+      companyId: marche.companyId,
+    },
+  ];
+
+  const comptaTab = (
+    <div className="card p-6">
+      <AccountingDocumentsManager
+        scope="marche"
+        parentId={marche.id}
+        parentLabel={marche.description ?? marche.name}
+        marcheDefaultCompanyId={marche.companyId ?? undefined}
+        marcheDefaultSupplierId={marche.supplierId ?? undefined}
+        rows={marcheAccountingRows}
+        totalHt={marcheComptaTotalHt}
+        totalTtc={marcheComptaTotalTtc}
+        companies={companyOpts}
+        suppliers={supplierOpts}
+        marches={marcheOptsForUnified}
+        createSupplierAction={createSupplierInlineAction}
+        devisOptions={devisOptsForMarche}
+        commandeOptions={commandeOptsForMarche}
+        uploadAction={uploadAccountingDocAction}
+        deleteAction={deleteAccountingDocAction}
+        getUrlAction={getAccountingDocUrlAction}
+      />
+    </div>
+  );
+
+  const tabs: TabItem[] = [
+    { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
+    { id: 'identity', label: 'Identité', content: identityTab },
+    { id: 'suivi', label: 'Suivi travaux', count: totalTaches, content: suiviTab },
+    {
+      id: 'compta',
+      label: 'Compta',
+      count: marcheAccountingDocs.length || undefined,
+      content: comptaTab,
+    },
+    { id: 'documents', label: 'Documents', count: docs.length, content: documentsTab },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <BackLink fallbackHref="/marches" label="Marchés de travaux" />
+
+      <header className="flex items-start justify-between gap-6">
+        <div className="page-header">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
+            <Link href={`/societes/${marche.companyId}`} className="hover:text-blue-800">
+              {marche.companyName}
+            </Link>{' '}
+            ·{' '}
+            <Link href={`/biens/properties/${marche.propertyId}`} className="hover:text-blue-800">
+              {marche.propertyName}
+            </Link>
+          </div>
+          {/* V1.11 R2 — H1 = description du marché (fallback type de travaux,
+              puis fournisseur si ni l'un ni l'autre n'est renseigné). Avant V1.11
+              le titre montrait le nom du fournisseur, redondant avec breadcrumb. */}
+          <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+            <span className="display-serif">
+              {marche.description ?? marcheTypeLabel ?? supplierLabel}
+            </span>
+            {marcheTypeLabel && marche.description && (
+              <span className="ml-3 inline-flex items-center rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 align-middle text-[12px] font-medium uppercase tracking-[0.06em] text-zinc-700">
+                {marcheTypeLabel}
+              </span>
+            )}
+            {!marche.isActive && (
+              <span className="ml-3 inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 align-middle text-[12px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+                Inactif
+              </span>
+            )}
+          </h1>
+          {/* V1.11 R3 — subtitle = uniquement le fournisseur (avant : `fournisseur · bien`,
+              le bien était redondant avec breadcrumb). */}
+          <p className="mt-1.5 text-[13px] text-zinc-500">
+            <Link
+              href={`/fournisseurs/${marche.supplierId}`}
+              className="font-medium hover:underline"
+            >
+              {supplierLabel}
+            </Link>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {affectedLots.length === 0 ? (
+              <span className="text-[12px] text-zinc-400">Parties communes</span>
+            ) : (
+              affectedLots.map((l) => (
+                <Link
+                  key={l.id}
+                  href={`/biens/lots/${l.id}`}
+                  className="rounded-full border border-zinc-200 bg-[#fbf8f0] px-3 py-1 text-[12px] hover:bg-zinc-50 hover:text-blue-700"
+                >
+                  {l.name}
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href={`/marches/${marche.id}/edit`} className="btn-secondary">
+            <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+            Modifier
+          </Link>
+          <DeleteButton
+            action={deleteMarcheAction}
+            id={marche.id}
+            label="Supprimer"
+            confirmationPhrase={supplierLabel}
+            description={`Cette action est irréversible. Le marché "${supplierLabel}" sera supprimé. Les sous-lots techniques et documents associés seront aussi supprimés.`}
+          />
+        </div>
+      </header>
+
+      <Tabs tabs={tabs} />
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</dt>
+      <dd className="text-right text-zinc-700">{children}</dd>
+    </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  variant = 'default',
+}: {
+  label: string;
+  value: number | string;
+  variant?: 'default' | 'good' | 'warn';
+}) {
+  return (
+    <div className="card p-5">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </div>
+      <div
+        className={`mt-2 text-3xl font-medium tabular-nums ${
+          variant === 'good'
+            ? 'text-blue-700'
+            : variant === 'warn'
+              ? 'text-blue-700'
+              : 'text-zinc-900'
+        }`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}

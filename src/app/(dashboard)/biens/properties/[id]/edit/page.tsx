@@ -1,0 +1,250 @@
+import { db } from '@/db/client';
+import { properties, companies } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
+import { updatePropertyAction } from '../../actions';
+
+export const dynamic = 'force-dynamic';
+
+// V12bis PR9 §4 — 4 statuts demandés par Natacha (dashboard-13). Loué/Vacant
+// supprimés du form (legacy DB seulement, backfill migration 0023 → en_portefeuille).
+const STATUT_OPTIONS = [
+  { value: 'en_cours_acquisition', label: "En cours d'acquisition" },
+  { value: 'en_portefeuille', label: 'En portefeuille' },
+  { value: 'en_cours_de_vente', label: 'En cours de vente' },
+  { value: 'vendu', label: 'Vendu' },
+];
+
+const TYPE_OPTIONS = [
+  { value: 'appartement', label: 'Appartement' },
+  { value: 'maison', label: 'Maison' },
+  { value: 'garage', label: 'Garage' },
+  { value: 'immeuble', label: 'Immeuble' },
+  { value: 'terrain', label: 'Terrain' },
+];
+
+export default async function EditPropertyPage({ params }: { params: { id: string } }) {
+  const rows = await db
+    .select({
+      id: properties.id,
+      name: properties.name,
+      type: properties.type,
+      address: properties.address,
+      city: properties.city,
+      postalCode: properties.postalCode,
+      purchaseDate: properties.purchaseDate,
+      purchasePrice: properties.purchasePrice,
+      statut: properties.statut,
+      notaire: properties.notaire,
+      cadastre: properties.cadastre,
+      notes: properties.notes,
+      companyId: companies.id,
+      companyName: companies.name,
+    })
+    .from(properties)
+    .innerJoin(companies, eq(properties.companyId, companies.id))
+    .where(eq(properties.id, params.id))
+    .limit(1);
+
+  if (rows.length === 0) notFound();
+  const p = rows[0];
+  const notaire = p.notaire ?? {};
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <BackLink fallbackHref={`/biens/properties/${p.id}`} label={p.name} />
+
+      <header className="page-header">
+        <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
+          Édition
+        </div>
+        <h1 className="mt-1.5 text-[32px] font-normal leading-tight text-zinc-900">
+          <span className="display-serif">Modifier</span>{' '}
+          <span className="text-zinc-900">{p.name}</span>
+        </h1>
+        <p className="mt-1.5 text-[13px] text-zinc-500">{p.companyName}</p>
+      </header>
+
+      <form action={updatePropertyAction} className="space-y-6" autoComplete="off">
+        <input type="hidden" name="id" value={p.id} />
+
+        <Section title="Identité">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Nom" required>
+              <input
+                name="name"
+                defaultValue={p.name}
+                required
+                className="input"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+              />
+            </Field>
+            <Field label="Type" required>
+              <select name="type" defaultValue={p.type} required className="input">
+                {TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Statut" required>
+              <select
+                name="statut"
+                defaultValue={
+                  STATUT_OPTIONS.some((o) => o.value === p.statut) ? p.statut : 'en_portefeuille'
+                }
+                required
+                className="input"
+              >
+                {STATUT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </Section>
+
+        <Section title="Adresse">
+          <Field label="Rue / voie">
+            <input
+              name="address"
+              defaultValue={p.address ?? ''}
+              className="input"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
+          </Field>
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="Code postal">
+              <input
+                name="postalCode"
+                defaultValue={p.postalCode ?? ''}
+                className="input font-mono"
+                placeholder="13090"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+              />
+            </Field>
+            <Field label="Ville" className="col-span-2">
+              <input
+                name="city"
+                defaultValue={p.city ?? ''}
+                className="input"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+              />
+            </Field>
+          </div>
+        </Section>
+
+        <Section title="Acquisition">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Date d'achat">
+              <input
+                type="date"
+                name="purchaseDate"
+                defaultValue={p.purchaseDate ?? ''}
+                className="input"
+              />
+            </Field>
+            <Field label="Prix d'achat (€)">
+              <input
+                type="number"
+                step="0.01"
+                name="purchasePrice"
+                defaultValue={p.purchasePrice ?? ''}
+                className="input tnum"
+              />
+            </Field>
+          </div>
+          <Field label="Référence cadastrale">
+            <input
+              name="cadastre"
+              defaultValue={p.cadastre ?? ''}
+              className="input font-mono"
+              placeholder="000 AB 0123"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+            />
+          </Field>
+        </Section>
+
+        {/* Notaire conservé en BDD (jsonb) — UI retirée V1.9 (un seul notaire récurrent côté Natacha). */}
+        <input type="hidden" name="notaireName" defaultValue={notaire.name ?? ''} />
+        <input type="hidden" name="notaireEtude" defaultValue={notaire.etude ?? ''} />
+        <input type="hidden" name="notairePhone" defaultValue={notaire.phone ?? ''} />
+        <input type="hidden" name="notaireEmail" defaultValue={notaire.email ?? ''} />
+
+        <Section title="Notes">
+          <textarea
+            name="notes"
+            defaultValue={p.notes ?? ''}
+            rows={4}
+            className="input"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore="true"
+          />
+        </Section>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <Link href={`/biens/properties/${p.id}`} className="btn-secondary">
+            Annuler
+          </Link>
+          <button type="submit" className="btn-primary">
+            Enregistrer les modifications
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card p-6">
+      <h2 className="mb-4 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+        {title}
+      </h2>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  required,
+  className,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <label className="block text-[12px] font-medium text-zinc-700">
+        {label} {required && <span className="text-blue-700">*</span>}
+      </label>
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}

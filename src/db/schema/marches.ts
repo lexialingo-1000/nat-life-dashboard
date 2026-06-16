@@ -1,0 +1,121 @@
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  date,
+  integer,
+  numeric,
+  primaryKey,
+  boolean,
+} from 'drizzle-orm/pg-core';
+import { marcheStatusEnum } from './enums';
+import { properties, lots } from './properties';
+import { suppliers } from './suppliers';
+import { documentTypes } from './document-types';
+import { marcheTypes } from './marche-types';
+import { users } from './users';
+
+export const marchesTravaux = pgTable('marches_travaux', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id')
+    .notNull()
+    .references(() => properties.id, { onDelete: 'restrict' }),
+  supplierId: uuid('supplier_id')
+    .notNull()
+    .references(() => suppliers.id, { onDelete: 'restrict' }),
+  marcheTypeId: uuid('marche_type_id').references(() => marcheTypes.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  amountHt: numeric('amount_ht', { precision: 14, scale: 2 }),
+  amountTtc: numeric('amount_ttc', { precision: 14, scale: 2 }),
+  dateDevis: date('date_devis'),
+  dateSignature: date('date_signature'),
+  dateDebutPrevu: date('date_debut_prevu'),
+  dateFinPrevu: date('date_fin_prevu'),
+  dateDebutReel: date('date_debut_reel'),
+  dateFinReelle: date('date_fin_reelle'),
+  status: marcheStatusEnum('status').notNull().default('devis_recu'),
+  // V1.11 R1 — ETAT du marché. Default ACTIF à la création.
+  // Liste filtre WHERE is_active = true par défaut, toggle "Afficher inactifs".
+  isActive: boolean('is_active').notNull().default(true),
+  storagePath: text('storage_path'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Affectation d'un marché à un ou plusieurs lots immobiliers.
+ * Optionnelle : un marché peut concerner 0 lot (parties communes / structurel).
+ */
+export const marcheLotAffectations = pgTable(
+  'marche_lot_affectations',
+  {
+    marcheId: uuid('marche_id')
+      .notNull()
+      .references(() => marchesTravaux.id, { onDelete: 'cascade' }),
+    lotId: uuid('lot_id')
+      .notNull()
+      .references(() => lots.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.marcheId, t.lotId] }),
+  }),
+);
+
+/**
+ * Sous-lots techniques d'un marché (corps d'état : plomberie, électricité, etc.).
+ * À ne pas confondre avec les lots immobiliers (table `lots`) — ceux-ci sont liés
+ * via `marche_lot_affectations`.
+ */
+export const marcheSousLots = pgTable('marche_sous_lots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  marcheId: uuid('marche_id')
+    .notNull()
+    .references(() => marchesTravaux.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  amountHt: numeric('amount_ht', { precision: 14, scale: 2 }),
+  amountTtc: numeric('amount_ttc', { precision: 14, scale: 2 }),
+  supplierId: uuid('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  marcheTypeId: uuid('marche_type_id').references(() => marcheTypes.id, { onDelete: 'set null' }),
+  dateDebutPrevu: date('date_debut_prevu'),
+  dateFinPrevu: date('date_fin_prevu'),
+  dateDebutReel: date('date_debut_reel'),
+  dateFinReelle: date('date_fin_reelle'),
+  status: marcheStatusEnum('status').notNull().default('devis_recu'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  storagePath: text('storage_path'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const marcheDocuments = pgTable('marche_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  marcheId: uuid('marche_id')
+    .notNull()
+    .references(() => marchesTravaux.id, { onDelete: 'cascade' }),
+  typeId: uuid('type_id')
+    .notNull()
+    .references(() => documentTypes.id, { onDelete: 'restrict' }),
+  name: text('name').notNull(),
+  storageKey: text('storage_key').notNull(),
+  documentDate: date('document_date'),
+  expiresAt: date('expires_at'),
+  // V1.12 R1+R2 — col legacy `category` retirée. Source unique = document_types.category.
+  notes: text('notes'),
+  uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
+  uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
+});
+
+export type MarcheTravaux = typeof marchesTravaux.$inferSelect;
+export type NewMarcheTravaux = typeof marchesTravaux.$inferInsert;
+export type MarcheLotAffectation = typeof marcheLotAffectations.$inferSelect;
+export type NewMarcheLotAffectation = typeof marcheLotAffectations.$inferInsert;
+export type MarcheSousLot = typeof marcheSousLots.$inferSelect;
+export type NewMarcheSousLot = typeof marcheSousLots.$inferInsert;
+export type MarcheDocument = typeof marcheDocuments.$inferSelect;
+export type NewMarcheDocument = typeof marcheDocuments.$inferInsert;
