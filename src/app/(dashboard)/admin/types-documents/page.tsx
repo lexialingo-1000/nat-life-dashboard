@@ -132,7 +132,9 @@ export default async function TypesDocumentsPage({
       )}
 
       {!dbError && (
-        <div className="card overflow-hidden">
+        // dashboard-23 R7 — scroll horizontal sur mobile : overflow-hidden coupait
+        // la colonne « Actions » (lien Modifier) hors écran, la rendant inaccessible.
+        <div className="card overflow-x-auto">
           <table className="table-base">
             <thead>
               <tr>

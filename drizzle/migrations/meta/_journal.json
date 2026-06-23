@@ -197,6 +197,41 @@
       "when": 1748357200000,
       "tag": "0027_seed_facture_location_doctypes",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1780866339406,
+      "tag": "0028_slim_ikaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1780866502582,
+      "tag": "0029_rich_loa",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1780866662170,
+      "tag": "0030_lame_cardiac",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1780880000000,
+      "tag": "0031_companies_tva_international",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1780890000000,
+      "tag": "0032_document_types_company_type",
+      "breakpoints": true
     }
   ]
 }

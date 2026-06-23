@@ -19,6 +19,9 @@ interface Props {
   /** Si fourni (ex: /taches/new), affiche un select fournisseur dans le dialog
    *  au lieu du supplier fixe. */
   suppliers?: PropertyOption[];
+  /** dashboard-23 R4 — types de marché (optionnel). Si fourni, affiche un select
+   *  « Type de marché » dans le dialog ; la valeur alimente la colonne Type de /marches. */
+  marcheTypes?: PropertyOption[];
   /** Action serveur de création inline. */
   createAction: (formData: FormData) => Promise<CreateResult>;
   /** Callback quand la création réussit. */
@@ -30,6 +33,8 @@ interface Props {
   }) => void;
   /** Désactivé tant que pas de supplier sélectionné (contexte compta). */
   disabled?: boolean;
+  /** Lot courant à affilier automatiquement au marché créé (contexte /taches/new). */
+  lotId?: string;
 }
 
 /**
@@ -40,15 +45,20 @@ export function MarcheInlineCreator({
   supplierId,
   properties,
   suppliers,
+  marcheTypes,
   createAction,
   onCreated,
   disabled = false,
+  lotId,
 }: Props) {
   const pickSupplier = !!suppliers; // mode /taches/new : fournisseur choisi dans le dialog
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [propertyId, setPropertyId] = useState('');
   const [chosenSupplierId, setChosenSupplierId] = useState('');
+  // dashboard-23 R4 — description + type de marché saisis à la volée.
+  const [description, setDescription] = useState('');
+  const [marcheTypeId, setMarcheTypeId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +69,8 @@ export function MarcheInlineCreator({
     setName('');
     setPropertyId('');
     setChosenSupplierId('');
+    setDescription('');
+    setMarcheTypeId('');
     setError(null);
     setSubmitting(false);
   };
@@ -83,6 +95,10 @@ export function MarcheInlineCreator({
     fd.set('supplierId', effectiveSupplierId);
     fd.set('propertyId', propertyId);
     fd.set('name', name.trim());
+    // dashboard-23 R4 — description + type de marché → colonnes /marches.
+    fd.set('description', description.trim());
+    if (marcheTypeId) fd.set('marcheTypeId', marcheTypeId);
+    if (lotId) fd.set('lotId', lotId);
     const res = await createAction(fd);
     if ('error' in res) {
       setError(res.error);
@@ -190,8 +206,42 @@ export function MarcheInlineCreator({
                 )}
               </div>
 
+              {/* dashboard-23 R4 — type de marché (si catalogue fourni). */}
+              {marcheTypes && marcheTypes.length > 0 && (
+                <div>
+                  <label className="block text-[12px] font-medium text-zinc-700">
+                    Type de marché
+                  </label>
+                  <select
+                    value={marcheTypeId}
+                    onChange={(e) => setMarcheTypeId(e.target.value)}
+                    className="input mt-1"
+                  >
+                    <option value="">— Aucun —</option>
+                    {marcheTypes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* dashboard-23 R4 — description du marché → colonne Description. */}
+              <div>
+                <label className="block text-[12px] font-medium text-zinc-700">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                  className="input mt-1"
+                  placeholder="Placard, porte, fenêtre, escalier…"
+                  autoComplete="off"
+                />
+              </div>
+
               <p className="text-[11px] text-zinc-500">
-                Le marché sera créé avec statut <strong>Devis reçu</strong>. Tu pourras le compléter
+                Le marché sera créé avec statut <strong>Signé</strong>. Tu pourras le compléter
                 ensuite (montants, dates, lots affectés) depuis sa fiche.
               </p>
 

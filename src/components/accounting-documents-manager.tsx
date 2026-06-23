@@ -16,6 +16,7 @@ import { DataTable } from './data-table';
 import { EntityCombobox, type ComboboxOption } from './entity-combobox';
 import { MarcheInlineCreator } from './marche-inline-creator';
 import { formatDate } from '@/lib/utils';
+import { openSignedUrl } from '@/lib/open-file';
 
 export type AccountingDocKind = 'devis' | 'commande' | 'facture';
 export type AccountingScope = 'company' | 'marche' | 'supplier';
@@ -273,22 +274,11 @@ export function AccountingDocumentsManager({
   };
 
   const handleDownload = (storageKey: string) => {
+    // dashboard-22 — ouverture iOS-safe (cf. lib/open-file).
     startTransition(async () => {
       const fd = new FormData();
       fd.set('storageKey', storageKey);
-      const res = await getUrlAction(fd);
-      if ('url' in res) {
-        const a = document.createElement('a');
-        a.href = res.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        alert(`Erreur : ${res.error}`);
-      }
+      await openSignedUrl(() => getUrlAction(fd));
     });
   };
 

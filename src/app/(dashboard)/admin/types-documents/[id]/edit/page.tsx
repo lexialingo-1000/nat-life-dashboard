@@ -21,6 +21,14 @@ const SCOPE_LABELS: Record<string, string> = {
   location: 'Location',
 };
 
+// dashboard-22 #8b — options type de société (enum company_type).
+const COMPANY_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'commerciale_bilan', label: 'Commerciale (bilan)' },
+  { value: 'commerciale_sans_bilan', label: 'Commerciale (sans bilan)' },
+  { value: 'immobiliere_bilan', label: 'Immobilière (bilan)' },
+  { value: 'immobiliere_sans_bilan', label: 'Immobilière (sans bilan)' },
+];
+
 export default async function EditDocumentTypePage({ params }: { params: { id: string } }) {
   const rows = await db
     .select()
@@ -31,6 +39,7 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
   const t = rows[0];
   const isCustomerScope = t.scope === 'customer';
   const isSupplierScope = t.scope === 'supplier';
+  const isCompanyScope = t.scope === 'company';
 
   const categories = await db
     .select({ id: documentCategories.id, label: documentCategories.label })
@@ -154,6 +163,34 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
             {!isSupplierScope && (
               <p className="mt-1 text-[11px] text-zinc-500">
                 Réservé aux types scope « Fournisseur ».
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12px] font-medium text-zinc-700">
+              Type de société {isCompanyScope ? '' : '(non applicable)'}
+            </label>
+            <select
+              name="appliesToCompanyType"
+              defaultValue={t.appliesToCompanyType ?? ''}
+              disabled={!isCompanyScope}
+              className="input mt-1 disabled:bg-zinc-50 disabled:text-zinc-400"
+            >
+              <option value="">— Toutes les sociétés —</option>
+              {COMPANY_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {!isCompanyScope ? (
+              <p className="mt-1 text-[11px] text-zinc-500">Réservé aux types scope « Société ».</p>
+            ) : (
+              <p className="mt-1 text-[11px] text-zinc-500">
+                Si défini, ce type s'applique uniquement aux sociétés de ce type.
               </p>
             )}
           </div>

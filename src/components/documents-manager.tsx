@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { DataTable } from './data-table';
 import { formatDate } from '@/lib/utils';
+import { openSignedUrl } from '@/lib/open-file';
 
 const SCOPE_SINGULAR: Record<string, string> = {
   companies: 'company',
@@ -240,29 +241,13 @@ export function DocumentsManager({
   };
 
   const handleDownload = (storageKey: string) => {
+    // dashboard-22 — ouverture iOS-safe (cf. lib/open-file). L'onglet est ouvert
+    // dans le geste AVANT l'await presigned, sinon iOS bloque (« ouvrir un PLAN :
+    // rien ne se passe »). Les PDF/plans s'ouvrent inline (pas d'attribut download).
     startTransition(async () => {
       const fd = new FormData();
       fd.set('storageKey', storageKey);
-      const res = await getUrlAction(fd);
-      if ('url' in res) {
-        // V1.10 J — window.open() bloqué par popup-blocker des navigateurs quand
-        // appelé après un await (clic utilisateur "expiré"). Cliente Natacha
-        // rapportait : "Document/doc ne telecharge pas" sur fiche marché.
-        // Création dynamique d'un <a> + .click() programmatique : le navigateur
-        // accepte car l'action descend du même clic utilisateur via la transition.
-        const a = document.createElement('a');
-        a.href = res.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        // download attribute : MinIO presigned URL inclut response-content-disposition,
-        // mais on l'override pour compat navigateurs.
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        alert(`Erreur téléchargement : ${res.error}`);
-      }
+      await openSignedUrl(() => getUrlAction(fd));
     });
   };
 

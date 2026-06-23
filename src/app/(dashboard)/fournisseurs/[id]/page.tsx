@@ -30,13 +30,15 @@ import {
 import { Plus, Mail, Phone, Briefcase, Pencil } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
+import { PdfDownloadButton } from '@/components/pdf-download-button';
 import { DeleteButton } from '@/components/delete-button';
 import { ContactDeleteButton } from '@/components/contact-delete-button';
 import { DocumentsManager } from '@/components/documents-manager';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { NotesCard } from '@/components/notes-card';
 import { SupplierMarchesTable } from '@/components/supplier-marches-table';
-import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
+import { type TacheListRow } from '@/components/taches-list-table';
+import { TachesGroupedByMarche } from '@/components/taches-grouped-by-marche';
 import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import {
   AccountingDocumentsManager,
@@ -540,16 +542,19 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <SectionTitle className="mb-0">Suivi des travaux</SectionTitle>
-        <Link
-          href={`/taches/new?supplierId=${s.id}&returnTo=${encodeURIComponent(
-            `/fournisseurs/${s.id}?tab=taches`,
-          )}`}
-          className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
-        >
-          + Ajouter une tâche
-        </Link>
+        <div className="flex items-center gap-3">
+          <PdfDownloadButton supplierId={s.id} label="PDF" />
+          <Link
+            href={`/taches/new?supplierId=${s.id}&returnTo=${encodeURIComponent(
+              `/fournisseurs/${s.id}?tab=taches`,
+            )}`}
+            className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
+          >
+            + Ajouter une tâche
+          </Link>
+        </div>
       </div>
-      <TachesListTable rows={tacheRows} returnTo={`/fournisseurs/${s.id}?tab=taches`} groupByLot />
+      <TachesGroupedByMarche rows={tacheRows} returnTo={`/fournisseurs/${s.id}?tab=taches`} />
     </div>
   );
 

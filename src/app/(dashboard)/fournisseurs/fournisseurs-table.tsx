@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -46,13 +47,9 @@ const baseColumns: ColumnDef<FournisseurRow>[] = [
     accessorKey: 'displayName',
     header: 'Fournisseur',
     cell: ({ row }) => (
-      <EntityLink
-        href={`/fournisseurs/${row.original.id}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Voir la fiche"
-      >
+      <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em]">
         {row.original.displayName}
-      </EntityLink>
+      </span>
     ),
   },
   {
@@ -99,6 +96,7 @@ interface Props {
 }
 
 export function FournisseursTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<FournisseurRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -126,6 +124,14 @@ export function FournisseursTable({ rows, deleteAction }: Props) {
   }, [deleteAction]);
 
   return (
-    <DataTable columns={columns} data={rows} emptyMessage="Aucun fournisseur." enableSelection />
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyMessage="Aucun fournisseur."
+      enableSelection
+      onRowClick={(r) => router.push(`/fournisseurs/${r.id}`)}
+      rowClickIgnoreColumnIds={['select', 'actions']}
+      columnVisibilityKey="natlife:fournisseurs-table"
+    />
   );
 }

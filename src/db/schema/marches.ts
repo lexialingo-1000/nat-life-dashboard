@@ -35,7 +35,7 @@ export const marchesTravaux = pgTable('marches_travaux', {
   dateFinPrevu: date('date_fin_prevu'),
   dateDebutReel: date('date_debut_reel'),
   dateFinReelle: date('date_fin_reelle'),
-  status: marcheStatusEnum('status').notNull().default('devis_recu'),
+  status: marcheStatusEnum('status').notNull().default('signe'),
   // V1.11 R1 — ETAT du marché. Default ACTIF à la création.
   // Liste filtre WHERE is_active = true par défaut, toggle "Afficher inactifs".
   isActive: boolean('is_active').notNull().default(true),
@@ -85,7 +85,7 @@ export const marcheSousLots = pgTable('marche_sous_lots', {
   dateFinPrevu: date('date_fin_prevu'),
   dateDebutReel: date('date_debut_reel'),
   dateFinReelle: date('date_fin_reelle'),
-  status: marcheStatusEnum('status').notNull().default('devis_recu'),
+  status: marcheStatusEnum('status').notNull().default('signe'),
   sortOrder: integer('sort_order').notNull().default(0),
   storagePath: text('storage_path'),
   notes: text('notes'),

@@ -3,7 +3,10 @@ import {
   marchesTravaux,
   marcheSousLots,
   marcheLotAffectations,
+  marcheTypes,
   lots,
+  levels,
+  rooms,
   properties,
   suppliers,
 } from '@/db/schema';
@@ -112,6 +115,45 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
     }
   }
 
+  // 3b. dashboard-24 — structure niveau/pièces par lot, pour les sélecteurs
+  // Niveau + Pièce désormais affichés dès la création (étaient seulement en
+  // édition). Mêmes données que la page d'édition de tâche.
+  const levelRows = await db
+    .select({ lotId: levels.lotId, id: levels.id, name: levels.name })
+    .from(levels)
+    .orderBy(asc(levels.lotId), asc(levels.sortOrder), asc(levels.name));
+  const levelIds = levelRows.map((l) => l.id);
+  const roomRows =
+    levelIds.length > 0
+      ? await db
+          .select({ id: rooms.id, name: rooms.name, levelId: rooms.levelId })
+          .from(rooms)
+          .where(inArray(rooms.levelId, levelIds))
+          .orderBy(asc(rooms.sortOrder), asc(rooms.name))
+      : [];
+  const roomsByLevel = new Map<string, { id: string; name: string }[]>();
+  for (const r of roomRows) {
+    (roomsByLevel.get(r.levelId) ?? roomsByLevel.set(r.levelId, []).get(r.levelId)!).push({
+      id: r.id,
+      name: r.name,
+    });
+  }
+  const levelsByLot = new Map<
+    string,
+    { id: string; name: string; rooms: { id: string; name: string }[] }[]
+  >();
+  for (const lvl of levelRows) {
+    (levelsByLot.get(lvl.lotId) ?? levelsByLot.set(lvl.lotId, []).get(lvl.lotId)!).push({
+      id: lvl.id,
+      name: lvl.name,
+      rooms: roomsByLevel.get(lvl.id) ?? [],
+    });
+  }
+  const lotsStructure = Array.from(levelsByLot, ([lotStructLotId, lvls]) => ({
+    lotId: lotStructLotId,
+    levels: lvls,
+  }));
+
   // 4. Fournisseurs actifs + tous les biens — pour la création de marché à la volée (V12.1).
   const supplierRows = await db
     .select({
@@ -136,6 +178,14 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
     .orderBy(asc(properties.name));
   const propertyOpts: SupplierOption[] = propertyRows.map((p) => ({ id: p.id, label: p.name }));
 
+  // dashboard-23 R4 — types de marché actifs, pour le select du dialog « créer à la volée ».
+  const marcheTypeRows = await db
+    .select({ id: marcheTypes.id, label: marcheTypes.label })
+    .from(marcheTypes)
+    .where(eq(marcheTypes.isActive, true))
+    .orderBy(asc(marcheTypes.sortOrder), asc(marcheTypes.label));
+  const marcheTypeOpts: SupplierOption[] = marcheTypeRows.map((t) => ({ id: t.id, label: t.label }));
+
   const defaultMarcheId = marches.length === 1 ? marches[0].id : undefined;
 
   return (
@@ -153,8 +203,10 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
         marches={marches}
         sousLotsByMarche={sousLotsByMarche}
         lotsByProperty={lotsByProperty}
+        lotsStructure={lotsStructure}
         suppliers={supplierOpts}
         properties={propertyOpts}
+        marcheTypes={marcheTypeOpts}
         createMarcheAction={createMarcheInlineAction}
         createSousLotAction={createSousLotInlineAction}
         defaultMarcheId={defaultMarcheId}

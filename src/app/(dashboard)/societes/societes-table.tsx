@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
@@ -20,13 +21,9 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
     accessorKey: 'name',
     header: 'Société',
     cell: ({ row }) => (
-      <EntityLink
-        href={`/societes/${row.original.id}`}
-        className="link-cell whitespace-nowrap font-medium uppercase tracking-[0.04em]"
-        title="Voir la fiche"
-      >
+      <span className="whitespace-nowrap font-medium uppercase tracking-[0.04em]">
         {row.original.name}
-      </EntityLink>
+      </span>
     ),
   },
   {
@@ -56,11 +53,16 @@ const baseColumns: ColumnDef<SocieteRow>[] = [
       // V12bis PR6 — couleur distincte commerciale (bleu) vs immobilière (amber).
       // `.badge-emerald` était déjà mappée sur les teintes bleues (Direction A),
       // d'où la confusion visuelle ; on bascule sur badge-amber qui contraste.
-      return (
-        <span className={v === 'commerciale' ? 'badge-blue' : 'badge-amber'}>
-          {v === 'commerciale' ? 'Commerciale' : 'Immobilière'}
-        </span>
-      );
+      const isComm = v.startsWith('commerciale');
+      const hasBilan = v.endsWith('bilan') && !v.endsWith('sans_bilan');
+      const label = isComm
+        ? hasBilan
+          ? 'Commerciale (bilan)'
+          : 'Commerciale (sans bilan)'
+        : hasBilan
+          ? 'Immobilière (bilan)'
+          : 'Immobilière (sans bilan)';
+      return <span className={isComm ? 'badge-blue' : 'badge-amber'}>{label}</span>;
     },
   },
   {
@@ -90,6 +92,7 @@ interface Props {
 }
 
 export function SocietesTable({ rows, deleteAction }: Props) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<SocieteRow>[]>(() => {
     if (!deleteAction) return baseColumns;
     return [
@@ -116,5 +119,15 @@ export function SocietesTable({ rows, deleteAction }: Props) {
     ];
   }, [deleteAction]);
 
-  return <DataTable columns={columns} data={rows} emptyMessage="Aucune société." enableSelection />;
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyMessage="Aucune société."
+      enableSelection
+      onRowClick={(r) => router.push(`/societes/${r.id}`)}
+      rowClickIgnoreColumnIds={['select', 'actions']}
+      columnVisibilityKey="natlife:societes-table"
+    />
+  );
 }

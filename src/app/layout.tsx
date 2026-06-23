@@ -36,11 +36,6 @@ export const viewport: Viewport = {
   themeColor: '#0D2144',
 };
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${sans.variable} ${display.variable} ${mono.variable}`}>

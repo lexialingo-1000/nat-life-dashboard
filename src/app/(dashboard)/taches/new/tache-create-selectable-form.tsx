@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AlertCircle, Loader2, Plus, Save, X } from 'lucide-react';
 import { createTacheAction, type CreateTacheState } from '@/app/(dashboard)/marches/actions';
 import { MarcheInlineCreator } from '@/components/marche-inline-creator';
+import { TacheLocationSelectors } from '@/components/tache-location-selectors';
 
 // V20 §FICHE LOT §4 + V12.1 — ajout de tâche depuis fournisseur / bien / lot :
 // marché et sous-lot SÉLECTIONNABLES, avec création à la volée d'un marché
@@ -33,6 +34,10 @@ export interface LotOption {
   id: string;
   name: string;
 }
+export interface LotStructure {
+  lotId: string;
+  levels: { id: string; name: string; rooms: { id: string; name: string }[] }[];
+}
 export interface SupplierOption {
   id: string;
   label: string;
@@ -51,10 +56,14 @@ interface Props {
   sousLotsByMarche: Record<string, SousLotOption[]>;
   /** Lots immo indexés par propertyId. */
   lotsByProperty: Record<string, LotOption[]>;
+  /** Structure niveau/pièces par lot (pour les sélecteurs Niveau + Pièce). */
+  lotsStructure: LotStructure[];
   /** Fournisseurs (pour création marché à la volée). */
   suppliers: SupplierOption[];
   /** Biens (pour création marché à la volée). */
   properties: SupplierOption[];
+  /** dashboard-23 R4 — types de marché (select du dialog création à la volée). */
+  marcheTypes?: SupplierOption[];
   createMarcheAction: InlineCreateMarche;
   createSousLotAction: InlineCreateSousLot;
   defaultMarcheId?: string;
@@ -87,8 +96,10 @@ export function TacheCreateSelectableForm({
   marches,
   sousLotsByMarche,
   lotsByProperty,
+  lotsStructure,
   suppliers,
   properties,
+  marcheTypes,
   createMarcheAction,
   createSousLotAction,
   defaultMarcheId,
@@ -189,7 +200,9 @@ export function TacheCreateSelectableForm({
             supplierId=""
             suppliers={suppliers}
             properties={properties}
+            marcheTypes={marcheTypes}
             createAction={createMarcheAction}
+            lotId={defaultLotId}
             onCreated={({ id, label, propertyId }) => {
               const propertyName = properties.find((p) => p.id === propertyId)?.label ?? '';
               setMarcheList((prev) => [
@@ -307,6 +320,12 @@ export function TacheCreateSelectableForm({
           )}
         </select>
       </div>
+
+      {/* dashboard-24 — Niveau + Pièce désormais visibles dès la création
+          (étaient seulement en édition). roomId persisté par createTacheAction. */}
+      {effectiveLotId && (
+        <TacheLocationSelectors lotsStructure={lotsStructure} lotId={effectiveLotId} />
+      )}
 
       <div>
         <label className="block text-[12px] font-medium text-zinc-700">Titre *</label>

@@ -16,18 +16,61 @@ const FORME_OPTIONS = [
   { value: 'autre', label: 'Autre' },
 ];
 
+// dashboard-22 (retour JC 2026-06-10) — Pays en menu déroulant. Codes ISO 3166-1 alpha-2.
+// FR en premier (cas par défaut), puis le reste alphabétique. `pays === 'FR'` pilote
+// l'affichage SIREN vs Immatriculation locale.
+const COUNTRY_OPTIONS = [
+  { code: 'FR', label: 'France' },
+  { code: 'BE', label: 'Belgique' },
+  { code: 'CH', label: 'Suisse' },
+  { code: 'LU', label: 'Luxembourg' },
+  { code: 'DE', label: 'Allemagne' },
+  { code: 'AD', label: 'Andorre' },
+  { code: 'AT', label: 'Autriche' },
+  { code: 'CA', label: 'Canada' },
+  { code: 'CN', label: 'Chine' },
+  { code: 'DK', label: 'Danemark' },
+  { code: 'AE', label: 'Émirats arabes unis' },
+  { code: 'ES', label: 'Espagne' },
+  { code: 'US', label: 'États-Unis' },
+  { code: 'FI', label: 'Finlande' },
+  { code: 'GR', label: 'Grèce' },
+  { code: 'HK', label: 'Hong Kong' },
+  { code: 'IE', label: 'Irlande' },
+  { code: 'IT', label: 'Italie' },
+  { code: 'JP', label: 'Japon' },
+  { code: 'MA', label: 'Maroc' },
+  { code: 'MC', label: 'Monaco' },
+  { code: 'NO', label: 'Norvège' },
+  { code: 'NL', label: 'Pays-Bas' },
+  { code: 'PL', label: 'Pologne' },
+  { code: 'PT', label: 'Portugal' },
+  { code: 'GB', label: 'Royaume-Uni' },
+  { code: 'SE', label: 'Suède' },
+  { code: 'SN', label: 'Sénégal' },
+  { code: 'TN', label: 'Tunisie' },
+  { code: 'TR', label: 'Turquie' },
+];
+
 // V1.11 R8 — enum 4 valeurs. NULL côté DB = info non renseignée.
 export type TvaFrequency = 'non_assujettie' | 'mensuelle' | 'trimestrielle' | 'annuelle';
 
 export interface SocieteFormValues {
   name?: string;
   siren?: string | null;
-  type?: 'commerciale' | 'immobiliere';
+  immatriculation?: string | null;
+  pays?: string | null;
+  type?:
+    | 'commerciale_bilan'
+    | 'commerciale_sans_bilan'
+    | 'immobiliere_bilan'
+    | 'immobiliere_sans_bilan';
   formeJuridique?: string | null;
   address?: string | null;
   activitePrincipale?: string | null;
   nafCode?: string | null;
   tvaIntracom?: string | null;
+  tvaInternational?: string | null;
   // V1.11 R8 — fréquence TVA. Null = info non renseignée ; 'non_assujettie' = explicite.
   tvaFrequency?: TvaFrequency | null;
   isActive?: boolean;
@@ -46,11 +89,13 @@ export function SocieteFormFields({
   enableSirenLookup = false,
   showActiveToggle = false,
 }: Props) {
+  const [pays, setPays] = useState(defaultValues.pays ?? 'FR');
   const [siren, setSiren] = useState(defaultValues.siren ?? '');
+  const [immatriculation, setImmatriculation] = useState(defaultValues.immatriculation ?? '');
   const [name, setName] = useState(defaultValues.name ?? '');
-  const [type, setType] = useState<'commerciale' | 'immobiliere'>(
-    defaultValues.type ?? 'commerciale',
-  );
+  const [type, setType] = useState<
+    'commerciale_bilan' | 'commerciale_sans_bilan' | 'immobiliere_bilan' | 'immobiliere_sans_bilan'
+  >(defaultValues.type ?? 'commerciale_bilan');
   const [formeJuridique, setFormeJuridique] = useState(defaultValues.formeJuridique ?? '');
   const [address, setAddress] = useState(defaultValues.address ?? '');
   const [activitePrincipale, setActivitePrincipale] = useState(
@@ -58,6 +103,7 @@ export function SocieteFormFields({
   );
   const [nafCode, setNafCode] = useState(defaultValues.nafCode ?? '');
   const [tvaIntracom, setTvaIntracom] = useState(defaultValues.tvaIntracom ?? '');
+  const [tvaInternational, setTvaInternational] = useState(defaultValues.tvaInternational ?? '');
   // V1.11 R8 — checkbox pilote l'affichage du select fréquence. La valeur DB
   // est l'enum complet (1 colonne) ; "Assujettie" coché = mensuelle/trim/annuelle ;
   // décoché = non_assujettie.
@@ -119,12 +165,22 @@ export function SocieteFormFields({
           <select
             name="type"
             value={type}
-            onChange={(e) => setType(e.target.value as 'commerciale' | 'immobiliere')}
+            onChange={(e) =>
+              setType(
+                e.target.value as
+                  | 'commerciale_bilan'
+                  | 'commerciale_sans_bilan'
+                  | 'immobiliere_bilan'
+                  | 'immobiliere_sans_bilan',
+              )
+            }
             required
             className="input mt-1"
           >
-            <option value="commerciale">Commerciale</option>
-            <option value="immobiliere">Immobilière</option>
+            <option value="commerciale_bilan">Commerciale (bilan)</option>
+            <option value="commerciale_sans_bilan">Commerciale (sans bilan)</option>
+            <option value="immobiliere_bilan">Immobilière (bilan)</option>
+            <option value="immobiliere_sans_bilan">Immobilière (sans bilan)</option>
           </select>
         </div>
         <div>
@@ -146,41 +202,77 @@ export function SocieteFormFields({
       </div>
 
       <div>
-        <label className="block text-sm font-medium">SIREN ou SIRET</label>
-        <div className="mt-1 flex gap-2">
-          <input
-            type="text"
-            name="siren"
-            value={siren}
-            onChange={(e) => setSiren(e.target.value)}
-            className="input flex-1 font-mono text-sm"
-            placeholder="123456789 (SIREN) ou 12345678900012 (SIRET)"
-            maxLength={20}
-            autoComplete="off"
-            data-form-type="other"
-            data-lpignore="true"
-          />
-          {enableSirenLookup && (
-            <button
-              type="button"
-              onClick={handleLookup}
-              disabled={lookupLoading}
-              className="btn-secondary whitespace-nowrap"
-              title="Auto-remplir depuis l'API gouvernementale"
-            >
-              {lookupLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Sparkles className="mr-1.5 h-4 w-4" />
-                  Auto-remplir
-                </>
-              )}
-            </button>
+        <label className="block text-sm font-medium">Pays</label>
+        <select
+          name="pays"
+          value={pays}
+          onChange={(e) => setPays(e.target.value)}
+          className="input mt-1 max-w-xs"
+        >
+          {/* Si la valeur enregistrée n'est pas dans la liste, on l'affiche quand même. */}
+          {pays && !COUNTRY_OPTIONS.some((c) => c.code === pays) && (
+            <option value={pays}>{pays}</option>
           )}
-        </div>
-        {lookupError && <p className="mt-1 text-xs text-red-600">{lookupError}</p>}
+          {COUNTRY_OPTIONS.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.label} ({c.code})
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-zinc-500">
+          Hors France : saisir l&apos;immatriculation locale et, si besoin, le N° TVA international ci-dessous.
+        </p>
       </div>
+
+      {pays === 'FR' || pays === '' ? (
+        <div>
+          <label className="block text-sm font-medium">SIREN ou SIRET</label>
+          <div className="mt-1 flex gap-2">
+            <input
+              type="text"
+              name="siren"
+              value={siren}
+              onChange={(e) => setSiren(e.target.value)}
+              className="input flex-1 font-mono text-sm"
+              placeholder="123456789 (SIREN) ou 12345678900012 (SIRET)"
+              maxLength={20}
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+            />
+            {enableSirenLookup && (
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={lookupLoading}
+                className="btn-secondary whitespace-nowrap"
+                title="Auto-remplir depuis l'API gouvernementale"
+              >
+                {lookupLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="mr-1.5 h-4 w-4" />
+                    Auto-remplir
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          {lookupError && <p className="mt-1 text-xs text-red-600">{lookupError}</p>}
+        </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium">Immatriculation locale</label>
+          <input
+            name="immatriculation"
+            value={immatriculation}
+            onChange={(e) => setImmatriculation(e.target.value)}
+            className="input mt-1 font-mono text-sm"
+            placeholder="Numéro d'immatriculation étranger"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium">Adresse</label>
@@ -227,6 +319,24 @@ export function SocieteFormFields({
           />
           <p className="mt-1 text-[11px] text-zinc-500">Format FR + 11 chiffres. Optionnel.</p>
         </div>
+      </div>
+
+      {/* dashboard-22 (retour JC 2026-06-10) — N° TVA international, distinct de l'intracom,
+          pour sociétés étrangères. */}
+      <div>
+        <label className="block text-sm font-medium">N° TVA international</label>
+        <input
+          type="text"
+          name="tvaInternational"
+          value={tvaInternational}
+          onChange={(e) => setTvaInternational(e.target.value.toUpperCase())}
+          className="input mt-1 font-mono text-sm"
+          placeholder="Ex. CHE-123.456.789 TVA"
+          maxLength={30}
+        />
+        <p className="mt-1 text-[11px] text-zinc-500">
+          Sociétés étrangères. Distinct du N° TVA intracom. Optionnel.
+        </p>
       </div>
 
       {/* V1.11 R8 — Assujettie à la TVA + fréquence (placé juste après N° TVA intracom). */}

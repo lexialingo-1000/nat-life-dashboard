@@ -1,11 +1,26 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Plus, Camera, MapPin, User, Trash2, Pencil, Calendar } from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
+import { useColumnVisibility, type ColumnVisibility } from './use-column-visibility';
+import { ColumnPickerButton, type PickerColumn } from './column-picker-button';
+
+/**
+ * dashboard-22 mobile — gestion des colonnes des lignes de tâches de l'arbre
+ * (bouton « Colonnes », mémorisé localStorage). Même primitive que la liste
+ * `TachesListTable`. Statut + Titre + actions toujours visibles ; Emplacement /
+ * Échéance / Contact / Photos masquables pour alléger l'arbre.
+ */
+const TREE_VIS_KEY = 'natlife:marches-tree';
+// Sur mobile, masquer par défaut les 2 champs les plus longs (Échéance + Photos
+// restent visibles). Desktop = tout visible. Ajustable.
+const TREE_MOBILE_DEFAULTS: ColumnVisibility = { emplacement: false, contact: false };
+// Propage `show(colId)` jusqu'à TacheRow sans prop-drilling (3 niveaux).
+const ColumnVisCtx = createContext<(id: string) => boolean>(() => true);
 
 /**
  * Vue cascade Marché > Sous-lot > Tâches dépliable, pattern `<details>` HTML
@@ -18,23 +33,8 @@ import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marche
  * Server component pur — aucune state interactive (status select = client component).
  */
 
-const MARCHE_STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
-  signe: 'Signé',
-  en_cours: 'En cours',
-  livre: 'Livré',
-  conteste: 'Contesté',
-  annule: 'Annulé',
-};
-
-const MARCHE_STATUS_BADGE: Record<string, string> = {
-  devis_recu: 'bg-zinc-100 text-zinc-700',
-  signe: 'bg-blue-100 text-blue-700',
-  en_cours: 'bg-amber-100 text-amber-700',
-  livre: 'bg-emerald-100 text-emerald-700',
-  conteste: 'bg-red-100 text-red-700',
-  annule: 'bg-zinc-200 text-zinc-500',
-};
+// dashboard-23 R3 — MARCHE_STATUS_LABELS/BADGE retirés : le badge de statut du
+// marché n'est plus affiché dans l'en-tête de branche (à côté du fournisseur).
 
 export interface TacheNode {
   id: string;
@@ -59,7 +59,11 @@ function formatDateFr(value: string | null): string | null {
   // marcheTaches.dueDate est une date Postgres → string "YYYY-MM-DD" ou Date.
   const d = typeof value === 'string' ? new Date(value) : value;
   if (Number.isNaN((d as Date).getTime())) return null;
-  return (d as Date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return (d as Date).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 export interface SousLotNode {
@@ -87,6 +91,16 @@ interface Props {
 export function MarchesTree({ marches, returnTo }: Props) {
   // V1.x dashboard-21 §2 — caméra cliquable par tâche (comme TachesListTable).
   const [photosTache, setPhotosTache] = useState<TacheNode | null>(null);
+  // dashboard-22 mobile — visibilité des champs de ligne de tâche.
+  const [vis, setVis] = useColumnVisibility(TREE_VIS_KEY, TREE_MOBILE_DEFAULTS);
+  const show = (id: string) => vis[id] !== false;
+  const toggleCol = (id: string) => setVis({ ...vis, [id]: vis[id] === false });
+  const pickerColumns: PickerColumn[] = [
+    { id: 'emplacement', label: 'Emplacement' },
+    { id: 'dueDate', label: 'Échéance' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'photos', label: 'Photos' },
+  ].map((c) => ({ ...c, visible: show(c.id), toggle: () => toggleCol(c.id) }));
 
   if (marches.length === 0) {
     return (
@@ -101,19 +115,24 @@ export function MarchesTree({ marches, returnTo }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      {marches.map((m) => (
-        <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
-      ))}
-      {photosTache && (
-        <TachePhotosDialog
-          tacheId={photosTache.id}
-          tacheTitle={photosTache.title}
-          photos={photosTache.photos}
-          onClose={() => setPhotosTache(null)}
-        />
-      )}
-    </div>
+    <ColumnVisCtx.Provider value={show}>
+      <div className="mb-2 flex justify-end">
+        <ColumnPickerButton columns={pickerColumns} />
+      </div>
+      <div className="space-y-2">
+        {marches.map((m) => (
+          <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
+        ))}
+        {photosTache && (
+          <TachePhotosDialog
+            tacheId={photosTache.id}
+            tacheTitle={photosTache.title}
+            photos={photosTache.photos}
+            onClose={() => setPhotosTache(null)}
+          />
+        )}
+      </div>
+    </ColumnVisCtx.Provider>
   );
 }
 
@@ -141,13 +160,8 @@ function MarcheBranch({
           >
             {marche.supplierName}
           </Link>
-          <span
-            className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] ${
-              MARCHE_STATUS_BADGE[marche.status] ?? MARCHE_STATUS_BADGE.devis_recu
-            }`}
-          >
-            {MARCHE_STATUS_LABELS[marche.status] ?? marche.status}
-          </span>
+          {/* dashboard-23 R3 — badge de statut du marché retiré à côté du nom
+              fournisseur (écran Suivi depuis le marché). */}
         </div>
         <div className="flex items-center gap-4 text-[12px] text-zinc-500">
           {marche.amountHt && (
@@ -264,6 +278,8 @@ function TacheRow({
   returnTo: string;
   onOpenPhotos: (t: TacheNode) => void;
 }) {
+  // dashboard-22 mobile — visibilité des champs pilotée par le picker « Colonnes ».
+  const show = useContext(ColumnVisCtx);
   return (
     <li className="flex items-center justify-between gap-3 px-3 py-2 text-[13px] hover:bg-[#fbf8f0]/60">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -272,27 +288,28 @@ function TacheRow({
       </div>
       <div className="flex items-center gap-3 text-[11px] text-zinc-500">
         {/* V1.13 R3 — Pièce / Niveau (depuis JOIN rooms→levels) ; fallback sur locationDescription legacy. */}
-        {(tache.roomName || tache.levelName) ? (
-          <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            <span className="max-w-[180px] truncate">
-              {[tache.levelName, tache.roomName].filter(Boolean).join(' · ')}
+        {show('emplacement') &&
+          (tache.roomName || tache.levelName ? (
+            <span className="inline-flex items-center gap-1" title="Pièce / Niveau">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              <span className="max-w-[180px] truncate">
+                {[tache.levelName, tache.roomName].filter(Boolean).join(' · ')}
+              </span>
             </span>
-          </span>
-        ) : tache.locationDescription ? (
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3" strokeWidth={1.75} />
-            <span className="max-w-[180px] truncate">{tache.locationDescription}</span>
-          </span>
-        ) : null}
+          ) : tache.locationDescription ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" strokeWidth={1.75} />
+              <span className="max-w-[180px] truncate">{tache.locationDescription}</span>
+            </span>
+          ) : null)}
         {/* V1.13 R3 — Échéance. */}
-        {tache.dueDate && (
+        {show('dueDate') && tache.dueDate && (
           <span className="inline-flex items-center gap-1 tabular-nums" title="Échéance">
             <Calendar className="h-3 w-3" strokeWidth={1.75} />
             {formatDateFr(tache.dueDate)}
           </span>
         )}
-        {tache.supplierContactName && (
+        {show('contact') && tache.supplierContactName && (
           <span className="inline-flex items-center gap-1">
             <User className="h-3 w-3" strokeWidth={1.75} />
             {tache.supplierContactName}
@@ -300,15 +317,17 @@ function TacheRow({
         )}
         {/* V1.x dashboard-21 §2 — caméra cliquable (voir/ajouter photos), comme
             le tableau du bas. Toujours visible, même sans photo. */}
-        <button
-          type="button"
-          onClick={() => onOpenPhotos(tache)}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
-          title="Voir / ajouter des photos"
-        >
-          <Camera className="h-3 w-3" strokeWidth={1.75} />
-          {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
-        </button>
+        {show('photos') && (
+          <button
+            type="button"
+            onClick={() => onOpenPhotos(tache)}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50"
+            title="Voir / ajouter des photos"
+          >
+            <Camera className="h-3 w-3" strokeWidth={1.75} />
+            {tache.photos.length > 0 && <span className="tabular-nums">{tache.photos.length}</span>}
+          </button>
+        )}
         {/* V12bis PR9 §6 — modifier la tâche. */}
         <Link
           href={`/marches/${marcheId}/sous-lots/${sousLotId}/taches/${tache.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
@@ -326,11 +345,24 @@ function TacheRow({
 
 // V12bis PR4 J1 — boutons de suppression inline sur sous-lot + tâche.
 
-function DeleteSousLotButton({ id, name, marcheId }: { id: string; name: string; marcheId: string }) {
+function DeleteSousLotButton({
+  id,
+  name,
+  marcheId,
+}: {
+  id: string;
+  name: string;
+  marcheId: string;
+}) {
   const [pending, startTransition] = useTransition();
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm(`Supprimer le sous-lot "${name}" ? Cette action supprime aussi toutes ses tâches associées.`)) return;
+    if (
+      !confirm(
+        `Supprimer le sous-lot "${name}" ? Cette action supprime aussi toutes ses tâches associées.`,
+      )
+    )
+      return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set('id', id);

@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { Pencil } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
+import { PdfDownloadButton } from '@/components/pdf-download-button';
 import { DeleteButton } from '@/components/delete-button';
 import {
   deleteMarcheAction,
@@ -52,7 +53,6 @@ import { slugify } from '@/lib/storage/minio';
 export const dynamic = 'force-dynamic';
 
 const STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',
@@ -61,7 +61,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_VARIANT: Record<string, 'good' | 'warn' | 'default'> = {
-  devis_recu: 'default',
   signe: 'default',
   en_cours: 'warn',
   livre: 'good',
@@ -277,8 +276,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       marcheTypeLabel: sl.marcheTypeLabel,
       // V1.x dashboard-21 §3 — la cascade masque les tâches terminées (vue "à
       // faire") ; le tableau bas (TachesListTable) garde tout via son filtre statut.
+      // dashboard-23 R2 — masquer aussi les tâches VALIDÉ (comme terminé).
       taches: (tachesBySousLot.get(sl.id) ?? [])
-        .filter((t) => t.status !== 'termine')
+        .filter((t) => t.status !== 'termine' && t.status !== 'valide')
         .map((t) => ({
           id: t.id,
           title: t.title,
@@ -436,6 +436,9 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
           Crée d&apos;abord un sous-lot ci-dessous, puis ajoute-lui des tâches via le bouton
           «&nbsp;Ajouter&nbsp;» à droite de chaque sous-lot.
         </p>
+      </div>
+      <div className="flex justify-end">
+        <PdfDownloadButton marcheId={marche.id} label="PDF suivi" />
       </div>
       <InlineSousLotForm marcheId={marche.id} />
       <MarchesTree marches={[marcheTreeNode]} returnTo={`/marches/${marche.id}?tab=suivi`} />

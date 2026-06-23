@@ -17,14 +17,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
-const marcheStatusValues = [
-  'devis_recu',
-  'signe',
-  'en_cours',
-  'livre',
-  'conteste',
-  'annule',
-] as const;
+const marcheStatusValues = ['signe', 'en_cours', 'livre', 'conteste', 'annule'] as const;
 
 const marcheBaseSchema = z.object({
   propertyId: z.string().uuid(),
@@ -49,7 +42,7 @@ const marcheBaseSchema = z.object({
   dateSignature: z.string().optional().or(z.literal('')),
   dateDebutPrevu: z.string().optional().or(z.literal('')),
   dateFinPrevu: z.string().optional().or(z.literal('')),
-  status: z.enum(marcheStatusValues).default('devis_recu'),
+  status: z.enum(marcheStatusValues).default('signe'),
   // V1.11 R1 — ETAT du marché (ACTIF/INACTIF). Default true à la création.
   isActive: z
     .preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean())
@@ -101,6 +94,11 @@ export async function createMarcheInlineAction(
   const propertyId = String(formData.get('propertyId') ?? '');
   const supplierId = String(formData.get('supplierId') ?? '');
   const name = String(formData.get('name') ?? '').trim();
+  const lotId = String(formData.get('lotId') ?? '');
+  // dashboard-23 R4 — description + type de marché saisis à la volée → colonnes /marches.
+  const description = String(formData.get('description') ?? '').trim();
+  const marcheTypeIdRaw = String(formData.get('marcheTypeId') ?? '');
+  const marcheTypeId = /^[0-9a-f-]{36}$/i.test(marcheTypeIdRaw) ? marcheTypeIdRaw : null;
   if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { error: 'Bien (propertyId) invalide' };
   if (!/^[0-9a-f-]{36}$/i.test(supplierId)) return { error: 'Fournisseur (supplierId) invalide' };
   if (!name) return { error: 'Nom du marché requis' };
@@ -113,14 +111,24 @@ export async function createMarcheInlineAction(
       propertyId,
       supplierId,
       name,
-      status: 'devis_recu',
+      description: description || null,
+      marcheTypeId,
+      status: 'signe',
       storagePath: buildStoragePrefix('marches', `${name}-${supplierName}`),
     })
     .returning({ id: marchesTravaux.id });
 
+  const marcheId = inserted[0].id;
+
+  if (/^[0-9a-f-]{36}$/i.test(lotId)) {
+    await db.insert(marcheLotAffectations).values({ marcheId, lotId }).onConflictDoNothing();
+    revalidatePath(`/biens/lots/${lotId}`);
+  }
+
   revalidatePath('/marches');
+  revalidatePath(`/marches/${marcheId}`);
   revalidatePath(`/biens/properties/${propertyId}`);
-  return { id: inserted[0].id, label: name };
+  return { id: marcheId, label: name };
 }
 
 // V12.1 — création inline d'un sous-lot depuis /taches/new (retourne l'id pour
@@ -159,7 +167,7 @@ export async function createMarcheAction(formData: FormData): Promise<void> {
     dateSignature: formData.get('dateSignature'),
     dateDebutPrevu: formData.get('dateDebutPrevu'),
     dateFinPrevu: formData.get('dateFinPrevu'),
-    status: formData.get('status') ?? 'devis_recu',
+    status: formData.get('status') ?? 'signe',
     notes: formData.get('notes'),
   });
 
@@ -226,7 +234,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
     dateSignature: formData.get('dateSignature'),
     dateDebutPrevu: formData.get('dateDebutPrevu'),
     dateFinPrevu: formData.get('dateFinPrevu'),
-    status: formData.get('status') ?? 'devis_recu',
+    status: formData.get('status') ?? 'signe',
     isActive: formData.get('isActive') ?? false,
     notes: formData.get('notes'),
   });
@@ -414,10 +422,7 @@ const sousLotUpdateSchema = z.object({
       z.union([z.string(), z.number()]).nullable(),
     )
     .optional(),
-  status: z
-    .enum(['devis_recu', 'signe', 'en_cours', 'livre', 'conteste', 'annule'])
-    .optional()
-    .default('devis_recu'),
+  status: z.enum(['signe', 'en_cours', 'livre', 'conteste', 'annule']).optional().default('signe'),
   dateDebutPrevu: z.string().optional().or(z.literal('')),
   dateFinPrevu: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
@@ -432,7 +437,7 @@ export async function updateSousLotAction(formData: FormData): Promise<void> {
     marcheTypeId: formData.get('marcheTypeId'),
     amountHt: formData.get('amountHt'),
     amountTtc: formData.get('amountTtc'),
-    status: formData.get('status') ?? 'devis_recu',
+    status: formData.get('status') ?? 'signe',
     dateDebutPrevu: formData.get('dateDebutPrevu'),
     dateFinPrevu: formData.get('dateFinPrevu'),
     notes: formData.get('notes'),

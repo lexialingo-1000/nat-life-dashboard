@@ -28,7 +28,6 @@ export type MarcheRow = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',
@@ -181,6 +180,7 @@ export function MarchesTable({ rows, deleteAction }: Props) {
       emptyMessage="Aucun marché de travaux."
       enableSelection
       onRowClick={(r) => router.push(`/marches/${r.id}`)}
+      columnVisibilityKey="natlife:marches-table"
     />
   );
 }

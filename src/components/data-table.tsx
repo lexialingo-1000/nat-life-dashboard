@@ -11,8 +11,9 @@ import {
   type SortingState,
   type ColumnFiltersState,
   type RowSelectionState,
+  type VisibilityState,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Columns3 } from 'lucide-react';
 
 interface Props<T> {
   columns: ColumnDef<T, any>[];
@@ -31,6 +32,11 @@ interface Props<T> {
   onRowClick?: (row: T) => void;
   /** Ids de colonnes dont le clic ne doit PAS déclencher onRowClick (default: select, actions). */
   rowClickIgnoreColumnIds?: string[];
+  /**
+   * Clé localStorage pour persister la visibilité des colonnes (dashboard-22 mobile).
+   * Quand fourni, affiche un bouton "Colonnes" avec checkboxes par colonne.
+   */
+  columnVisibilityKey?: string;
 }
 
 function IndeterminateCheckbox({
@@ -71,11 +77,22 @@ export function DataTable<T>({
   emptyMessage = 'Aucune donnée.',
   onRowClick,
   rowClickIgnoreColumnIds,
+  columnVisibilityKey,
 }: Props<T>) {
   const ignoreRowClick = new Set(rowClickIgnoreColumnIds ?? ['select', 'actions']);
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
+    if (!columnVisibilityKey) return {};
+    try {
+      const saved = localStorage.getItem(columnVisibilityKey);
+      return saved ? (JSON.parse(saved) as VisibilityState) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const allColumns = enableSelection
     ? [
@@ -107,11 +124,22 @@ export function DataTable<T>({
   const table = useReactTable({
     data,
     columns: allColumns,
-    state: { sorting, columnFilters, rowSelection },
+    state: { sorting, columnFilters, rowSelection, columnVisibility },
     enableRowSelection: enableSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: (updater) => {
+      setColumnVisibility((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater;
+        if (columnVisibilityKey) {
+          try {
+            localStorage.setItem(columnVisibilityKey, JSON.stringify(next));
+          } catch {}
+        }
+        return next;
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -121,6 +149,51 @@ export function DataTable<T>({
 
   return (
     <div className="overflow-x-auto">
+      {columnVisibilityKey && (
+        <div className="relative mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-[11px] text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+          >
+            <Columns3 className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Colonnes
+          </button>
+          {pickerOpen && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setPickerOpen(false)} />
+              <div className="absolute right-0 top-8 z-30 min-w-[180px] rounded-lg border border-zinc-200 bg-white p-3 shadow-lg">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                  Colonnes visibles
+                </p>
+                <div className="space-y-1.5">
+                  {table
+                    .getAllLeafColumns()
+                    .filter((col) => col.id !== 'select' && col.id !== 'actions')
+                    .map((col) => {
+                      const header = col.columnDef.header;
+                      const label = typeof header === 'string' ? header : col.id;
+                      return (
+                        <label
+                          key={col.id}
+                          className="flex cursor-pointer items-center gap-2 text-[12px] text-zinc-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={col.getIsVisible()}
+                            onChange={col.getToggleVisibilityHandler()}
+                            className="h-3.5 w-3.5 rounded border-zinc-300 accent-blue-600"
+                          />
+                          {label}
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       <table className="w-full text-[13px]">
         <thead className="border-b border-zinc-200">
           {table.getHeaderGroups().map((headerGroup) => (

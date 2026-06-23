@@ -46,6 +46,12 @@ const supplierSchema = z.object({
 const supplierUpdateSchema = supplierSchema.extend({
   id: z.string().uuid(),
   isActive: z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean()),
+  // dashboard-23 R5 — le form d'édition envoie `typeId` (FK supplier_types) ;
+  // l'ancien enum `type` n'est plus dans le form. On lit et persiste `typeId`,
+  // sinon la catégorie n'était jamais enregistrée.
+  typeId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
 });
 
 export async function updateSupplierAction(formData: FormData): Promise<void> {
@@ -59,6 +65,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     email: formData.get('email'),
     invoicingType: formData.get('invoicingType') ?? 'manual_upload',
     type: formData.get('type') ?? 'autre',
+    typeId: formData.get('typeId'),
     notes: formData.get('notes'),
     isActive: formData.get('isActive'),
   });
@@ -77,6 +84,8 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
       email: data.email || null,
       invoicingType: data.invoicingType,
       type: data.type,
+      // dashboard-23 R5 — persiste la catégorie (FK supplier_types).
+      typeId: data.typeId ?? null,
       notes: data.notes || null,
       isActive: data.isActive,
       updatedAt: new Date(),
@@ -84,6 +93,7 @@ export async function updateSupplierAction(formData: FormData): Promise<void> {
     .where(eq(suppliers.id, data.id));
   revalidatePath('/fournisseurs');
   revalidatePath(`/fournisseurs/${data.id}`);
+  revalidatePath('/');
   redirect(`/fournisseurs/${data.id}`);
 }
 

@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { Download, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { openSignedUrl } from '@/lib/open-file';
 
 interface Props {
   documentId: string;
@@ -36,21 +37,11 @@ export function SupplierComptaRowActions({
   const [pending, startTransition] = useTransition();
 
   const handleDownload = () => {
+    // dashboard-22 — ouverture iOS-safe (cf. lib/open-file).
     startTransition(async () => {
       const fd = new FormData();
       fd.set('storageKey', storageKey);
-      const res = await getUrlAction(fd);
-      if ('url' in res) {
-        const a = document.createElement('a');
-        a.href = res.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        alert(`Erreur : ${res.error}`);
-      }
+      await openSignedUrl(() => getUrlAction(fd));
     });
   };
 

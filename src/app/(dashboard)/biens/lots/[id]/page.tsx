@@ -23,12 +23,14 @@ import { Pencil, Plus } from 'lucide-react';
 import { Tabs, type TabItem } from '@/components/tabs';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
+import { PdfDownloadButton } from '@/components/pdf-download-button';
 import { DocumentsManager } from '@/components/documents-manager';
 import { NotesCard } from '@/components/notes-card';
 import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
-import { TachesListTable, type TacheListRow } from '@/components/taches-list-table';
+import { type TacheListRow } from '@/components/taches-list-table';
+import { TachesGroupedByMarche } from '@/components/taches-grouped-by-marche';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
 import {
   LocationsTable,
@@ -377,19 +379,21 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <SectionTitle className="mb-0">Suivi des travaux de ce lot</SectionTitle>
-        <Link
-          href={`/taches/new?lotId=${lot.id}&returnTo=${encodeURIComponent(
-            `/biens/lots/${lot.id}?tab=suivi-travaux`,
-          )}`}
-          className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
-        >
-          + Ajouter une tâche
-        </Link>
+        <div className="flex items-center gap-3">
+          <PdfDownloadButton lotId={lot.id} label="PDF" />
+          <Link
+            href={`/taches/new?lotId=${lot.id}&returnTo=${encodeURIComponent(
+              `/biens/lots/${lot.id}?tab=suivi-travaux`,
+            )}`}
+            className="text-[12px] text-blue-700 underline decoration-blue-700/35 underline-offset-[3px] hover:decoration-blue-700"
+          >
+            + Ajouter une tâche
+          </Link>
+        </div>
       </div>
-      <TachesListTable
+      <TachesGroupedByMarche
         rows={lotTacheRows}
         returnTo={`/biens/lots/${lot.id}?tab=suivi-travaux`}
-        hideLotColumn
       />
     </div>
   );

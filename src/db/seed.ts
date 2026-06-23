@@ -34,7 +34,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'FKA',
       siren: '752116103',
-      type: 'commerciale',
+      type: 'commerciale_bilan',
       formeJuridique: 'sarl',
       address:
         "Les Jardins d'Anthéa, 10 T avenue Maréchal de Lattre de Tassigny, 13090 Aix-en-Provence",
@@ -44,7 +44,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'Valrose',
       siren: '814952040',
-      type: 'immobiliere',
+      type: 'immobiliere_bilan',
       formeJuridique: 'sas',
       address: '10 T avenue Maréchal de Lattre de Tassigny, 13090 Aix-en-Provence',
       activitePrincipale: 'Location de terrains et autres biens immobiliers',
@@ -53,7 +53,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'KAPIMMO',
       siren: '102418530',
-      type: 'immobiliere',
+      type: 'immobiliere_bilan',
       formeJuridique: 'sas',
       address: '10 avenue Maréchal de Lattre de Tassigny, 13090 Aix-en-Provence',
       activitePrincipale: 'Marchand de biens immobiliers',
@@ -62,7 +62,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'LMNP PERSO',
       siren: null,
-      type: 'immobiliere',
+      type: 'immobiliere_bilan',
       formeJuridique: 'indivision',
       address: null,
       activitePrincipale: 'Loueur Meublé Non Professionnel',
@@ -71,7 +71,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'TRAMEXIA',
       siren: '102453438',
-      type: 'commerciale',
+      type: 'commerciale_bilan',
       formeJuridique: 'sas',
       address: '10 avenue Maréchal de Lattre de Tassigny, 13090 Aix-en-Provence',
       activitePrincipale: "Ingénierie, études techniques (bureau d'étude textile)",
@@ -80,7 +80,7 @@ async function seedCompanies(db: ReturnType<typeof drizzle<typeof schema>>) {
     {
       name: 'HEPHALAB',
       siren: '999641632',
-      type: 'commerciale',
+      type: 'commerciale_bilan',
       formeJuridique: 'sas',
       address: '835 allée des Sardenas, 13250 Cornillon-Confoux',
       activitePrincipale: "Fabrication d'articles en matières plastiques",

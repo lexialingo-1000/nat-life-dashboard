@@ -168,6 +168,29 @@ export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">
+            Type de société (scope société uniquement)
+          </label>
+          <select
+            name="appliesToCompanyType"
+            className="input mt-1"
+            defaultValue=""
+            disabled={scope !== 'company'}
+          >
+            <option value="">— Toutes les sociétés —</option>
+            <option value="commerciale_bilan">Commerciale (bilan)</option>
+            <option value="commerciale_sans_bilan">Commerciale (sans bilan)</option>
+            <option value="immobiliere_bilan">Immobilière (bilan)</option>
+            <option value="immobiliere_sans_bilan">Immobilière (sans bilan)</option>
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Si défini, ce type de doc s'applique uniquement aux sociétés de ce type.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <label className="flex cursor-pointer items-center gap-2 text-[13px]">
           <input
             type="checkbox"

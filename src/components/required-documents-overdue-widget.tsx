@@ -181,6 +181,9 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND dt.is_active = true
         AND dt.is_required = true
         AND dt.scope = 'company'
+        -- dashboard-22 #8b — filtre par type de société :
+        --   applies_to_company_type NULL = toutes ; sinon ce type uniquement
+        AND (dt.applies_to_company_type IS NULL OR dt.applies_to_company_type = c.type::text)
         AND NOT EXISTS (
           SELECT 1 FROM ${companyDocuments} cd
           WHERE cd.company_id = c.id AND cd.type_id = dt.id

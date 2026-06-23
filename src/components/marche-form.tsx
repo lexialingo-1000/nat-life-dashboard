@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { EntityCombobox } from '@/components/entity-combobox';
 
 // v19-3 — champ Statut retiré du formulaire (demande client v19). Le statut
-// reste géré côté DB avec default `devis_recu` ; les badges restent affichés
+// reste géré côté DB avec default `signe` ; les badges restent affichés
 // sur la liste/fiche/tree (cf. plan V1.15).
 
 interface LotOption {

@@ -47,7 +47,6 @@ import { PropertyStructureTree, type PropertyTree } from '@/components/property-
 import { slugify } from '@/lib/storage/minio';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',
@@ -274,8 +273,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         marcheTypeLabel: sl.marcheTypeLabel,
         // V1.x dashboard-21 §3 — la cascade Travaux masque les tâches terminées
         // (vue "à faire") ; le tableau bas (TachesListTable) garde tout via filtre.
+        // dashboard-23 R2 — masquer aussi les tâches VALIDÉ (comme terminé).
         taches: (tachesBySousLot.get(sl.id) ?? [])
-          .filter((t) => t.status !== 'termine')
+          .filter((t) => t.status !== 'termine' && t.status !== 'valide')
           .map((t) => ({
             id: t.id,
             title: t.title,

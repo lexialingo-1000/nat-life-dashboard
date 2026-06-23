@@ -18,7 +18,6 @@ export type SupplierMarcheRow = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  devis_recu: 'Devis reçu',
   signe: 'Signé',
   en_cours: 'En cours',
   livre: 'Livré',
@@ -27,7 +26,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  devis_recu: 'badge-neutral',
   signe: 'badge-blue',
   en_cours: 'badge-amber',
   livre: 'badge-emerald',
