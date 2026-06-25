@@ -46,10 +46,20 @@ const s = StyleSheet.create({
     paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: '#71717a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  // dashboard-25 — nom du bien + lot = info la plus importante (demande Natacha) :
+  // sous-titre passe en gros titre, le "Suivi de travaux" devient l'eyebrow au-dessus.
+  headerSubtitle: {
+    fontSize: 22,
     fontFamily: 'Helvetica-Bold',
     color: '#18181b',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   headerMeta: {
     fontSize: 8,
@@ -218,7 +228,7 @@ export function SuiviTravauxPDF({ marches, title, subtitle, generatedAt }: Props
         {/* En-tête */}
         <View style={s.header}>
           <Text style={s.headerTitle}>{title}</Text>
-          {subtitle && <Text style={{ ...s.headerMeta, marginBottom: 2 }}>{subtitle}</Text>}
+          {subtitle && <Text style={s.headerSubtitle}>{subtitle}</Text>}
           <Text style={s.headerMeta}>
             Généré le {generatedAt} — {totalTaches} tâche{totalTaches > 1 ? 's' : ''}
           </Text>
