@@ -72,6 +72,8 @@ h3 {
     @apply inline-flex h-9 select-none items-center justify-center rounded-sm px-4 text-[13px] font-medium transition-all duration-150;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-1;
     @apply disabled:pointer-events-none disabled:opacity-40;
+    /* Mobile : cible tactile 44px + texte plus lisible (refonte mobile) */
+    @apply max-md:h-11 max-md:px-5 max-md:text-[15px];
   }
   .btn-primary {
     @apply btn bg-[#2563EB] text-white hover:bg-[#1D4ED8];
@@ -90,10 +92,14 @@ h3 {
     @apply placeholder:text-zinc-400;
     @apply focus-visible:outline-none focus-visible:border-[#2563EB] focus-visible:ring-1 focus-visible:ring-[#2563EB];
     @apply disabled:cursor-not-allowed disabled:opacity-50;
+    /* Mobile : cible tactile 44px + text-[16px] IMPÉRATIF (sinon iOS Safari zoome
+       au focus du champ). Refonte mobile. */
+    @apply max-md:h-11 max-md:text-[16px];
     transition: border-color 150ms;
   }
   textarea.input {
     @apply h-auto py-2 leading-relaxed;
+    @apply max-md:h-auto;
   }
   select.input {
     @apply pr-8 cursor-pointer;
@@ -177,6 +183,15 @@ h3 {
   .badge-orange {
     @apply badge border-orange-200 bg-orange-50 text-orange-700;
   }
+}
+
+/* Mobile (refonte) — masque le scrollbar horizontal des tablists tabs + momentum iOS */
+.scrollbar-none {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Custom scrollbar — refined */

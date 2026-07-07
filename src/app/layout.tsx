@@ -26,7 +26,9 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: 'Nat Life',
-    statusBarStyle: 'default',
+    // black-translucent : la status bar iOS se fond dans la topbar navy
+    // (contenu sous la barre, compensé par pt-[safe-area-inset-top] sur la topbar).
+    statusBarStyle: 'black-translucent',
   },
 };
 

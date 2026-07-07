@@ -14,8 +14,9 @@ export function SidebarShell({ userEmail }: { userEmail: string | null }) {
         <SidebarContent userEmail={userEmail} />
       </div>
 
-      {/* Topbar mobile — masquée sur desktop */}
-      <header className="flex h-14 shrink-0 items-center justify-center bg-sidebar px-4 text-sidebar-fg md:hidden">
+      {/* Topbar mobile — masquée sur desktop. pt safe-area : la status bar iOS
+          (black-translucent) se fond dans le navy sans recouvrir le logo. */}
+      <header className="flex min-h-14 shrink-0 items-center justify-center bg-sidebar px-4 pt-[env(safe-area-inset-top)] text-sidebar-fg md:hidden">
         <span className="font-serif text-[18px] leading-none tracking-tight text-sidebar-active">
           Nat Life
         </span>
