@@ -220,7 +220,8 @@ export function SocieteFormFields({
           ))}
         </select>
         <p className="mt-1 text-[11px] text-zinc-500">
-          Hors France : saisir l&apos;immatriculation locale et, si besoin, le N° TVA international ci-dessous.
+          Hors France : saisir l&apos;immatriculation locale et, si besoin, le N° TVA international
+          ci-dessous.
         </p>
       </div>
 

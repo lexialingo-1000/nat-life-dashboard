@@ -184,7 +184,10 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
     .from(marcheTypes)
     .where(eq(marcheTypes.isActive, true))
     .orderBy(asc(marcheTypes.sortOrder), asc(marcheTypes.label));
-  const marcheTypeOpts: SupplierOption[] = marcheTypeRows.map((t) => ({ id: t.id, label: t.label }));
+  const marcheTypeOpts: SupplierOption[] = marcheTypeRows.map((t) => ({
+    id: t.id,
+    label: t.label,
+  }));
 
   const defaultMarcheId = marches.length === 1 ? marches[0].id : undefined;
 

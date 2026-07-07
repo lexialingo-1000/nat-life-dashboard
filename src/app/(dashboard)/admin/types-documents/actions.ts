@@ -185,8 +185,7 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
 
   const finalAppliesTo = current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
   const finalSupplierTypeId = current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
-  const finalCompanyType =
-    current[0].scope === 'company' ? parsed.data.appliesToCompanyType : null;
+  const finalCompanyType = current[0].scope === 'company' ? parsed.data.appliesToCompanyType : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(parsed.data.categoryId);
 
   await db

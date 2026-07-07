@@ -3,67 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Building2,
-  Users,
-  UserCircle,
-  LayoutDashboard,
-  Hammer,
-  Settings,
-  LogOut,
-  Briefcase,
-  HardHat,
-  KeyRound,
-  ChevronRight,
-} from 'lucide-react';
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  children?: { href: string; label: string }[];
-}
-
-const sections: { title: string; items: NavItem[] }[] = [
-  {
-    title: 'Synthèse',
-    items: [{ href: '/', label: 'Tableau de bord', icon: LayoutDashboard }],
-  },
-  {
-    title: 'Référentiels',
-    items: [
-      { href: '/societes', label: 'Sociétés', icon: Briefcase },
-      { href: '/fournisseurs', label: 'Fournisseurs', icon: Hammer },
-      { href: '/clients', label: 'Clients', icon: UserCircle },
-    ],
-  },
-  {
-    title: 'Patrimoine',
-    items: [
-      { href: '/biens', label: 'Biens immobiliers', icon: Building2 },
-      { href: '/locations', label: 'Locations', icon: KeyRound },
-      { href: '/marches', label: 'Marchés de travaux', icon: HardHat },
-    ],
-  },
-  {
-    title: 'Administration',
-    items: [
-      // V12bis PR6 — sous-menu déroulant sur Paramètres
-      {
-        href: '/admin/parametres',
-        label: 'Paramètres',
-        icon: Settings,
-        children: [
-          { href: '/admin/types-documents', label: 'Types de documents' },
-          { href: '/admin/document-categories', label: 'Catégories de documents' },
-          { href: '/admin/marche-types', label: 'Types de marchés' },
-          { href: '/admin/supplier-types', label: 'Types de fournisseurs' },
-        ],
-      },
-      { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
-    ],
-  },
-];
+import { LogOut, ChevronRight } from 'lucide-react';
+import { sections } from './nav-items';
 
 export function SidebarContent({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();

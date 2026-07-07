@@ -1,4 +1,5 @@
 import { SidebarShell } from '@/components/sidebar-shell';
+import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -38,11 +39,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="kbd">.env.local</span> pour réactiver Supabase Auth.
           </div>
         )}
-        <div className="max-w-[1280px] px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-7">
+        <div className="max-w-[1280px] px-4 py-5 max-md:pb-24 sm:px-6 sm:py-6 lg:px-10 lg:py-7">
           <Breadcrumb />
           {children}
         </div>
       </main>
+      <MobileTabBar userEmail={userEmail} />
     </div>
   );
 }

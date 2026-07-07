@@ -2,7 +2,17 @@
 
 import { useState, useMemo, useTransition } from 'react';
 import Link from 'next/link';
-import { Calendar, MapPin, Pencil, Camera, ArrowUp, ArrowDown, Filter, X, Trash2 } from 'lucide-react';
+import {
+  Calendar,
+  MapPin,
+  Pencil,
+  Camera,
+  ArrowUp,
+  ArrowDown,
+  Filter,
+  X,
+  Trash2,
+} from 'lucide-react';
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteTacheAction } from '@/app/(dashboard)/marches/actions';
@@ -254,8 +264,7 @@ export function TachesListTable({
   const statusIsDefault =
     statusSet.size === DEFAULT_VISIBLE_STATUS.length &&
     DEFAULT_VISIBLE_STATUS.every((v) => statusSet.has(v));
-  const hasActiveFilters =
-    Object.values(filters).some((v) => v !== '') || !statusIsDefault;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== '') || !statusIsDefault;
 
   if (rows.length === 0) {
     return <div className="card p-8 text-center text-sm text-zinc-500">Aucune tâche.</div>;

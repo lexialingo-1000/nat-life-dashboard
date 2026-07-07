@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
-import { EntityLink } from '@/components/entity-link';
 
 export type FournisseurRow = {
   id: string;
