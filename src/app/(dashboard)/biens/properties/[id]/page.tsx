@@ -619,7 +619,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     <div className="space-y-8">
       <BackLink fallbackHref="/biens" label="Biens immobiliers" />
 
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
         <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             <Link href={`/societes/${property.companyId}`} className="hover:text-blue-800">

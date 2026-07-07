@@ -120,7 +120,7 @@ export default async function MarchesPage({
 
   return (
     <div className="space-y-8">
-      <header className="flex items-end justify-between gap-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6">
         <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Patrimoine
@@ -141,14 +141,14 @@ export default async function MarchesPage({
 
       {!dbError && supplierList.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
-          <form method="get" className="flex items-center gap-3">
+          <form method="get" className="flex flex-wrap items-center gap-3">
             <label className="text-[12px] font-medium uppercase tracking-[0.12em] text-zinc-500">
               Fournisseur
             </label>
             <select
               name="supplierId"
               defaultValue={activeSupplierId ?? ''}
-              className="input w-56 text-[13px]"
+              className="input w-56 max-md:w-full text-[13px]"
             >
               <option value="">Tous les fournisseurs</option>
               {supplierList.map((s) => (

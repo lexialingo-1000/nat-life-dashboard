@@ -587,7 +587,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     <div className="space-y-8">
       <BackLink fallbackHref={`/biens/properties/${lot.propertyId}`} label={lot.propertyName} />
 
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
         <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             <Link href={`/biens/properties/${lot.propertyId}`} className="hover:text-blue-800">

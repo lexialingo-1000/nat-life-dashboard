@@ -622,7 +622,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
     <div className={`space-y-8 ${s.isActive ? '' : 'opacity-75'}`}>
       <BackLink fallbackHref="/fournisseurs" label="Fournisseurs" />
 
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
         <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Fournisseur

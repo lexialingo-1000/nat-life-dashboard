@@ -82,7 +82,7 @@ export default async function LocationsListPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-end justify-between gap-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6">
         <div className="page-header">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
             Patrimoine
@@ -97,7 +97,7 @@ export default async function LocationsListPage() {
             ancien.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* <a href> natif : full reload pour éviter une soft-nav qui
               pourrait conserver l'état précédent du layout. */}
           <a
