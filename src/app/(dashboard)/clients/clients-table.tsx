@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
+import { EntityCard } from '@/components/entity-card';
 
 export type ClientRow = {
   id: string;
@@ -141,6 +142,26 @@ export function ClientsTable({ rows, deleteAction }: Props) {
       onRowClick={(r) => router.push(`/clients/${r.id}`)}
       rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:clients-table"
+      renderMobileCard={(r) => {
+        const tenant = r.tenantType ? TENANT_BADGES[r.tenantType] : null;
+        return (
+          <EntityCard
+            href={`/clients/${r.id}`}
+            title={r.displayName}
+            badge={
+              tenant ? (
+                <span className={tenant.className}>{tenant.label}</span>
+              ) : (
+                <span className="badge-neutral">B2B</span>
+              )
+            }
+            fields={[
+              ...(r.email ? [{ label: 'Email', value: r.email }] : []),
+              ...(r.phone ? [{ label: 'Tél', value: r.phone }] : []),
+            ]}
+          />
+        );
+      }}
     />
   );
 }

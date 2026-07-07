@@ -37,6 +37,12 @@ interface Props<T> {
    * Quand fourni, affiche un bouton "Colonnes" avec checkboxes par colonne.
    */
   columnVisibilityKey?: string;
+  /**
+   * Rendu carte mobile (<md). Quand fourni, le tableau est masqué en dessous de md
+   * (`hidden md:block`) et remplacé par une pile de cartes utilisant le même row model
+   * TanStack (tri/filtres partagés). Absent → comportement inchangé (scroll horizontal).
+   */
+  renderMobileCard?: (row: T) => React.ReactNode;
 }
 
 function IndeterminateCheckbox({
@@ -78,6 +84,7 @@ export function DataTable<T>({
   onRowClick,
   rowClickIgnoreColumnIds,
   columnVisibilityKey,
+  renderMobileCard,
 }: Props<T>) {
   const ignoreRowClick = new Set(rowClickIgnoreColumnIds ?? ['select', 'actions']);
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
@@ -194,7 +201,20 @@ export function DataTable<T>({
           )}
         </div>
       )}
-      <table className="w-full text-[13px]">
+      {renderMobileCard && (
+        <div className="space-y-2 md:hidden">
+          {table.getRowModel().rows.length === 0 ? (
+            <div className="card p-8 text-center text-sm text-zinc-500">{emptyMessage}</div>
+          ) : (
+            table
+              .getRowModel()
+              .rows.map((row) => <div key={row.id}>{renderMobileCard(row.original)}</div>)
+          )}
+        </div>
+      )}
+      <table
+        className={renderMobileCard ? 'hidden w-full text-[13px] md:table' : 'w-full text-[13px]'}
+      >
         <thead className="border-b border-zinc-200">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>

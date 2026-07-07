@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
+import { EntityCard } from '@/components/entity-card';
 
 export type FournisseurRow = {
   id: string;
@@ -131,6 +132,22 @@ export function FournisseursTable({ rows, deleteAction }: Props) {
       onRowClick={(r) => router.push(`/fournisseurs/${r.id}`)}
       rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:fournisseurs-table"
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={`/fournisseurs/${r.id}`}
+          title={r.displayName}
+          badge={
+            <span className={r.isActive ? 'badge-emerald' : 'badge-neutral'}>
+              {r.isActive ? 'Actif' : 'Inactif'}
+            </span>
+          }
+          fields={[
+            { label: 'Facturation', value: INVOICING_LABELS[r.invoicingType] ?? r.invoicingType },
+            ...(r.email ? [{ label: 'Email', value: r.email }] : []),
+            ...(r.phone ? [{ label: 'Tél', value: r.phone }] : []),
+          ]}
+        />
+      )}
     />
   );
 }

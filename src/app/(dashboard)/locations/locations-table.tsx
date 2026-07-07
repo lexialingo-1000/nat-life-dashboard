@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
+import { EntityCard } from '@/components/entity-card';
 import { formatDate } from '@/lib/utils';
 
 export type LocationStatus = 'actif' | 'a_venir' | 'inactif';
@@ -85,6 +86,7 @@ export function LocationsTable({
   emptyMessage = 'Aucune location.',
 }: Props) {
   const router = useRouter();
+  const customerHidden = new Set<LocationColumnId>(hideColumns ?? []).has('customer');
   // V12.2 — toute la ligne navigue vers la fiche location, partout (fiche client
   // ET liste globale). Colonnes Bien/actions exclues, colonne Lot non-cliquable.
   const columns = useMemo<ColumnDef<LocationRow>[]>(() => {
@@ -264,6 +266,25 @@ export function LocationsTable({
       // V1.9 — défaut : plus récente date début en haut. User peut cliquer un header
       // pour basculer en alphabétique (locataire / bien / lot) à la demande.
       initialSorting={[{ id: 'dateDebut', desc: true }]}
+      renderMobileCard={(r) => {
+        const loyer = r.prixLocation
+          ? `${Number(r.prixLocation).toLocaleString('fr-FR')} € ${PERIODICITE_SUFFIX[r.periodicite] ?? ''}`.trim()
+          : '—';
+        return (
+          <EntityCard
+            href={`/locations/${r.id}`}
+            title={customerHidden ? r.propertyName : r.customerLabel}
+            badge={<span className={STATUS_BADGE[r.status]}>{STATUS_LABELS[r.status]}</span>}
+            fields={[
+              ...(customerHidden
+                ? []
+                : [{ label: 'Bien', value: `${r.propertyName} · ${r.lotName}` }]),
+              { label: 'Loyer', value: loyer },
+              { label: 'Début', value: formatDate(r.dateDebut) },
+            ]}
+          />
+        );
+      }}
     />
   );
 }

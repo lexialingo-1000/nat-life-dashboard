@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
+import { EntityCard } from '@/components/entity-card';
 
 export type SocieteRow = {
   id: string;
@@ -127,6 +128,24 @@ export function SocietesTable({ rows, deleteAction }: Props) {
       onRowClick={(r) => router.push(`/societes/${r.id}`)}
       rowClickIgnoreColumnIds={['select', 'actions']}
       columnVisibilityKey="natlife:societes-table"
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={`/societes/${r.id}`}
+          title={r.name}
+          badge={
+            <span className={r.isActive ? 'badge-emerald' : 'badge-neutral'}>
+              {r.isActive ? 'Active' : 'Inactive'}
+            </span>
+          }
+          fields={[
+            {
+              label: 'Type',
+              value: r.type.startsWith('commerciale') ? 'Commerciale' : 'Immobilière',
+            },
+            { label: 'SIREN', value: r.siren ?? '—' },
+          ]}
+        />
+      )}
     />
   );
 }

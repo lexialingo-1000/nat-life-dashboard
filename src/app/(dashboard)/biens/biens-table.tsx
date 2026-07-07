@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
+import { EntityCard } from '@/components/entity-card';
 
 export type BienLotRow = {
   // lotId/lotName/etc. nullable : un bien sans lot apparaît quand même
@@ -191,6 +192,24 @@ export function BiensTable({ rows, deleteAction }: Props) {
         if (r.lotId) router.push(`/biens/lots/${r.lotId}`);
       }}
       rowClickIgnoreColumnIds={['propertyName', 'companyName', 'select', 'actions']}
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={r.lotId ? `/biens/lots/${r.lotId}` : `/biens/properties/${r.propertyId}`}
+          title={r.lotName ?? r.propertyName}
+          badge={
+            r.lotStatus ? (
+              <span className={STATUS_BADGES[r.lotStatus] ?? 'badge-neutral'}>
+                {STATUS_LABELS[r.lotStatus] ?? r.lotStatus}
+              </span>
+            ) : undefined
+          }
+          fields={[
+            { label: 'Bien', value: r.propertyName },
+            { label: 'Société', value: r.companyName },
+            { label: 'Surface', value: r.surfaceCarrez ? `${r.surfaceCarrez} m²` : '—' },
+          ]}
+        />
+      )}
     />
   );
 }

@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/data-table';
 import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
+import { EntityCard } from '@/components/entity-card';
 
 export type MarcheRow = {
   id: string;
@@ -181,6 +182,21 @@ export function MarchesTable({ rows, deleteAction }: Props) {
       enableSelection
       onRowClick={(r) => router.push(`/marches/${r.id}`)}
       columnVisibilityKey="natlife:marches-table"
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={`/marches/${r.id}`}
+          title={r.supplierLabel}
+          badge={<span className="badge-neutral">{STATUS_LABELS[r.status] ?? r.status}</span>}
+          fields={[
+            ...(r.marcheTypeLabel ? [{ label: 'Type', value: r.marcheTypeLabel }] : []),
+            { label: 'Lots', value: r.lotsConcernes ?? 'parties communes' },
+            {
+              label: 'Montant HT',
+              value: r.amountHt ? `${Number(r.amountHt).toLocaleString('fr-FR')} €` : '—',
+            },
+          ]}
+        />
+      )}
     />
   );
 }
