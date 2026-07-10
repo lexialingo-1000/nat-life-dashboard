@@ -1,6 +1,6 @@
 {
-  "id": "da0d1459-9d55-42cd-9a54-382862019bc4",
-  "prevId": "f709887b-a340-44ff-a968-f69247f814ea",
+  "id": "20a117ea-fe12-4af4-8cea-6d877b2b02ba",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -88,6 +88,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "immatriculation": {
+          "name": "immatriculation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pays": {
+          "name": "pays",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'FR'"
+        },
         "type": {
           "name": "type",
           "type": "company_type",
@@ -123,6 +136,12 @@
         "tva_intracom": {
           "name": "tva_intracom",
           "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tva_international": {
+          "name": "tva_international",
+          "type": "varchar(30)",
           "primaryKey": false,
           "notNull": false
         },
@@ -364,6 +383,12 @@
         },
         "applies_to_tenant_type": {
           "name": "applies_to_tenant_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "applies_to_company_type": {
+          "name": "applies_to_company_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false
