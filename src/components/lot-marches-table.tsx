@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
+import { EntityCard } from './entity-card';
 import { EntityLink } from './entity-link';
 import { formatDate } from '@/lib/utils';
 
@@ -98,6 +99,25 @@ export function LotMarchesTable({ rows }: { rows: LotMarcheRow[] }) {
       data={rows}
       emptyMessage="Aucun marché affecté à ce lot."
       onRowClick={(r) => router.push(`/marches/${r.id}`)}
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={`/marches/${r.id}`}
+          title={r.name}
+          badge={
+            <span className={STATUS_BADGE[r.status] ?? 'badge-neutral'}>
+              {STATUS_LABELS[r.status] ?? r.status}
+            </span>
+          }
+          fields={[
+            { label: 'Fournisseur', value: r.supplierName ?? '—' },
+            {
+              label: 'Montant HT',
+              value: r.amountHt ? `${Number(r.amountHt).toLocaleString('fr-FR')} €` : '—',
+            },
+            { label: 'Fin prévue', value: formatDate(r.dateFinPrevu) },
+          ]}
+        />
+      )}
     />
   );
 }

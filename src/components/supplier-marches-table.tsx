@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
+import { EntityCard } from './entity-card';
 import { EntityLink } from './entity-link';
 import { formatDate } from '@/lib/utils';
 
@@ -116,6 +117,25 @@ export function SupplierMarchesTable({ rows }: { rows: SupplierMarcheRow[] }) {
       onRowClick={(r) => router.push(`/marches/${r.id}`)}
       // La colonne "Bien" pointe vers /biens/properties → exclue du clic-ligne.
       rowClickIgnoreColumnIds={['propertyName', 'select', 'actions']}
+      renderMobileCard={(r) => (
+        <EntityCard
+          href={`/marches/${r.id}`}
+          title={r.name}
+          badge={
+            <span className={STATUS_BADGE[r.status] ?? 'badge-neutral'}>
+              {STATUS_LABELS[r.status] ?? r.status}
+            </span>
+          }
+          fields={[
+            { label: 'Bien', value: r.propertyName },
+            {
+              label: 'Montant HT',
+              value: r.amountHt ? `${Number(r.amountHt).toLocaleString('fr-FR')} €` : '—',
+            },
+            { label: 'Début prévu', value: formatDate(r.dateDebutPrevu) },
+          ]}
+        />
+      )}
     />
   );
 }

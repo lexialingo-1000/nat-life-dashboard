@@ -45,7 +45,7 @@ export default async function DocumentCategoriesPage() {
       )}
 
       {!dbError && (
-        <div className="card overflow-hidden">
+        <div className="card overflow-x-auto">
           <table className="table-base">
             <thead>
               <tr>
