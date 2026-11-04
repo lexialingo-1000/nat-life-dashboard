@@ -163,6 +163,8 @@ export function MarcheForm({
 
         <input type="hidden" name="dateDevis" value={defaultValues.dateDevis ?? ''} />
         <input type="hidden" name="dateSignature" value={defaultValues.dateSignature ?? ''} />
+        {/* sans ce champ, updateMarcheAction retombait sur 'signe' et chaque modification remettait le statut à « Signé » */}
+        <input type="hidden" name="status" value={defaultValues.status ?? 'signe'} />
 
         <div>
           <label className="block text-sm font-medium">Début prévu</label>
