@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import {
   companyDocuments,
@@ -119,6 +120,7 @@ const deleteSchema = z.object({
 });
 
 export async function deleteDocumentByScopeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const parsed = deleteSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));

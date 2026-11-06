@@ -22,7 +22,7 @@ export interface NavItem {
  * et le shell mobile (mobile-tab-bar.tsx + mobile-more-sheet.tsx).
  * Source de vérité unique — ne pas dupliquer.
  */
-export const sections: { title: string; items: NavItem[] }[] = [
+export const sections: { title: string; items: NavItem[]; adminOnly?: boolean }[] = [
   {
     title: 'Synthèse',
     items: [{ href: '/', label: 'Tableau de bord', icon: LayoutDashboard }],
@@ -45,6 +45,7 @@ export const sections: { title: string; items: NavItem[] }[] = [
   },
   {
     title: 'Administration',
+    adminOnly: true,
     items: [
       // V12bis PR6 — sous-menu déroulant sur Paramètres
       {
@@ -62,3 +63,6 @@ export const sections: { title: string; items: NavItem[] }[] = [
     ],
   },
 ];
+
+export const visibleSections = (isAdmin: boolean) =>
+  sections.filter((s) => isAdmin || !s.adminOnly);

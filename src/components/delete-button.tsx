@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useIsAdmin } from './role-context';
 
 interface DeleteButtonProps {
   /** Server action that takes FormData and deletes the resource.
@@ -35,6 +36,7 @@ export function DeleteButton({
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const isAdmin = useIsAdmin();
 
   // Comparaison tolérante : casse, accents, espaces multiples (V11 Natacha :
   // "le bouton ne passe pas en rouge"). Certains noms en DB ont un double-espace
@@ -86,6 +88,9 @@ export function DeleteButton({
       }
     });
   };
+
+  // Suppressions réservées aux admins (le serveur refuse de toute façon).
+  if (!isAdmin) return null;
 
   return (
     <>

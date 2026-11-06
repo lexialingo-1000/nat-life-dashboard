@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { marcheTypes, marchesTravaux, marcheSousLots } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -42,6 +43,7 @@ export async function createMarcheTypeAction(
   _prev: CreateMarcheTypeState,
   formData: FormData,
 ): Promise<CreateMarcheTypeState> {
+  await requireAdmin();
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -68,6 +70,7 @@ export async function createMarcheTypeAction(
 }
 
 export async function updateMarcheTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -88,6 +91,7 @@ export async function updateMarcheTypeAction(formData: FormData): Promise<void> 
 }
 
 export async function reorderMarcheTypesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
   for (let i = 0; i < orderedIds.length; i++) {
     await db
@@ -99,6 +103,7 @@ export async function reorderMarcheTypesAction(orderedIds: string[]): Promise<vo
 }
 
 export async function toggleMarcheTypeActiveAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -118,6 +123,7 @@ export async function toggleMarcheTypeActiveAction(formData: FormData): Promise<
 }
 
 export async function deleteMarcheTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 

@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { supplierTypes, suppliers, documentTypes } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -42,6 +43,7 @@ export async function createSupplierTypeAction(
   _prev: CreateSupplierTypeState,
   formData: FormData,
 ): Promise<CreateSupplierTypeState> {
+  await requireAdmin();
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -67,6 +69,7 @@ export async function createSupplierTypeAction(
 }
 
 export async function updateSupplierTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -87,6 +90,7 @@ export async function updateSupplierTypeAction(formData: FormData): Promise<void
 }
 
 export async function reorderSupplierTypesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
   for (let i = 0; i < orderedIds.length; i++) {
     await db
@@ -98,6 +102,7 @@ export async function reorderSupplierTypesAction(orderedIds: string[]): Promise<
 }
 
 export async function toggleSupplierTypeActiveAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -117,6 +122,7 @@ export async function toggleSupplierTypeActiveAction(formData: FormData): Promis
 }
 
 export async function deleteSupplierTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 

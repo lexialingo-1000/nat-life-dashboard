@@ -1,5 +1,7 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
+import { isUploadKeyFor } from '@/lib/storage/keys';
 import { db } from '@/db/client';
 import { companyAccountingDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -89,6 +91,7 @@ export async function uploadAccountingDocAction(formData: FormData): Promise<voi
 }
 
 export async function deleteAccountingDocAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const companyId = String(formData.get('companyId') ?? '');
   if (!documentId || !companyId) throw new Error('IDs manquants');
@@ -144,11 +147,18 @@ export async function updateAccountingDocAction(formData: FormData): Promise<voi
   let storageKeyUpdate: { storageKey: string; originalFilename: string | null } | null = null;
   if (data.newStorageKey && data.newStorageKey.trim() !== '') {
     const existing = await db
-      .select({ storageKey: companyAccountingDocuments.storageKey })
+      .select({
+        storageKey: companyAccountingDocuments.storageKey,
+        companyId: companyAccountingDocuments.companyId,
+      })
       .from(companyAccountingDocuments)
       .where(eq(companyAccountingDocuments.id, data.id))
       .limit(1);
-    const oldKey = existing[0]?.storageKey;
+    // La clé doit venir de /api/upload pour la société du document (pas une clé quelconque du bucket).
+    if (!existing[0] || !isUploadKeyFor(data.newStorageKey, 'Companies', existing[0].companyId)) {
+      throw new Error('Fichier joint invalide.');
+    }
+    const oldKey = existing[0].storageKey;
     if (oldKey && oldKey !== data.newStorageKey) {
       try {
         await deleteObject(oldKey);

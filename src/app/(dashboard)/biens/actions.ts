@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { lots, levels, rooms, lotDocuments } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -103,6 +104,7 @@ export async function updateLotAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteLotAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -161,6 +163,7 @@ export async function createLevelAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteLevelAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const levelId = String(formData.get('levelId') ?? '');
   const lotId = String(formData.get('lotId') ?? '');
   if (!levelId || !lotId) throw new Error('IDs manquants');
@@ -202,6 +205,7 @@ export async function createRoomAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteRoomAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const roomId = String(formData.get('roomId') ?? '');
   const lotId = String(formData.get('lotId') ?? '');
   if (!roomId || !lotId) throw new Error('IDs manquants');
@@ -255,6 +259,7 @@ export async function uploadLotDocumentAction(formData: FormData): Promise<void>
 }
 
 export async function deleteLotDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const lotId = String(formData.get('lotId') ?? '');
   if (!documentId || !lotId) throw new Error('IDs manquants');

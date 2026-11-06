@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, ChevronRight } from 'lucide-react';
-import { sections, type NavItem } from './nav-items';
+import { visibleSections, type NavItem } from './nav-items';
+import { useIsAdmin } from './role-context';
 
 /** Hrefs déjà couverts par les onglets de la tab bar — exclus du sheet. */
 const TAB_HREFS = new Set(['/', '/biens', '/marches', '/locations']);
@@ -25,6 +26,7 @@ export function MobileMoreSheet({
   userEmail: string | null;
 }) {
   const pathname = usePathname();
+  const isAdmin = useIsAdmin();
 
   // Fermer après navigation (même pattern que l'ex-drawer sidebar-shell).
   useEffect(() => {
@@ -41,7 +43,7 @@ export function MobileMoreSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  const items: NavItem[] = sections
+  const items: NavItem[] = visibleSections(isAdmin)
     .flatMap((s) => s.items)
     .filter((item) => !TAB_HREFS.has(item.href));
 

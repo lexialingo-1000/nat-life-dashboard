@@ -1,5 +1,7 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
+import { isUploadKeyFor } from '@/lib/storage/keys';
 import { db } from '@/db/client';
 import {
   marchesTravaux,
@@ -286,6 +288,7 @@ export async function updateMarcheAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteMarcheAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -342,6 +345,7 @@ export async function uploadMarcheDocumentAction(formData: FormData): Promise<vo
 }
 
 export async function deleteMarcheDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const marcheId = String(formData.get('marcheId') ?? '');
   if (!documentId || !marcheId) throw new Error('IDs manquants');
@@ -386,6 +390,7 @@ export async function createSousLotAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteSousLotAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   const marcheId = String(formData.get('marcheId') ?? '');
   if (!id) return { error: 'ID manquant' };
@@ -606,6 +611,7 @@ export async function updateTacheAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteTacheAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -628,6 +634,9 @@ export async function appendTachePhotoAction(formData: FormData): Promise<void> 
   const id = String(formData.get('id') ?? '');
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!id || !storageKey) throw new Error('ID ou storageKey manquant');
+  // Seulement une photo envoyée pour CETTE tâche : sinon la clé d'un autre fichier, plantée ici,
+  // serait effacée par deleteTachePhotoAction.
+  if (!isUploadKeyFor(storageKey, 'Marches', id)) throw new Error('Photo invalide.');
 
   const rows = await db
     .select({ photos: marcheTaches.photos })
@@ -648,6 +657,7 @@ export async function appendTachePhotoAction(formData: FormData): Promise<void> 
 }
 
 export async function deleteTachePhotoAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   const storageKey = String(formData.get('storageKey') ?? '');
   if (!id || !storageKey) throw new Error('ID ou storageKey manquant');

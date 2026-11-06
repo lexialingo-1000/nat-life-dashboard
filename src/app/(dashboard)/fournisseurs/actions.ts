@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import {
   suppliers,
@@ -198,6 +199,7 @@ const contactSchema = z.object({
 });
 
 export async function deleteSupplierAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -284,6 +286,7 @@ export async function addContactAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteContactAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const contactId = String(formData.get('contactId') ?? '');
   const supplierId = String(formData.get('supplierId') ?? '');
   if (!contactId || !supplierId) throw new Error('IDs manquants');
@@ -323,6 +326,7 @@ export async function uploadSupplierDocumentAction(formData: FormData): Promise<
 }
 
 export async function deleteSupplierDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const supplierId = String(formData.get('supplierId') ?? '');
   if (!documentId || !supplierId) throw new Error('IDs manquants');

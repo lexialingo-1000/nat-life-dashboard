@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { companies, companyDocuments, properties, companyAccountingDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -73,6 +74,7 @@ export async function lookupSirenAction(formData: FormData) {
 }
 
 export async function deleteSocieteAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -263,6 +265,7 @@ export async function uploadCompanyDocumentAction(formData: FormData): Promise<v
 }
 
 export async function deleteCompanyDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const companyId = String(formData.get('companyId') ?? '');
   if (!documentId || !companyId) throw new Error('IDs manquants');

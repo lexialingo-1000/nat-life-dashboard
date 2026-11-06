@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, ChevronRight } from 'lucide-react';
-import { sections } from './nav-items';
+import { visibleSections } from './nav-items';
+import { useIsAdmin } from './role-context';
 
 export function SidebarContent({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();
+  const isAdmin = useIsAdmin();
 
   // Items à enfants : section ouverte si on est sur /admin/parametres ou un sous-item.
   const isParametresActive =
@@ -43,7 +45,7 @@ export function SidebarContent({ userEmail }: { userEmail: string | null }) {
       <div className="mx-6 border-t border-[#1A3366]" />
 
       <nav className="flex-1 overflow-y-auto px-3 py-5">
-        {sections.map((section) => (
+        {visibleSections(isAdmin).map((section) => (
           <div key={section.title} className="mb-5">
             <h3 className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[#2D4A7A]">
               {section.title}

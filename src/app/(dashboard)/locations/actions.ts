@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { locations, locationDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -151,6 +152,7 @@ export async function updateLocationAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteLocationAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -235,6 +237,7 @@ export async function uploadLocationDocumentAction(formData: FormData): Promise<
 }
 
 export async function deleteLocationDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const locationId = String(formData.get('locationId') ?? '');
   if (!documentId || !locationId) throw new Error('IDs manquants');

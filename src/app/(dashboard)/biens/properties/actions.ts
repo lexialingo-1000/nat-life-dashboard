@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { properties, propertyDocuments, lots, marchesTravaux } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -167,6 +168,7 @@ export async function updatePropertyAction(formData: FormData): Promise<void> {
 }
 
 export async function deletePropertyAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -239,6 +241,7 @@ export async function uploadPropertyDocumentAction(formData: FormData): Promise<
 }
 
 export async function deletePropertyDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const propertyId = String(formData.get('propertyId') ?? '');
   if (!documentId || !propertyId) throw new Error('IDs manquants');

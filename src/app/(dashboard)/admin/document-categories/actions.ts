@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { documentCategories, documentTypes } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -42,6 +43,7 @@ export async function createDocumentCategoryAction(
   _prev: CreateDocumentCategoryState,
   formData: FormData,
 ): Promise<CreateDocumentCategoryState> {
+  await requireAdmin();
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: 'error', message: parsed.error.errors.map((e) => e.message).join(', ') };
@@ -64,6 +66,7 @@ export async function createDocumentCategoryAction(
 }
 
 export async function updateDocumentCategoryAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -94,6 +97,7 @@ export async function updateDocumentCategoryAction(formData: FormData): Promise<
 }
 
 export async function reorderDocumentCategoriesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
   for (let i = 0; i < orderedIds.length; i++) {
     await db
@@ -115,6 +119,7 @@ export async function reorderDocumentCategoriesAction(orderedIds: string[]): Pro
 }
 
 export async function toggleDocumentCategoryActiveAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -144,6 +149,7 @@ export async function toggleDocumentCategoryActiveAction(formData: FormData): Pr
 }
 
 export async function deleteDocumentCategoryAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 

@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { customers, customerDocuments, locations } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -145,6 +146,7 @@ export async function createCustomerInlineAction(
 }
 
 export async function deleteCustomerAction(formData: FormData): Promise<void | { error: string }> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'ID manquant' };
 
@@ -237,6 +239,7 @@ export async function uploadCustomerDocumentAction(formData: FormData): Promise<
 }
 
 export async function deleteCustomerDocumentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const documentId = String(formData.get('documentId') ?? '');
   const customerId = String(formData.get('customerId') ?? '');
   if (!documentId || !customerId) throw new Error('IDs manquants');

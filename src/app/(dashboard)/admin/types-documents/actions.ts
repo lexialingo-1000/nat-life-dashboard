@@ -1,5 +1,6 @@
 'use server';
 
+import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
 import { documentTypes, documentCategories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -122,6 +123,7 @@ export async function createDocumentTypeAction(
   _prev: CreateDocumentTypeState,
   formData: FormData,
 ): Promise<CreateDocumentTypeState> {
+  await requireAdmin();
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -171,6 +173,7 @@ export async function createDocumentTypeAction(
 }
 
 export async function updateDocumentTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
@@ -210,6 +213,7 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
 }
 
 export async function reorderDocumentTypesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
   for (let i = 0; i < orderedIds.length; i++) {
     await db
@@ -221,6 +225,7 @@ export async function reorderDocumentTypesAction(orderedIds: string[]): Promise<
 }
 
 export async function toggleActiveAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 
@@ -240,6 +245,7 @@ export async function toggleActiveAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteDocumentTypeAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const id = String(formData.get('id') ?? '');
   if (!id) throw new Error('ID manquant');
 

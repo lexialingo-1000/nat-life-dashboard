@@ -1,5 +1,5 @@
-'use server';
-
+// Utilitaires serveur, appelés par les server actions. Pas de 'use server' ici : chaque export
+// deviendrait une action appelable de l'extérieur (deleteObject effacerait n'importe quel fichier).
 import { getMinio, getPresignedDownloadUrl, BUCKET } from './minio';
 import { logger } from '@/lib/logger';
 
