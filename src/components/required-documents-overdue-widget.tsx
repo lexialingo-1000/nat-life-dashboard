@@ -104,6 +104,16 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND s.is_active = true
         AND sd.expires_at IS NOT NULL
         AND sd.expires_at < ${today}::date
+        AND dt.is_active = true
+        -- même filtre de type que « manquants » (fournisseur passé « sans bilan » → sort).
+        AND (dt.supplier_type_id IS NULL OR dt.supplier_type_id = s.type_id)
+        -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
+        -- du même type, même parent, encore valide (sans échéance ou pas échue).
+        AND NOT EXISTS (
+          SELECT 1 FROM ${supplierDocuments} v
+          WHERE v.supplier_id = s.id AND v.type_id = dt.id
+            AND (v.expires_at IS NULL OR v.expires_at >= ${today}::date)
+        )
       ORDER BY sd.expires_at
       LIMIT 50
     `);
@@ -159,6 +169,19 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND c.is_active = true
         AND cd.expires_at IS NOT NULL
         AND cd.expires_at < ${today}::date
+        AND dt.is_active = true
+        AND (
+          dt.applies_to_tenant_type = 'all'
+          OR (dt.applies_to_tenant_type IS NULL AND c.tenant_type IS NULL)
+          OR (dt.applies_to_tenant_type = c.tenant_type::text)
+        )
+        -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
+        -- du même type, même parent, encore valide (sans échéance ou pas échue).
+        AND NOT EXISTS (
+          SELECT 1 FROM ${customerDocuments} v
+          WHERE v.customer_id = c.id AND v.type_id = dt.id
+            AND (v.expires_at IS NULL OR v.expires_at >= ${today}::date)
+        )
       ORDER BY cd.expires_at
       LIMIT 50
     `);
@@ -213,6 +236,15 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND c.is_active = true
         AND cd.expires_at IS NOT NULL
         AND cd.expires_at < ${today}::date
+        AND dt.is_active = true
+        AND (dt.applies_to_company_type IS NULL OR dt.applies_to_company_type = c.type::text)
+        -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
+        -- du même type, même parent, encore valide (sans échéance ou pas échue).
+        AND NOT EXISTS (
+          SELECT 1 FROM ${companyDocuments} v
+          WHERE v.company_id = c.id AND v.type_id = dt.id
+            AND (v.expires_at IS NULL OR v.expires_at >= ${today}::date)
+        )
       ORDER BY cd.expires_at
       LIMIT 50
     `);

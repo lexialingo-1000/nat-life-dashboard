@@ -18,13 +18,9 @@ const SCOPE_SINGULAR: Record<string, string> = {
   locations: 'location',
 };
 
-type DocumentCategory =
-  | 'notaire'
-  | 'banque'
-  | 'juridique'
-  | 'comptabilite'
-  | 'courant'
-  | 'location';
+// Retours 24/11 pt 2 : code libre de `document_categories` (les 6 historiques ont
+// un libellé et une couleur de repli ; les catégories créées dans les Paramètres aussi).
+type DocumentCategory = string;
 
 // V1.11 R9 — labels rendus dynamiques via prop `categoriesMap` fourni par chaque
 // callsite (fetché depuis la table `document_categories`). Le fallback ci-dessous
@@ -116,7 +112,7 @@ export function DocumentsManager({
 }: Props) {
   // V1.11 R9 — résolution label : map dynamique (renames admin) puis fallback.
   const labelFor = (code: DocumentCategory): string =>
-    categoriesMap?.[code] ?? FALLBACK_CATEGORY_LABELS[code];
+    categoriesMap?.[code] ?? FALLBACK_CATEGORY_LABELS[code] ?? code;
   const [showForm, setShowForm] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [typeId, setTypeId] = useState('');
@@ -278,7 +274,7 @@ export function DocumentsManager({
         header: 'Catégorie',
         cell: ({ row }) =>
           row.original.category ? (
-            <span className={CATEGORY_BADGE[row.original.category]}>
+            <span className={CATEGORY_BADGE[row.original.category] ?? 'badge-neutral'}>
               {labelFor(row.original.category)}
             </span>
           ) : (
@@ -462,6 +458,9 @@ export function DocumentsManager({
                 }
                 const orderedKeys: (DocumentCategory | '__none__')[] = [
                   ...CATEGORY_ORDER.filter((k) => grouped.has(k)),
+                  ...Array.from(grouped.keys()).filter(
+                    (k) => k !== '__none__' && !CATEGORY_ORDER.includes(k),
+                  ),
                   ...(grouped.has('__none__') ? ['__none__' as const] : []),
                 ];
                 return orderedKeys.map((key) => (

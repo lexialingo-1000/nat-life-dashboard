@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   properties,
@@ -172,7 +173,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       })
       .from(marchesTravaux)
       .innerJoin(suppliers, eq(marchesTravaux.supplierId, suppliers.id))
-      .where(eq(marchesTravaux.propertyId, property.id))
+      // Pt 16 (24/11) : marchés désactivés (= « supprimés ») hors fiche bien.
+      .where(and(eq(marchesTravaux.propertyId, property.id), eq(marchesTravaux.isActive, true)))
       .orderBy(asc(marchesTravaux.createdAt));
 
     propertyLocations = await db
@@ -319,7 +321,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       documentDate: propertyDocuments.documentDate,
       uploadedAt: propertyDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(propertyDocuments)
     .innerJoin(documentTypes, eq(propertyDocuments.typeId, documentTypes.id))
@@ -605,7 +607,16 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       count: propertyLocations.length || undefined,
       content: locationsTab,
     },
-    { id: 'travaux', label: 'Suivi travaux', count: propertyMarches.length, content: travauxTab },
+    {
+      id: 'travaux',
+      label: 'Suivi travaux',
+      // Pt 14 (24/11) : nombre de tâches ouvertes (hors Terminé/Validé), pas de marchés.
+      count: marcheTreeNodes.reduce(
+        (n, m) => n + m.sousLots.reduce((k, sl) => k + sl.taches.length, 0),
+        0,
+      ),
+      content: travauxTab,
+    },
     {
       id: 'photos',
       label: 'Photos',
@@ -628,27 +639,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
           <h1 className="mt-1.5 flex items-baseline gap-3 text-[32px] font-normal leading-tight text-zinc-900">
             <span className="display-serif">{property.name}</span>
-            {property.statut && (
-              <span
-                className={
-                  property.statut === 'vendu'
-                    ? 'badge-neutral'
-                    : property.statut === 'en_cours_acquisition'
-                      ? 'badge-blue'
-                      : property.statut === 'vacant'
-                        ? 'badge-amber'
-                        : 'badge-emerald'
-                }
-              >
-                {property.statut === 'en_cours_acquisition'
-                  ? 'Acquisition'
-                  : property.statut === 'vendu'
-                    ? 'Vendu'
-                    : property.statut === 'vacant'
-                      ? 'Vacant'
-                      : 'Loué'}
-              </span>
-            )}
+            {/* Pt 17 (24/11) : badge statut locatif retiré à côté du nom du bien. */}
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
             {property.type} · {property.address ?? 'adresse à compléter'}

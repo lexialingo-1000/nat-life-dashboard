@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   suppliers,
@@ -83,7 +84,7 @@ export default async function FournisseurDetailPage({ params }: { params: { id: 
       documentDate: supplierDocuments.documentDate,
       uploadedAt: supplierDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(supplierDocuments)
     .innerJoin(documentTypes, eq(supplierDocuments.typeId, documentTypes.id))

@@ -155,6 +155,12 @@ const s = StyleSheet.create({
     // Largeur fixe seule = toutes les photos à 72px de large, calées à gauche,
     // hauteur auto selon le ratio (pas de distorsion).
     width: 72,
+    // Retours 24/11 pt 4 : hauteur auto = hauteur inconnue au calcul de mise en page
+    // → plusieurs photos chevauchaient les lignes suivantes. Boîte fixe 72×54,
+    // image contenue (pas de déformation, pas de débordement).
+    height: 54,
+    objectFit: 'contain',
+    objectPositionX: 0,
     borderRadius: 2,
   },
   footer: {
@@ -238,7 +244,7 @@ export function SuiviTravauxPDF({ marches, title, subtitle, generatedAt }: Props
           <Text style={s.emptyState}>Aucune tâche de suivi.</Text>
         ) : (
           marches.map((marche) => (
-            <View key={marche.id} style={s.marche} wrap={false}>
+            <View key={marche.id} style={s.marche}>
               {/* En-tête marché */}
               <View style={s.marcheHeader}>
                 <View>

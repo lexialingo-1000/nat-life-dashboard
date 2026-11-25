@@ -8,6 +8,7 @@ import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteSousLotAction, deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 import { useColumnVisibility, type ColumnVisibility } from './use-column-visibility';
 import { ColumnPickerButton, type PickerColumn } from './column-picker-button';
+import { sortByTacheStatus } from '@/lib/utils';
 
 /**
  * dashboard-22 mobile — gestion des colonnes des lignes de tâches de l'arbre
@@ -248,7 +249,7 @@ function SousLotBranch({
           <p className="px-3 py-3 text-[12px] text-zinc-400">Aucune tâche.</p>
         ) : (
           <ul className="divide-y divide-zinc-100">
-            {sousLot.taches.map((t) => (
+            {sortByTacheStatus(sousLot.taches).map((t) => (
               <TacheRow
                 key={t.id}
                 tache={t}

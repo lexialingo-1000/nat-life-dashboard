@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   locations,
@@ -119,7 +120,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       documentDate: locationDocuments.documentDate,
       uploadedAt: locationDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(locationDocuments)
     .innerJoin(documentTypes, eq(locationDocuments.typeId, documentTypes.id))

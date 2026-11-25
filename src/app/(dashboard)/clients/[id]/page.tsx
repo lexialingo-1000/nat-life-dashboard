@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   customers,
@@ -82,7 +83,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       documentDate: customerDocuments.documentDate,
       uploadedAt: customerDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(customerDocuments)
     .innerJoin(documentTypes, eq(customerDocuments.typeId, documentTypes.id))

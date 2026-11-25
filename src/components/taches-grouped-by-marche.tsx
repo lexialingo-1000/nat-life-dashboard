@@ -7,6 +7,7 @@ import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteTacheAction } from '@/app/(dashboard)/marches/actions';
 import type { TacheListRow } from './taches-list-table';
+import { sortByTacheStatus } from '@/lib/utils';
 
 /**
  * V22 dashboard-22 §"SUIVI DE TRAVAUX / FICHE BIEN" — Vue suivi de travaux groupée
@@ -148,7 +149,7 @@ export function TachesGroupedByMarche({ rows, returnTo }: Props) {
                       {sousLot.sousLotName}
                     </p>
                     <div className="space-y-1.5">
-                      {sousLot.taches.map((t) => {
+                      {sortByTacheStatus(sousLot.taches).map((t) => {
                         const emplacement = [t.levelName, t.roomName, t.locationDescription]
                           .filter(Boolean)
                           .join(' · ');

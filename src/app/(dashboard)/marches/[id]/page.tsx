@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   marchesTravaux,
@@ -123,7 +124,7 @@ export default async function MarcheDetailPage({ params }: { params: { id: strin
       documentDate: marcheDocuments.documentDate,
       uploadedAt: marcheDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(marcheDocuments)
     .innerJoin(documentTypes, eq(marcheDocuments.typeId, documentTypes.id))

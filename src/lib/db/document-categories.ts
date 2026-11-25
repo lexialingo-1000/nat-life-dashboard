@@ -8,7 +8,8 @@
  * un fallback hardcodé. Toutes les pages doivent donc fetcher ce map.
  */
 import { db } from '@/db/client';
-import { documentCategories } from '@/db/schema';
+import { sql } from 'drizzle-orm';
+import { documentCategories, documentTypes } from '@/db/schema';
 
 export async function loadDocumentCategoriesMap(): Promise<Record<string, string>> {
   const cats = await db
@@ -16,3 +17,14 @@ export async function loadDocumentCategoriesMap(): Promise<Record<string, string
     .from(documentCategories);
   return Object.fromEntries(cats.map((c) => [c.code, c.label]));
 }
+
+/**
+ * Retours 24/11 pt 2 — code de catégorie d'un type de document, lu dans
+ * `document_categories` via `category_id` (catégories créées dans les Paramètres),
+ * repli sur l'ancienne colonne enum `category`. À utiliser dans un select joint à
+ * `documentTypes` : `category: docTypeCategoryCode`.
+ */
+export const docTypeCategoryCode = sql<string | null>`COALESCE(
+  (SELECT dc.code FROM ${documentCategories} dc WHERE dc.id = ${documentTypes.categoryId}),
+  ${documentTypes.category}::text
+)`;

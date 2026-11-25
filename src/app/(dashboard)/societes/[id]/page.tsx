@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   companies,
@@ -92,7 +93,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
       documentDate: companyDocuments.documentDate,
       uploadedAt: companyDocuments.uploadedAt,
       // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-      category: documentTypes.category,
+      category: docTypeCategoryCode,
     })
     .from(companyDocuments)
     .innerJoin(documentTypes, eq(companyDocuments.typeId, documentTypes.id))
@@ -130,8 +131,10 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
         <dl className="space-y-2 text-[13px]">
           <Row label="Nom">{company.name}</Row>
           <Row label="Type">
-            <span className={company.type === 'commerciale' ? 'badge-blue' : 'badge-amber'}>
-              {company.type === 'commerciale' ? 'Commerciale' : 'Immobilière'}
+            {/* Bonus 24/11 : type = `<commerciale|immobiliere>_<bilan|sans_bilan>` depuis dashboard-22. */}
+            <span className={company.type.startsWith('commerciale') ? 'badge-blue' : 'badge-amber'}>
+              {company.type.startsWith('commerciale') ? 'Commerciale' : 'Immobilière'}
+              {company.type.endsWith('sans_bilan') ? ' · sans bilan' : ' · avec bilan'}
             </span>
           </Row>
           <Row label="Forme juridique">
@@ -181,9 +184,7 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
     <div className="card overflow-hidden">
       {props.length === 0 ? (
         <p className="p-6 text-center text-sm text-zinc-500">
-          {company.type === 'immobiliere'
-            ? 'Aucun bien rattaché à cette société.'
-            : 'Société commerciale — pas de biens immobiliers.'}
+          Aucun bien rattaché à cette société.
         </p>
       ) : (
         <table className="table-base">

@@ -16,6 +16,7 @@ import {
 import { TacheStatusSelect } from './tache-status-select';
 import { TachePhotosDialog } from './tache-photos-dialog';
 import { deleteTacheAction } from '@/app/(dashboard)/marches/actions';
+import { tacheStatusRank } from '@/lib/utils';
 import { useColumnVisibility, type ColumnVisibility } from './use-column-visibility';
 import { ColumnPickerButton, MobileCard, type PickerColumn } from './column-picker-button';
 
@@ -139,7 +140,7 @@ export function TachesListTable({
   // V20 §5 — filtre statut multi (cases à cocher). Défaut : tout sauf "Terminé".
   const [statusSet, setStatusSet] = useState<Set<string>>(() => new Set(DEFAULT_VISIBLE_STATUS));
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
-    key: 'dueDate',
+    key: 'status',
     dir: 'asc',
   });
   const [photosTache, setPhotosTache] = useState<TacheListRow | null>(null);
@@ -190,10 +191,14 @@ export function TachesListTable({
           av = a.title;
           bv = b.title;
           break;
-        case 'status':
-          av = a.status;
-          bv = b.status;
-          break;
+        case 'status': {
+          // Pt 1 (24/11) : ordre métier (enum), date d'échéance en second critère.
+          const d = (tacheStatusRank(a.status) - tacheStatusRank(b.status)) * dir;
+          if (d !== 0) return d;
+          av = a.dueDate ?? '\uffff';
+          bv = b.dueDate ?? '\uffff';
+          return av.localeCompare(bv);
+        }
         case 'lot':
           av = `${a.propertyName} ${a.lotName}`;
           bv = `${b.propertyName} ${b.lotName}`;

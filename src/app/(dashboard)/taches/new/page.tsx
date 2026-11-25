@@ -10,7 +10,7 @@ import {
   properties,
   suppliers,
 } from '@/db/schema';
-import { eq, inArray, asc } from 'drizzle-orm';
+import { and, eq, inArray, asc } from 'drizzle-orm';
 import { BackLink } from '@/components/back-link';
 import { createMarcheInlineAction, createSousLotInlineAction } from '../../marches/actions';
 import {
@@ -41,6 +41,7 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
 
   // 1. Marchés en périmètre selon le contexte.
   let marcheRows: MarcheOption[];
+  // Pt 16 (24/11) : un marché « supprimé » = désactivé (pas de soft-delete) → hors liste.
   if (lotId) {
     marcheRows = await db
       .select({
@@ -52,7 +53,7 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
       .from(marcheLotAffectations)
       .innerJoin(marchesTravaux, eq(marchesTravaux.id, marcheLotAffectations.marcheId))
       .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId))
-      .where(eq(marcheLotAffectations.lotId, lotId))
+      .where(and(eq(marcheLotAffectations.lotId, lotId), eq(marchesTravaux.isActive, true)))
       .orderBy(asc(marchesTravaux.name));
   } else {
     const base = db
@@ -66,14 +67,16 @@ export default async function NewTachePage({ searchParams }: { searchParams: Sea
       .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId));
     if (supplierId) {
       marcheRows = await base
-        .where(eq(marchesTravaux.supplierId, supplierId))
+        .where(and(eq(marchesTravaux.supplierId, supplierId), eq(marchesTravaux.isActive, true)))
         .orderBy(asc(marchesTravaux.name));
     } else if (propertyId) {
       marcheRows = await base
-        .where(eq(marchesTravaux.propertyId, propertyId))
+        .where(and(eq(marchesTravaux.propertyId, propertyId), eq(marchesTravaux.isActive, true)))
         .orderBy(asc(marchesTravaux.name));
     } else {
-      marcheRows = await base.orderBy(asc(marchesTravaux.name));
+      marcheRows = await base
+        .where(eq(marchesTravaux.isActive, true))
+        .orderBy(asc(marchesTravaux.name));
     }
   }
 

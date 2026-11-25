@@ -1,3 +1,4 @@
+import { docTypeCategoryCode } from '@/lib/db/document-categories';
 import { db } from '@/db/client';
 import {
   lots,
@@ -217,7 +218,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
         // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-        category: documentTypes.category,
+        category: docTypeCategoryCode,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
@@ -254,7 +255,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         documentDate: lotDocuments.documentDate,
         uploadedAt: lotDocuments.uploadedAt,
         // V1.12 R2 — catégorie héritée du type (col legacy `category` retirée).
-        category: documentTypes.category,
+        category: docTypeCategoryCode,
       })
       .from(lotDocuments)
       .innerJoin(documentTypes, eq(lotDocuments.typeId, documentTypes.id))
