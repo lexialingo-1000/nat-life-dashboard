@@ -9,6 +9,8 @@ interface Props {
   marcheId?: string;
   lotId?: string;
   supplierId?: string;
+  /** Retours 24/11 pt 3 — tous les marchés actifs du bien. */
+  propertyId?: string;
   label?: string;
 }
 
@@ -16,6 +18,7 @@ export function PdfDownloadButton({
   marcheId,
   lotId,
   supplierId,
+  propertyId,
   label = 'Télécharger PDF',
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -25,6 +28,7 @@ export function PdfDownloadButton({
     if (marcheId) params.set('marcheId', marcheId);
     else if (lotId) params.set('lotId', lotId);
     else if (supplierId) params.set('supplierId', supplierId);
+    else if (propertyId) params.set('propertyId', propertyId);
 
     setLoading(true);
     const url = `/api/pdf/suivi-travaux?${params}`;

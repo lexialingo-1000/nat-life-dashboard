@@ -507,7 +507,12 @@ const tacheUpdateSchema = tacheCreateSchema.extend({
 // V1.10 §9 — useFormState pattern : retourne {status, message} en cas d'erreur
 // (Zod ou DB), throw redirect en cas de succès. Évite le digest opaque Next.js
 // quand le throw nu était capturé par l'error boundary.
-export type CreateTacheState = { status: 'idle' } | { status: 'error'; message: string };
+// Retours 24/11/2026 pt 8 — `created` : le form a des photos à envoyer (champ `hasPhotos`),
+// l'action rend l'id au lieu de rediriger ; le client uploade puis navigue vers `returnTo`.
+export type CreateTacheState =
+  | { status: 'idle' }
+  | { status: 'error'; message: string }
+  | { status: 'created'; id: string; returnTo: string };
 
 export async function createTacheAction(
   _prev: CreateTacheState,
@@ -533,18 +538,23 @@ export async function createTacheAction(
   }
   const data = parsed.data;
 
+  let createdId: string;
   try {
-    await db.insert(marcheTaches).values({
-      marcheSousLotId: data.marcheSousLotId,
-      lotId: data.lotId,
-      title: data.title,
-      description: data.description || null,
-      locationDescription: data.locationDescription || null,
-      roomId: data.roomId || null,
-      supplierContactId: data.supplierContactId || null,
-      status: data.status,
-      dueDate: data.dueDate || null,
-    });
+    const [created] = await db
+      .insert(marcheTaches)
+      .values({
+        marcheSousLotId: data.marcheSousLotId,
+        lotId: data.lotId,
+        title: data.title,
+        description: data.description || null,
+        locationDescription: data.locationDescription || null,
+        roomId: data.roomId || null,
+        supplierContactId: data.supplierContactId || null,
+        status: data.status,
+        dueDate: data.dueDate || null,
+      })
+      .returning({ id: marcheTaches.id });
+    createdId = created.id;
   } catch (err) {
     const code = (err as { code?: string })?.code;
     const detail = err instanceof Error ? err.message : String(err);
@@ -561,6 +571,9 @@ export async function createTacheAction(
 
   const returnTo = formData.get('returnTo');
   revalidatePath('/biens');
+  if (formData.get('hasPhotos') === '1') {
+    return { status: 'created', id: createdId, returnTo: safeReturnTo(returnTo, '/biens') };
+  }
   redirect(safeReturnTo(returnTo, '/biens'));
 }
 
@@ -638,17 +651,22 @@ export async function appendTachePhotoAction(formData: FormData): Promise<void> 
   // serait effacée par deleteTachePhotoAction.
   if (!isUploadKeyFor(storageKey, 'Marches', id)) throw new Error('Photo invalide.');
 
+  // Retours 24/11/2026 pt 9 — commentaire facultatif saisi avec la photo.
+  const comment = cleanPhotoComment(formData.get('comment'));
+
   const rows = await db
-    .select({ photos: marcheTaches.photos })
+    .select({ photos: marcheTaches.photos, photoComments: marcheTaches.photoComments })
     .from(marcheTaches)
     .where(eq(marcheTaches.id, id))
     .limit(1);
   if (rows.length === 0) throw new Error('Tâche introuvable');
 
   const next = Array.from(new Set([...(rows[0].photos ?? []), storageKey]));
+  const comments = { ...(rows[0].photoComments ?? {}) };
+  if (comment) comments[storageKey] = comment;
   await db
     .update(marcheTaches)
-    .set({ photos: next, updatedAt: new Date() })
+    .set({ photos: next, photoComments: comments, updatedAt: new Date() })
     .where(eq(marcheTaches.id, id));
 
   revalidatePath('/biens');
@@ -663,16 +681,18 @@ export async function deleteTachePhotoAction(formData: FormData): Promise<void> 
   if (!id || !storageKey) throw new Error('ID ou storageKey manquant');
 
   const rows = await db
-    .select({ photos: marcheTaches.photos })
+    .select({ photos: marcheTaches.photos, photoComments: marcheTaches.photoComments })
     .from(marcheTaches)
     .where(eq(marcheTaches.id, id))
     .limit(1);
   if (rows.length === 0) throw new Error('Tâche introuvable');
 
   const next = (rows[0].photos ?? []).filter((p: string) => p !== storageKey);
+  // Retours 24/11/2026 pt 9 — la photo supprimée emporte son commentaire.
+  const { [storageKey]: _removed, ...comments } = rows[0].photoComments ?? {};
   await db
     .update(marcheTaches)
-    .set({ photos: next, updatedAt: new Date() })
+    .set({ photos: next, photoComments: comments, updatedAt: new Date() })
     .where(eq(marcheTaches.id, id));
 
   // Best-effort MinIO delete (silencieux si échec).
@@ -681,6 +701,58 @@ export async function deleteTachePhotoAction(formData: FormData): Promise<void> 
   } catch {
     // ignore
   }
+
+  revalidatePath('/biens');
+  revalidatePath('/fournisseurs');
+  revalidatePath('/marches');
+}
+
+const PHOTO_COMMENT_MAX = 1000;
+
+function cleanPhotoComment(v: FormDataEntryValue | null): string {
+  return String(v ?? '')
+    .trim()
+    .slice(0, PHOTO_COMMENT_MAX);
+}
+
+/** Retours 24/11/2026 pt 9 — commentaires des photos d'une tâche (dialog / fiche édition). */
+export async function getTachePhotoCommentsAction(
+  formData: FormData,
+): Promise<Record<string, string>> {
+  const id = String(formData.get('id') ?? '');
+  if (!z.string().uuid().safeParse(id).success) return {};
+  const rows = await db
+    .select({ photoComments: marcheTaches.photoComments })
+    .from(marcheTaches)
+    .where(eq(marcheTaches.id, id))
+    .limit(1);
+  return rows[0]?.photoComments ?? {};
+}
+
+/**
+ * Retours 24/11/2026 pt 9 — pose / modifie / efface (texte vide) le commentaire d'UNE photo
+ * de la tâche. Seule une clé présente dans `photos[]` est acceptée : aucun commentaire orphelin.
+ */
+export async function updateTachePhotoCommentAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const storageKey = String(formData.get('storageKey') ?? '');
+  if (!id || !storageKey) throw new Error('ID ou storageKey manquant');
+  const comment = cleanPhotoComment(formData.get('comment'));
+
+  const rows = await db
+    .select({ photos: marcheTaches.photos, photoComments: marcheTaches.photoComments })
+    .from(marcheTaches)
+    .where(eq(marcheTaches.id, id))
+    .limit(1);
+  if (rows.length === 0) throw new Error('Tâche introuvable');
+  if (!(rows[0].photos ?? []).includes(storageKey)) throw new Error('Photo introuvable');
+
+  const { [storageKey]: _previous, ...comments } = rows[0].photoComments ?? {};
+  if (comment) comments[storageKey] = comment;
+  await db
+    .update(marcheTaches)
+    .set({ photoComments: comments, updatedAt: new Date() })
+    .where(eq(marcheTaches.id, id));
 
   revalidatePath('/biens');
   revalidatePath('/fournisseurs');

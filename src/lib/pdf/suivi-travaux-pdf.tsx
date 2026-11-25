@@ -61,6 +61,12 @@ const s = StyleSheet.create({
     color: '#18181b',
     marginBottom: 4,
   },
+  // Retours 24/11 pt 4a — adresse du bien sous le titre.
+  headerAddress: {
+    fontSize: 10,
+    color: '#3f3f46',
+    marginBottom: 4,
+  },
   headerMeta: {
     fontSize: 8,
     color: '#71717a',
@@ -202,6 +208,8 @@ export interface PdfSousLot {
 export interface PdfMarche {
   id: string;
   name: string;
+  /** Type de marché (marche_types.label), null si non renseigné. */
+  typeLabel: string | null;
   supplierName: string;
   status: string;
   amountHt: string | null;
@@ -212,7 +220,14 @@ interface Props {
   marches: PdfMarche[];
   title: string;
   subtitle?: string;
+  /** Adresse du bien, affichée sous le titre (retours 24/11 pt 4a). */
+  address?: string;
   generatedAt: string;
+}
+
+/** Retours 24/11 pt 4a — « Marché <type de marché> — <fournisseur> » (nom libre si pas de type). */
+export function marcheHeading(m: Pick<PdfMarche, 'name' | 'typeLabel' | 'supplierName'>): string {
+  return `Marché ${m.typeLabel || m.name} — ${m.supplierName}`;
 }
 
 function formatDate(value: string | null): string {
@@ -222,7 +237,7 @@ function formatDate(value: string | null): string {
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export function SuiviTravauxPDF({ marches, title, subtitle, generatedAt }: Props) {
+export function SuiviTravauxPDF({ marches, title, subtitle, address, generatedAt }: Props) {
   const totalTaches = marches.reduce(
     (acc, m) => acc + m.sousLots.reduce((a, s) => a + s.taches.length, 0),
     0,
@@ -235,6 +250,7 @@ export function SuiviTravauxPDF({ marches, title, subtitle, generatedAt }: Props
         <View style={s.header}>
           <Text style={s.headerTitle}>{title}</Text>
           {subtitle && <Text style={s.headerSubtitle}>{subtitle}</Text>}
+          {address && <Text style={s.headerAddress}>{address}</Text>}
           <Text style={s.headerMeta}>
             Généré le {generatedAt} — {totalTaches} tâche{totalTaches > 1 ? 's' : ''}
           </Text>
@@ -248,8 +264,10 @@ export function SuiviTravauxPDF({ marches, title, subtitle, generatedAt }: Props
               {/* En-tête marché */}
               <View style={s.marcheHeader}>
                 <View>
-                  <Text style={s.marcheTitle}>{marche.name}</Text>
-                  <Text style={s.marcheMeta}>{marche.supplierName}</Text>
+                  <Text style={s.marcheTitle}>{marcheHeading(marche)}</Text>
+                  {marche.typeLabel && marche.name !== marche.typeLabel && (
+                    <Text style={s.marcheMeta}>{marche.name}</Text>
+                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={s.marcheMeta}>

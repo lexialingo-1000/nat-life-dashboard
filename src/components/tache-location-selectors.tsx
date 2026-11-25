@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { Plus } from 'lucide-react';
+import { createRoomInlineAction } from '@/app/(dashboard)/biens/actions';
 
 interface Room {
   id: string;
@@ -38,6 +40,10 @@ interface Props {
  *
  * Si le lot n'a pas de niveaux configurés en DB, les selects sont disabled et
  * un message d'aide pointe vers la création de la structure depuis la fiche bien.
+ *
+ * Retours 24/11/2026 pt 13 — « + Nouvelle pièce » sous le select pièce : crée la
+ * pièce dans le niveau sélectionné (createRoomInlineAction), l'ajoute aux options
+ * et la sélectionne. Pas de <form> imbriqué : bouton type="button" + Entrée gérée.
  */
 export function TacheLocationSelectors({
   lotsStructure,
@@ -70,13 +76,49 @@ export function TacheLocationSelectors({
     }
   }, [levelsForLot, levelId]);
 
+  // Pièces créées depuis ce formulaire, par niveau (ajoutées aux options serveur).
+  const [createdRooms, setCreatedRooms] = useState<Record<string, Room[]>>({});
+  const [adding, setAdding] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
+  const [isCreating, startCreating] = useTransition();
+
   const roomsForLevel = useMemo(() => {
-    return levelsForLot.find((lvl) => lvl.id === levelId)?.rooms ?? [];
-  }, [levelsForLot, levelId]);
+    const base = levelsForLot.find((lvl) => lvl.id === levelId)?.rooms ?? [];
+    const extra = (createdRooms[levelId] ?? []).filter((r) => !base.some((b) => b.id === r.id));
+    return [...base, ...extra];
+  }, [levelsForLot, levelId, createdRooms]);
 
   const handleLevelChange = (next: string) => {
     setLevelId(next);
     setRoomId('');
+    setAdding(false);
+    setAddError(null);
+  };
+
+  const handleCreateRoom = () => {
+    const roomName = newRoomName.trim();
+    if (!roomName || !levelId || !lotId || isCreating) return;
+    const fd = new FormData();
+    fd.set('lotId', lotId);
+    fd.set('levelId', levelId);
+    fd.set('name', roomName);
+    const targetLevelId = levelId;
+    startCreating(async () => {
+      try {
+        setAddError(null);
+        const created = await createRoomInlineAction(fd);
+        setCreatedRooms((prev) => ({
+          ...prev,
+          [targetLevelId]: [...(prev[targetLevelId] ?? []), created],
+        }));
+        setRoomId(created.id);
+        setNewRoomName('');
+        setAdding(false);
+      } catch {
+        setAddError('Impossible de créer la pièce. Réessaie.');
+      }
+    });
   };
 
   if (levelsForLot.length === 0) {
@@ -135,6 +177,62 @@ export function TacheLocationSelectors({
             </option>
           ))}
         </select>
+        {/* Champ sans `name` : non soumis avec la tâche. */}
+        {adding ? (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateRoom();
+                } else if (e.key === 'Escape') {
+                  setAdding(false);
+                }
+              }}
+              placeholder="Nom de la pièce"
+              maxLength={120}
+              className="input flex-1"
+              autoComplete="off"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={handleCreateRoom}
+              disabled={!newRoomName.trim() || isCreating}
+              className="btn-secondary"
+            >
+              {isCreating ? 'Ajout…' : 'Ajouter'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAdding(false);
+                setNewRoomName('');
+                setAddError(null);
+              }}
+              className="text-[12px] text-zinc-500 hover:text-zinc-700"
+            >
+              Annuler
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            disabled={!levelId}
+            title={levelId ? undefined : "Sélectionne d'abord un niveau"}
+            className="mt-1.5 inline-flex items-center text-[12px] font-medium text-blue-700 hover:underline disabled:cursor-not-allowed disabled:text-zinc-400 disabled:no-underline"
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" strokeWidth={2} />
+            Nouvelle pièce
+          </button>
+        )}
+        {addError && <p className="mt-1 text-[12px] text-red-600">{addError}</p>}
       </div>
       <input type="hidden" name={name} value={roomId} />
     </div>

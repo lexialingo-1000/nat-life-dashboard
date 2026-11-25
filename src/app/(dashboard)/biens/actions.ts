@@ -185,6 +185,17 @@ const roomCreateSchema = z.object({
 });
 
 export async function createRoomAction(formData: FormData): Promise<void> {
+  await createRoomInlineAction(formData);
+}
+
+/**
+ * Même création que createRoomAction (mêmes validation et droits), sans redirect,
+ * renvoie la pièce créée. Utilisée depuis la fiche tâche (« + Nouvelle pièce »,
+ * retours 24/11/2026 pt 13) pour ajouter la pièce au select et la sélectionner.
+ */
+export async function createRoomInlineAction(
+  formData: FormData,
+): Promise<{ id: string; name: string }> {
   const parsed = roomCreateSchema.safeParse({
     levelId: formData.get('levelId'),
     lotId: formData.get('lotId'),
@@ -195,13 +206,17 @@ export async function createRoomAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
 
-  await db.insert(rooms).values({
-    levelId: parsed.data.levelId,
-    name: parsed.data.name,
-    surfaceM2: parsed.data.surfaceM2 != null ? String(parsed.data.surfaceM2) : null,
-  });
+  const [created] = await db
+    .insert(rooms)
+    .values({
+      levelId: parsed.data.levelId,
+      name: parsed.data.name,
+      surfaceM2: parsed.data.surfaceM2 != null ? String(parsed.data.surfaceM2) : null,
+    })
+    .returning({ id: rooms.id, name: rooms.name });
 
   revalidatePath(`/biens/lots/${parsed.data.lotId}`);
+  return created;
 }
 
 export async function deleteRoomAction(formData: FormData): Promise<void> {

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, date } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, jsonb } from 'drizzle-orm/pg-core';
 import { marcheTacheStatusEnum } from './enums';
 import { lots, rooms } from './properties';
 import { suppliers, supplierContacts } from './suppliers';
@@ -35,6 +35,12 @@ export const marcheTaches = pgTable('marche_taches', {
   description: text('description'),
   locationDescription: text('location_description'),
   photos: text('photos').array().notNull().default([]),
+  /**
+   * Retours 24/11/2026 pt 9 — commentaire par photo : { [storageKey]: commentaire }.
+   * Interne au suivi de travaux, jamais imprimé dans le PDF. Nullable (lignes existantes
+   * = null = aucun commentaire) : colonne ajoutée sans migration de données.
+   */
+  photoComments: jsonb('photo_comments').$type<Record<string, string>>().default({}),
   /** @deprecated V1.8 — utiliser `photos[]`. Conservé pour rétrocompat, à drop en V1.8.5+. */
   pictureStorageKey: text('picture_storage_key'),
   status: marcheTacheStatusEnum('status').notNull().default('a_faire'),

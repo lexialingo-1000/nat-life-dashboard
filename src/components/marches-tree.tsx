@@ -83,13 +83,22 @@ export interface MarcheNode {
   sousLots: SousLotNode[];
 }
 
+/** Retours 24/11 pt 15 — rupture par lot immobilier (fiche bien). */
+export interface MarcheGroup {
+  id: string;
+  label: string;
+  marches: MarcheNode[];
+}
+
 interface Props {
   marches: MarcheNode[];
   /** URL de retour pour les links create/edit tâche */
   returnTo: string;
+  /** Si fourni : un en-tête par lot, puis ses marchés (tâches filtrées sur le lot). */
+  groups?: MarcheGroup[];
 }
 
-export function MarchesTree({ marches, returnTo }: Props) {
+export function MarchesTree({ marches, returnTo, groups }: Props) {
   // V1.x dashboard-21 §2 — caméra cliquable par tâche (comme TachesListTable).
   const [photosTache, setPhotosTache] = useState<TacheNode | null>(null);
   // dashboard-22 mobile — visibilité des champs de ligne de tâche.
@@ -121,9 +130,30 @@ export function MarchesTree({ marches, returnTo }: Props) {
         <ColumnPickerButton columns={pickerColumns} />
       </div>
       <div className="space-y-2">
-        {marches.map((m) => (
-          <MarcheBranch key={m.id} marche={m} returnTo={returnTo} onOpenPhotos={setPhotosTache} />
-        ))}
+        {groups
+          ? groups.map((g) => (
+              <section key={g.id} className="space-y-2 pt-2 first:pt-0">
+                <h3 className="border-b border-zinc-200 pb-1 text-[12px] font-semibold uppercase tracking-[0.06em] text-zinc-600">
+                  {g.label}
+                </h3>
+                {g.marches.map((m) => (
+                  <MarcheBranch
+                    key={m.id}
+                    marche={m}
+                    returnTo={returnTo}
+                    onOpenPhotos={setPhotosTache}
+                  />
+                ))}
+              </section>
+            ))
+          : marches.map((m) => (
+              <MarcheBranch
+                key={m.id}
+                marche={m}
+                returnTo={returnTo}
+                onOpenPhotos={setPhotosTache}
+              />
+            ))}
         {photosTache && (
           <TachePhotosDialog
             tacheId={photosTache.id}

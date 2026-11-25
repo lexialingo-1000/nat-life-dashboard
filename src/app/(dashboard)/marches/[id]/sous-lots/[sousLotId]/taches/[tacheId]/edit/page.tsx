@@ -16,6 +16,7 @@ import { Save } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { updateTacheAction } from '@/app/(dashboard)/marches/actions';
 import { TacheLotLocationFieldset } from '@/components/tache-lot-location-fieldset';
+import { TachePhotosManager } from '@/components/tache-photos-dialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +49,7 @@ export default async function EditTachePage({
       lotId: marcheTaches.lotId,
       roomId: marcheTaches.roomId,
       marcheSousLotId: marcheTaches.marcheSousLotId,
+      photos: marcheTaches.photos,
       marcheId: marchesTravaux.id,
       marcheSupplierId: marchesTravaux.supplierId,
     })
@@ -250,6 +252,13 @@ export default async function EditTachePage({
           </button>
         </div>
       </form>
+
+      {/* Retours 24/11/2026 pt 8-9 — photos + commentaire par photo gérés sur la fiche
+          (hors du <form> : enregistrés à l'upload / à la sortie du champ). */}
+      <section className="card space-y-3 p-6">
+        <h2 className="text-[13px] font-medium text-zinc-900">Photos</h2>
+        <TachePhotosManager tacheId={t.id} photos={t.photos ?? []} />
+      </section>
     </div>
   );
 }

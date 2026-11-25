@@ -16,17 +16,26 @@ import {
 } from '@/db/schema';
 import { eq, inArray, asc, and, ne } from 'drizzle-orm';
 import { getPresignedDownloadUrl } from '@/lib/storage/minio';
-import { SuiviTravauxPDF, type PdfMarche } from '@/lib/pdf/suivi-travaux-pdf';
+import { SuiviTravauxPDF, marcheHeading, type PdfMarche } from '@/lib/pdf/suivi-travaux-pdf';
 import { sortByTacheStatus } from '@/lib/utils';
 
 // dashboard-22 — API route PDF suivi de travaux
 // GET /api/pdf/suivi-travaux?marcheId=<id>
 // GET /api/pdf/suivi-travaux?lotId=<id>
 // GET /api/pdf/suivi-travaux?supplierId=<id>
+// GET /api/pdf/suivi-travaux?propertyId=<id>  (retours 24/11 pt 3 : marchés ACTIFS du bien)
 
 export const dynamic = 'force-dynamic';
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
+
+// Retours 24/11 pt 4a — adresse du bien sous le titre.
+type AddressParts = { address: string | null; postalCode: string | null; city: string | null };
+function formatAddress(p: AddressParts | null | undefined): string | undefined {
+  if (!p) return undefined;
+  const cityLine = [p.postalCode, p.city].filter(Boolean).join(' ');
+  return [p.address, cityLine].filter(Boolean).join(', ') || undefined;
+}
 
 // dashboard-24 — fiabilise les photos du PDF. On télécharge les octets côté
 // serveur (1 retry) PUIS on ré-encode systématiquement via sharp avant de les
@@ -75,12 +84,14 @@ async function buildMarcheNodes(marcheIds: string[]): Promise<PdfMarche[]> {
       name: marchesTravaux.name,
       status: marchesTravaux.status,
       amountHt: marchesTravaux.amountHt,
+      marcheTypeLabel: marcheTypes.label,
       supplierCompanyName: suppliers.companyName,
       supplierFirstName: suppliers.firstName,
       supplierLastName: suppliers.lastName,
     })
     .from(marchesTravaux)
     .leftJoin(suppliers, eq(suppliers.id, marchesTravaux.supplierId))
+    .leftJoin(marcheTypes, eq(marcheTypes.id, marchesTravaux.marcheTypeId))
     .where(inArray(marchesTravaux.id, marcheIds))
     .orderBy(asc(marchesTravaux.name));
 
@@ -176,6 +187,7 @@ async function buildMarcheNodes(marcheIds: string[]): Promise<PdfMarche[]> {
     return {
       id: m.id,
       name: m.name,
+      typeLabel: m.marcheTypeLabel ?? null,
       supplierName,
       status: m.status,
       amountHt: m.amountHt ? String(m.amountHt) : null,
@@ -189,14 +201,29 @@ export async function GET(request: Request) {
   const marcheId = searchParams.get('marcheId') ?? '';
   const lotId = searchParams.get('lotId') ?? '';
   const supplierId = searchParams.get('supplierId') ?? '';
+  const propertyId = searchParams.get('propertyId') ?? '';
 
   let marcheIds: string[] = [];
   let title = 'Suivi de travaux';
   let subtitle: string | undefined;
+  let address: string | undefined;
+  // Pour un marché seul, le gros titre = « Marché <type> — <fournisseur> » (calculé après build).
+  let singleMarche = false;
 
   if (UUID_RE.test(marcheId)) {
     marcheIds = [marcheId];
-    title = 'Suivi de travaux — Marché';
+    singleMarche = true;
+    const [p] = await db
+      .select({
+        address: properties.address,
+        postalCode: properties.postalCode,
+        city: properties.city,
+      })
+      .from(marchesTravaux)
+      .innerJoin(properties, eq(properties.id, marchesTravaux.propertyId))
+      .where(eq(marchesTravaux.id, marcheId))
+      .limit(1);
+    address = formatAddress(p);
   } else if (UUID_RE.test(lotId)) {
     // Trouver les marchés affectés à ce lot
     const affectations = await db
@@ -204,6 +231,9 @@ export async function GET(request: Request) {
         marcheId: marcheLotAffectations.marcheId,
         lotName: lots.name,
         propertyName: properties.name,
+        address: properties.address,
+        postalCode: properties.postalCode,
+        city: properties.city,
       })
       .from(marcheLotAffectations)
       .leftJoin(lots, eq(lots.id, marcheLotAffectations.lotId))
@@ -211,8 +241,8 @@ export async function GET(request: Request) {
       .where(eq(marcheLotAffectations.lotId, lotId));
     marcheIds = affectations.map((a) => a.marcheId);
     const first = affectations[0];
-    title = 'Suivi de travaux';
     subtitle = first ? `${first.propertyName ?? ''} — ${first.lotName ?? ''}` : undefined;
+    address = formatAddress(first);
   } else if (UUID_RE.test(supplierId)) {
     // Tous les marchés de ce fournisseur
     const rows = await db
@@ -223,11 +253,35 @@ export async function GET(request: Request) {
     marcheIds = rows.map((r) => r.id);
     const name = rows[0]?.supplierName ?? 'Fournisseur';
     title = `Suivi de travaux — ${name}`;
+  } else if (UUID_RE.test(propertyId)) {
+    // Retours 24/11 pt 3 — tous les marchés ACTIFS du bien (un marché porte
+    // toujours son propertyId ; les lots n'en sont que des affectations).
+    const [p] = await db
+      .select({
+        name: properties.name,
+        address: properties.address,
+        postalCode: properties.postalCode,
+        city: properties.city,
+      })
+      .from(properties)
+      .where(eq(properties.id, propertyId))
+      .limit(1);
+    if (!p) return new Response('Bien introuvable', { status: 404 });
+    const rows = await db
+      .select({ id: marchesTravaux.id })
+      .from(marchesTravaux)
+      .where(and(eq(marchesTravaux.propertyId, propertyId), eq(marchesTravaux.isActive, true)));
+    marcheIds = rows.map((r) => r.id);
+    subtitle = p.name;
+    address = formatAddress(p);
   } else {
-    return new Response('Paramètre marcheId, lotId ou supplierId requis', { status: 400 });
+    return new Response('Paramètre marcheId, lotId, supplierId ou propertyId requis', {
+      status: 400,
+    });
   }
 
   const marches = await buildMarcheNodes(marcheIds);
+  if (singleMarche && marches[0]) subtitle = marcheHeading(marches[0]);
 
   const now = new Date();
   const generatedAt = now.toLocaleDateString('fr-FR', {
@@ -239,7 +293,7 @@ export async function GET(request: Request) {
   });
 
   const nodeBuffer = await renderToBuffer(
-    React.createElement(SuiviTravauxPDF, { marches, title, subtitle, generatedAt }),
+    React.createElement(SuiviTravauxPDF, { marches, title, subtitle, address, generatedAt }),
   );
   const buffer = new Uint8Array(nodeBuffer);
 

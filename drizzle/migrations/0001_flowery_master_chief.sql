@@ -1,0 +1,1 @@
+ALTER TABLE "marche_taches" ADD COLUMN "photo_comments" jsonb DEFAULT '{}'::jsonb;

@@ -7,6 +7,11 @@ import { AlertCircle, Loader2, Plus, Save, X } from 'lucide-react';
 import { createTacheAction, type CreateTacheState } from '@/app/(dashboard)/marches/actions';
 import { MarcheInlineCreator } from '@/components/marche-inline-creator';
 import { TacheLocationSelectors } from '@/components/tache-location-selectors';
+import {
+  TachePendingPhotos,
+  useUploadPendingPhotos,
+  type PendingPhoto,
+} from '@/components/tache-pending-photos';
 
 // V20 §FICHE LOT §4 + V12.1 — ajout de tâche depuis fournisseur / bien / lot :
 // marché et sous-lot SÉLECTIONNABLES, avec création à la volée d'un marché
@@ -73,14 +78,14 @@ interface Props {
 
 const initialState: CreateTacheState = { status: 'idle' };
 
-function SubmitButton({ disabled }: { disabled: boolean }) {
+function SubmitButton({ disabled, uploading }: { disabled: boolean; uploading?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn-primary" disabled={disabled || pending}>
-      {pending ? (
+    <button type="submit" className="btn-primary" disabled={disabled || pending || uploading}>
+      {pending || uploading ? (
         <>
           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-          Création…
+          {uploading ? 'Envoi des photos…' : 'Création…'}
         </>
       ) : (
         <>
@@ -107,6 +112,9 @@ export function TacheCreateSelectableForm({
   returnTo,
 }: Props) {
   const [state, formAction] = useFormState(createTacheAction, initialState);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  // Retours 24/11/2026 pt 8 — photos envoyées juste après la création (id de la tâche requis).
+  const photoUpload = useUploadPendingPhotos(state, pendingPhotos);
 
   // État local : les listes peuvent grandir via création inline.
   const [marcheList, setMarcheList] = useState<MarcheOption[]>(marches);
@@ -166,11 +174,23 @@ export function TacheCreateSelectableForm({
   return (
     <form action={formAction} className="card space-y-5 p-6">
       <input type="hidden" name="returnTo" value={returnTo} />
+      {pendingPhotos.length > 0 && <input type="hidden" name="hasPhotos" value="1" />}
 
       {state.status === 'error' && (
         <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" strokeWidth={2} />
           <div className="text-[13px] text-red-800">{state.message}</div>
+        </div>
+      )}
+      {photoUpload.failure && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" strokeWidth={2} />
+          <div className="text-[13px] text-amber-800">
+            {photoUpload.failure.message}{' '}
+            <Link href={photoUpload.failure.returnTo} className="underline">
+              Continuer
+            </Link>
+          </div>
         </div>
       )}
 
@@ -369,11 +389,20 @@ export function TacheCreateSelectableForm({
         />
       </div>
 
+      <TachePendingPhotos
+        photos={pendingPhotos}
+        onChange={setPendingPhotos}
+        disabled={photoUpload.created}
+      />
+
       <div className="flex justify-end gap-3 pt-2">
         <Link href={returnTo} className="btn-secondary">
           Annuler
         </Link>
-        <SubmitButton disabled={!canSubmit} />
+        <SubmitButton
+          disabled={!canSubmit || photoUpload.created}
+          uploading={photoUpload.uploading}
+        />
       </div>
     </form>
   );

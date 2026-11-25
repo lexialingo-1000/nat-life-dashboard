@@ -43,7 +43,8 @@ import { NotesCard } from '@/components/notes-card';
 import { DocumentsManager } from '@/components/documents-manager';
 import { loadDocumentCategoriesMap } from '@/lib/db/document-categories';
 import { PropertyPhotosManager } from '@/components/property-photos-manager';
-import { MarchesTree, type MarcheNode } from '@/components/marches-tree';
+import { MarchesTree, type MarcheGroup, type MarcheNode } from '@/components/marches-tree';
+import { PdfDownloadButton } from '@/components/pdf-download-button';
 import { PropertyStructureTree, type PropertyTree } from '@/components/property-structure-tree';
 import { slugify } from '@/lib/storage/minio';
 
@@ -202,6 +203,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   // V1.8 P2-3 : cascade Marché > Sous-lot > Tâche pour la fiche bien
   let marcheTreeNodes: MarcheNode[] = [];
+  let marcheGroups: MarcheGroup[] | undefined;
   if (property && propertyMarches.length > 0) {
     const marcheIds = propertyMarches.map((m) => m.id);
 
@@ -298,6 +300,43 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           })),
       })),
     }));
+
+    // Retours 24/11 pt 15 — rupture par lot : un groupe par lot du bien (ordre alpha),
+    // puis « Sans lot ». Dans un groupe, le marché garde tous ses sous-lots (bouton
+    // « Ajouter » accessible) mais n'affiche que les tâches de ce lot. Un marché figure
+    // sous un lot s'il y est affecté ou s'il y a des tâches ouvertes, sinon sous « Sans
+    // lot ». Chaque tâche ouverte apparaît une seule fois (= compteur de l'onglet).
+    if (propertyLots.length > 0) {
+      const affRows = await db
+        .select({ marcheId: marcheLotAffectations.marcheId, lotId: marcheLotAffectations.lotId })
+        .from(marcheLotAffectations)
+        .where(inArray(marcheLotAffectations.marcheId, marcheIds));
+      const knownLotIds = new Set<string>(propertyLots.map((l) => l.id));
+      const onlyTaches = (m: MarcheNode, keep: (lotId: string) => boolean): MarcheNode => ({
+        ...m,
+        sousLots: m.sousLots.map((sl) => ({
+          ...sl,
+          taches: sl.taches.filter((t) => keep(t.lotId)),
+        })),
+      });
+      const hasTaches = (m: MarcheNode) => m.sousLots.some((sl) => sl.taches.length > 0);
+      const groups: MarcheGroup[] = [];
+      for (const lot of propertyLots) {
+        const affected = new Set(affRows.filter((a) => a.lotId === lot.id).map((a) => a.marcheId));
+        const ms = marcheTreeNodes
+          .map((m) => onlyTaches(m, (id) => id === lot.id))
+          .filter((m) => affected.has(m.id) || hasTaches(m));
+        if (ms.length > 0) groups.push({ id: lot.id, label: lot.name, marches: ms });
+      }
+      const placed = new Set(groups.flatMap((g) => g.marches.map((m) => m.id)));
+      const sansLot = marcheTreeNodes
+        .map((m) => onlyTaches(m, (id) => !knownLotIds.has(id)))
+        .filter((m) => !placed.has(m.id) || hasTaches(m));
+      if (sansLot.length > 0) {
+        groups.push({ id: 'sans-lot', label: 'Sans lot (parties communes)', marches: sansLot });
+      }
+      marcheGroups = groups;
+    }
   }
 
   if (!property) {
@@ -529,6 +568,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const travauxTab = (
     <div className="space-y-4">
       <div className="flex justify-end gap-3">
+        {/* Retours 24/11 pt 3 — PDF de tous les marchés actifs du bien. */}
+        {marcheTreeNodes.length > 0 && (
+          <PdfDownloadButton propertyId={property.id} label="PDF suivi" />
+        )}
         <Link
           href={`/taches/new?propertyId=${property.id}&returnTo=${encodeURIComponent(
             `/biens/properties/${property.id}?tab=travaux`,
@@ -543,7 +586,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           Nouveau marché
         </Link>
       </div>
-      <MarchesTree marches={marcheTreeNodes} returnTo={`/biens/properties/${property.id}`} />
+      <MarchesTree
+        marches={marcheTreeNodes}
+        groups={marcheGroups}
+        returnTo={`/biens/properties/${property.id}`}
+      />
     </div>
   );
 
