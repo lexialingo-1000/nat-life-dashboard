@@ -16,6 +16,8 @@ import {
   customers,
   documentTypes,
   documentCategories,
+  lotContracts,
+  contractTypes,
 } from '@/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -30,6 +32,11 @@ import { NotesCard } from '@/components/notes-card';
 import { LotPhotosManager } from '@/components/lot-photos-manager';
 import { LevelsRoomsManager, type LevelWithRooms } from '@/components/levels-rooms-manager';
 import { LotMarchesTable, type LotMarcheRow } from '@/components/lot-marches-table';
+import {
+  LotContractsManager,
+  type LotContractRow,
+  type ContractTypeOption,
+} from '@/components/lot-contracts-manager';
 import { type TacheListRow } from '@/components/taches-list-table';
 import { TachesGroupedByMarche } from '@/components/taches-grouped-by-marche';
 import { deleteLocationAction } from '@/app/(dashboard)/locations/actions';
@@ -272,6 +279,47 @@ export default async function LotDetailPage({ params }: { params: { id: string }
         ),
       )
       .orderBy(desc(lotDocuments.uploadedAt));
+  }
+
+  // Retours 24/11/2026 pt 7 — contrats du lot (eau, électricité, internet, assurance…).
+  let lotContractRows: LotContractRow[] = [];
+  let contractTypeOptions: ContractTypeOption[] = [];
+  if (lot) {
+    // « échu » = fin passée, jugée sur la date du jour à Paris (calcul serveur, pas d'écart d'hydratation).
+    const todayParis = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(
+      new Date(),
+    );
+    const contractRows = await db
+      .select({
+        id: lotContracts.id,
+        typeId: lotContracts.typeId,
+        typeLabel: contractTypes.label,
+        startDate: lotContracts.startDate,
+        endDate: lotContracts.endDate,
+        contractNumber: lotContracts.contractNumber,
+        customerNumber: lotContracts.customerNumber,
+        comment: lotContracts.comment,
+        fileName: lotContracts.fileName,
+        storageKey: lotContracts.storageKey,
+      })
+      .from(lotContracts)
+      .innerJoin(contractTypes, eq(contractTypes.id, lotContracts.typeId))
+      .where(eq(lotContracts.lotId, lot.id))
+      .orderBy(asc(contractTypes.sortOrder), desc(lotContracts.startDate));
+    lotContractRows = contractRows.map(({ storageKey, ...c }) => ({
+      ...c,
+      hasFile: !!storageKey,
+      isExpired: !!c.endDate && c.endDate < todayParis,
+    }));
+
+    contractTypeOptions = await db
+      .select({
+        id: contractTypes.id,
+        label: contractTypes.label,
+        isActive: contractTypes.isActive,
+      })
+      .from(contractTypes)
+      .orderBy(asc(contractTypes.sortOrder), asc(contractTypes.label));
   }
 
   if (!lot) {
@@ -528,6 +576,10 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     </div>
   );
 
+  const contratsTab = (
+    <LotContractsManager lotId={lot.id} contracts={lotContractRows} types={contractTypeOptions} />
+  );
+
   const tabs: TabItem[] = [
     { id: 'overview', label: "Vue d'ensemble", content: overviewTab },
     { id: 'identity', label: 'Identité', content: identityTab },
@@ -568,6 +620,12 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       content: plansTab,
     },
     { id: 'documents', label: 'Documents', count: lotDocsNoMedia.length, content: documentsTab },
+    {
+      id: 'contrats',
+      label: 'Contrats',
+      count: lotContractRows.length || undefined,
+      content: contratsTab,
+    },
   ];
 
   return (

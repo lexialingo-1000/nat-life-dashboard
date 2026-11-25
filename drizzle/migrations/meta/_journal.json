@@ -36,6 +36,13 @@
       "when": 1795602161317,
       "tag": "0004_document_types_drop_scalars",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795610866706,
+      "tag": "0005_lot_contracts",
+      "breakpoints": true
     }
   ]
 }

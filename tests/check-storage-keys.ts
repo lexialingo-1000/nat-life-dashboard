@@ -1,7 +1,7 @@
 // isUploadKeyFor : n'accepte que la clé que /api/upload produit pour ce parent.
 // Usage : npx tsx tests/check-storage-keys.ts
 import assert from 'node:assert/strict';
-import { isUploadKeyFor } from '../src/lib/storage/keys';
+import { isUploadKeyFor, isLotContractKey } from '../src/lib/storage/keys';
 
 const co = '11111111-1111-1111-1111-111111111111';
 const other = '22222222-2222-2222-2222-222222222222';
@@ -13,4 +13,10 @@ assert.ok(!isUploadKeyFor(`Suppliers/dupont/${co}/1730800000000-rib.pdf`, 'Compa
 assert.ok(!isUploadKeyFor(`Companies/valrose/${co}/../${other}/x.pdf`, 'Companies', co));
 assert.ok(!isUploadKeyFor(`Companies/valrose/${co}/`, 'Companies', co));
 assert.ok(!isUploadKeyFor('x', 'Companies', co));
-console.log('ok : isUploadKeyFor');
+// isLotContractKey : seulement le dossier `contrats` de CE lot (pas un document du lot)
+assert.ok(isLotContractKey(`Lots/contrats/${co}/1730800000000-contrat-edf.pdf`, co));
+assert.ok(!isLotContractKey(`Lots/contrats/${other}/1730800000000-contrat-edf.pdf`, co));
+assert.ok(!isLotContractKey(`Lots/valrose-lot-1/${co}/1730800000000-dpe.pdf`, co));
+assert.ok(!isLotContractKey(`Companies/contrats/${co}/1730800000000-x.pdf`, co));
+assert.ok(!isLotContractKey(`Lots/contrats/${co}/../x.pdf`, co));
+console.log('ok : isUploadKeyFor, isLotContractKey');

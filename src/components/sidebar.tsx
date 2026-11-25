@@ -18,7 +18,8 @@ export function SidebarContent({ userEmail }: { userEmail: string | null }) {
     pathname?.startsWith('/admin/document-categories') ||
     pathname?.startsWith('/admin/marche-types') ||
     pathname?.startsWith('/admin/supplier-types') ||
-    pathname?.startsWith('/admin/location-types');
+    pathname?.startsWith('/admin/location-types') ||
+    pathname?.startsWith('/admin/contract-types');
 
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({
     '/admin/parametres': isParametresActive ?? false,

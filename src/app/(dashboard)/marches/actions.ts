@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '@/lib/auth/role';
 import { isUploadKeyFor } from '@/lib/storage/keys';
+import { safeReturnTo } from '@/lib/safe-return-to';
 import { db } from '@/db/client';
 import {
   marchesTravaux,
@@ -51,15 +52,6 @@ const marcheBaseSchema = z.object({
     .default(true),
   notes: z.string().optional().or(z.literal('')),
 });
-
-// Whitelist des chemins internes autorisés pour `returnTo` afin d'éviter les
-// open redirects. On reste sur des préfixes de l'app, jamais d'URL absolue.
-function safeReturnTo(value: unknown, fallback: string): string {
-  const v = typeof value === 'string' ? value : '';
-  if (!v.startsWith('/')) return fallback;
-  if (v.startsWith('//')) return fallback;
-  return v;
-}
 
 function parseLotIds(formData: FormData): string[] {
   const ids = formData.getAll('lotIds');

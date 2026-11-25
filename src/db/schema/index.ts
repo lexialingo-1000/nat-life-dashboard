@@ -8,6 +8,8 @@ export * from './properties';
 export * from './marche-types';
 export * from './supplier-types';
 export * from './location-types';
+export * from './contract-types';
+export * from './lot-contracts';
 export * from './document-categories';
 export * from './marches';
 export * from './locations';

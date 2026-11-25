@@ -58,6 +58,7 @@ export const sections: { title: string; items: NavItem[]; adminOnly?: boolean }[
           { href: '/admin/marche-types', label: 'Types de marchés' },
           { href: '/admin/supplier-types', label: 'Types de fournisseurs' },
           { href: '/admin/location-types', label: 'Types de location' },
+          { href: '/admin/contract-types', label: 'Types de contrat' },
         ],
       },
       { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },

@@ -7,6 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { buildStoragePrefix } from '@/lib/storage/minio';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
+import { safeReturnTo } from '@/lib/safe-return-to';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -67,12 +68,6 @@ export async function updateCustomerAction(formData: FormData): Promise<void> {
   revalidatePath('/clients');
   revalidatePath(`/clients/${data.id}`);
   redirect(`/clients/${data.id}`);
-}
-
-function safeReturnTo(value: unknown, fallback: string): string {
-  const v = typeof value === 'string' ? value : '';
-  if (!v.startsWith('/') || v.startsWith('//')) return fallback;
-  return v;
 }
 
 export async function createCustomerAction(formData: FormData): Promise<void> {

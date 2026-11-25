@@ -6,9 +6,18 @@ import {
   supplierTypes,
   documentCategories,
   locationTypes,
+  contractTypes,
 } from '@/db/schema';
 import { sql } from 'drizzle-orm';
-import { FileBox, HardHat, Tags, Briefcase, KeyRound, ArrowRight } from 'lucide-react';
+import {
+  FileBox,
+  HardHat,
+  Tags,
+  Briefcase,
+  KeyRound,
+  FileSignature,
+  ArrowRight,
+} from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +37,14 @@ export default async function ParametresPage() {
     supplierTypesCount,
     docCategoriesCount,
     locationTypesCount,
+    contractTypesCount,
   ] = await Promise.all([
     countOrZero(documentTypes),
     countOrZero(marcheTypes),
     countOrZero(supplierTypes),
     countOrZero(documentCategories),
     countOrZero(locationTypes),
+    countOrZero(contractTypes),
   ]);
 
   const sections = [
@@ -76,6 +87,14 @@ export default async function ParametresPage() {
       description:
         'Types proposés sur la fiche location (Bail meublé annuel, Bail commercial, Saisonnier, etc.).',
       count: locationTypesCount,
+    },
+    {
+      href: '/admin/contract-types',
+      icon: FileSignature,
+      title: 'Types de contrat',
+      description:
+        "Types proposés dans l'onglet Contrats de la fiche lot (Eau, Électricité, Internet, Assurance, etc.).",
+      count: contractTypesCount,
     },
   ];
 
