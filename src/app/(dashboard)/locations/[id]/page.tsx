@@ -27,23 +27,10 @@ import {
 } from '../actions';
 import { slugify } from '@/lib/storage/minio';
 import { formatDate } from '@/lib/utils';
+import { locationTypeLabel } from '@/lib/db/location-types';
+import { PERIODICITE_LABELS, PERIODICITE_SUFFIX } from '@/lib/location-periodicite';
 
 export const dynamic = 'force-dynamic';
-
-const TYPE_LABELS: Record<string, string> = {
-  bail_meuble_annuel: 'Bail meublé annuel',
-  bail_nu_annuel: 'Bail nu annuel',
-  saisonnier_direct: 'Saisonnier direct',
-  saisonnier_plateforme: 'Saisonnier plateforme',
-};
-
-const PERIODICITE_LABELS: Record<string, string> = {
-  forfait: 'forfait',
-  jour: '/ jour',
-  semaine: '/ semaine',
-  mois: '/ mois',
-  annee: '/ an',
-};
 
 type LocStatus = 'actif' | 'a_venir' | 'inactif';
 
@@ -72,7 +59,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   const rows = await db
     .select({
       id: locations.id,
-      typeLocation: locations.typeLocation,
+      typeLabel: locationTypeLabel,
       dateDebut: locations.dateDebut,
       dateFin: locations.dateFin,
       prixLocation: locations.prixLocation,
@@ -140,7 +127,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   const fmtMoney = (v: string | null, suffix = '') =>
     v ? `${Number(v).toLocaleString('fr-FR')} €${suffix ? ' ' + suffix : ''}` : '—';
 
-  const periodSuffix = PERIODICITE_LABELS[loc.periodicite] ?? '';
+  const periodSuffix = PERIODICITE_SUFFIX[loc.periodicite] ?? '';
 
   const overviewTab = (
     <div className="space-y-6">
@@ -162,12 +149,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <SectionTitle>Détails</SectionTitle>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
           <Row label="Type">
-            <span className="badge-neutral">
-              {TYPE_LABELS[loc.typeLocation] ?? loc.typeLocation}
-            </span>
+            <span className="badge-neutral">{loc.typeLabel}</span>
           </Row>
           <Row label="Périodicité">
-            <span className="badge-neutral">{loc.periodicite}</span>
+            <span className="badge-neutral">
+              {PERIODICITE_LABELS[loc.periodicite] ?? loc.periodicite}
+            </span>
           </Row>
           <Row label="Date de début">{formatDate(loc.dateDebut)}</Row>
           <Row label="Date de fin">

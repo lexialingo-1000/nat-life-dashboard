@@ -2,6 +2,7 @@ import { pgTable, uuid, text, timestamp, date, numeric } from 'drizzle-orm/pg-co
 import { locationTypeEnum, locationPeriodiciteEnum } from './enums';
 import { lots } from './properties';
 import { customers } from './customers';
+import { locationTypes } from './location-types';
 import { documentTypes } from './document-types';
 import { users } from './users';
 
@@ -13,7 +14,9 @@ export const locations = pgTable('locations', {
   customerId: uuid('customer_id')
     .notNull()
     .references(() => customers.id, { onDelete: 'restrict' }),
-  typeLocation: locationTypeEnum('type_location').notNull(),
+  // Retours 24/11/2026 pt 6 — legacy, plus écrite (nullable). Source = typeId.
+  typeLocation: locationTypeEnum('type_location'),
+  typeId: uuid('type_id').references(() => locationTypes.id, { onDelete: 'restrict' }),
   dateDebut: date('date_debut').notNull(),
   dateFin: date('date_fin'),
   prixLocation: numeric('prix_location', { precision: 14, scale: 2 }),

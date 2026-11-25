@@ -9,7 +9,7 @@ import {
   locationDocuments,
   documentTypes,
 } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, asc, eq, or } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Save } from 'lucide-react';
@@ -25,6 +25,7 @@ export const dynamic = 'force-dynamic';
 
 async function fetchDoc(scope: DocumentScope, docId: string) {
   const baseSelect = {
+    typeId: documentTypes.id,
     typeLabel: documentTypes.label,
     hasExpiration: documentTypes.hasExpiration,
     // V1.12 R1 — catégorie héritée du type (col legacy `category` doc retirée).
@@ -208,6 +209,19 @@ export default async function EditDocumentPage({
   const backHref = BACK_PATHS[scope](doc.parentId);
   const scopeLabel = SCOPE_LABELS[scope];
 
+  // Retours 24/11 pt 11 — types proposés : actifs du même scope + le type actuel
+  // (même désactivé, pour que la sélection par défaut reste valide).
+  const typeOptions = await db
+    .select({ id: documentTypes.id, label: documentTypes.label, isActive: documentTypes.isActive })
+    .from(documentTypes)
+    .where(
+      and(
+        eq(documentTypes.scope, scope),
+        or(eq(documentTypes.isActive, true), eq(documentTypes.id, doc.typeId)),
+      ),
+    )
+    .orderBy(asc(documentTypes.sortOrder), asc(documentTypes.label));
+
   return (
     <div className="space-y-8 max-w-2xl">
       <BackLink fallbackHref={backHref} label={`${scopeLabel} · Documents`} />
@@ -220,9 +234,8 @@ export default async function EditDocumentPage({
           <span className="display-serif">Modifier</span> · {doc.name}
         </h1>
         <p className="mt-1.5 text-[13px] text-zinc-500">
-          Type : <span className="font-medium text-zinc-700">{doc.typeLabel}</span> (verrouillé
-          après upload). Le fichier source n'est pas modifiable — réuploade un nouveau document pour
-          remplacer.
+          Type actuel : <span className="font-medium text-zinc-700">{doc.typeLabel}</span>. Le
+          fichier source n'est pas modifiable — réuploade un nouveau document pour remplacer.
         </p>
       </header>
 
@@ -230,6 +243,22 @@ export default async function EditDocumentPage({
         <input type="hidden" name="scope" value={scope} />
         <input type="hidden" name="id" value={doc.id} />
         <input type="hidden" name="parentId" value={doc.parentId} />
+
+        <div>
+          <label className="block text-[12px] font-medium text-zinc-700">Type de document *</label>
+          <select name="typeId" required defaultValue={doc.typeId} className="input mt-1">
+            {typeOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+                {t.isActive ? '' : ' (désactivé)'}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Si le nouveau type a une date d'expiration, enregistre puis rouvre le document pour la
+            saisir.
+          </p>
+        </div>
 
         <div>
           <label className="block text-[12px] font-medium text-zinc-700">Nom *</label>

@@ -44,27 +44,13 @@ import {
   getLotDocumentUrlAction,
 } from '../../actions';
 import { slugify } from '@/lib/storage/minio';
+import { locationTypeLabel } from '@/lib/db/location-types';
 
 const LOT_STATUS_LABELS: Record<string, string> = {
   vacant: 'Vacant',
   loue_annuel: 'Loué annuel',
   loue_saisonnier: 'Loué saisonnier',
   travaux: 'Travaux',
-};
-
-const LOCATION_TYPE_LABELS: Record<string, string> = {
-  bail_meuble_annuel: 'Bail meublé annuel',
-  bail_nu_annuel: 'Bail nu annuel',
-  saisonnier_direct: 'Saisonnier direct',
-  saisonnier_plateforme: 'Saisonnier plateforme',
-};
-
-const PERIODICITE_LABELS: Record<string, string> = {
-  forfait: 'forfait',
-  jour: '/ jour',
-  semaine: '/ semaine',
-  mois: '/ mois',
-  annee: '/ an',
 };
 
 export const dynamic = 'force-dynamic';
@@ -154,7 +140,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
     lotLocations = await db
       .select({
         id: locations.id,
-        typeLocation: locations.typeLocation,
+        typeLabel: locationTypeLabel,
         dateDebut: locations.dateDebut,
         dateFin: locations.dateFin,
         prixLocation: locations.prixLocation,
@@ -421,7 +407,7 @@ export default async function LotDetailPage({ params }: { params: { id: string }
       lotName: lot.name,
       customerId: l.customerId,
       customerLabel,
-      typeLocation: l.typeLocation,
+      typeLabel: l.typeLabel,
       dateDebut: l.dateDebut,
       dateFin: l.dateFin,
       status: computeStatus(l.dateDebut, l.dateFin),

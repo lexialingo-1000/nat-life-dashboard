@@ -73,6 +73,8 @@ export const marcheStatusEnum = pgEnum('marche_status', [
   'annule',
 ]);
 
+// Retours 24/11/2026 pt 6 — legacy : la source est désormais la table `location_types`
+// (`locations.type_id`). Enum gardé pour la colonne `type_location` (anciennes lignes).
 export const locationTypeEnum = pgEnum('location_type', [
   'bail_meuble_annuel',
   'bail_nu_annuel',
@@ -85,6 +87,8 @@ export const locationPeriodiciteEnum = pgEnum('location_periodicite', [
   'jour',
   'semaine',
   'mois',
+  // Retours 24/11/2026 pt 6 — ADD VALUE … BEFORE 'annee' (migration 0002).
+  'trimestre',
   'annee',
 ]);
 

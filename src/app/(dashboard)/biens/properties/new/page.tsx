@@ -4,6 +4,7 @@ import { asc } from 'drizzle-orm';
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { createPropertyAction } from '../actions';
+import { safeReturnTo } from '@/lib/safe-return-to';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,15 +25,29 @@ const PROPERTY_TYPES = [
   { value: 'terrain', label: 'Terrain' },
 ] as const;
 
-export default async function NewPropertyPage() {
+export default async function NewPropertyPage({
+  searchParams,
+}: {
+  searchParams: { companyId?: string; returnTo?: string };
+}) {
   const companyList = await db
     .select({ id: companies.id, name: companies.name })
     .from(companies)
     .orderBy(asc(companies.name));
 
+  // Retours 24/11/2026 pt 5 — depuis la fiche société : société présélectionnée + retour.
+  const presetCompanyId = companyList.some((c) => c.id === searchParams.companyId)
+    ? (searchParams.companyId ?? '')
+    : '';
+  const returnTo = safeReturnTo(searchParams.returnTo, '');
+  const cancelHref = returnTo || '/biens';
+
   return (
     <div className="max-w-2xl space-y-6">
-      <BackLink fallbackHref="/biens" label="Biens immobiliers" />
+      <BackLink
+        fallbackHref={cancelHref}
+        label={presetCompanyId ? 'Retour à la société' : 'Biens immobiliers'}
+      />
 
       <div>
         <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-700">
@@ -44,6 +59,7 @@ export default async function NewPropertyPage() {
       </div>
 
       <form action={createPropertyAction} className="card space-y-5 p-6" autoComplete="off">
+        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-zinc-700">
@@ -65,7 +81,7 @@ export default async function NewPropertyPage() {
             <label className="block text-sm font-medium text-zinc-700">
               Société <span className="text-red-500">*</span>
             </label>
-            <select name="companyId" required className="input mt-1">
+            <select name="companyId" required defaultValue={presetCompanyId} className="input mt-1">
               <option value="">— Choisir —</option>
               {companyList.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -184,7 +200,7 @@ export default async function NewPropertyPage() {
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <Link href="/biens" className="btn-secondary">
+          <Link href={cancelHref} className="btn-secondary">
             Annuler
           </Link>
           <button type="submit" className="btn-primary">

@@ -29,6 +29,50 @@ const COMPANY_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'immobiliere_sans_bilan', label: 'Immobilière (sans bilan)' },
 ];
 
+// Retours 24/11 pt 12 — sélection multiple (aucune case = tous).
+const TENANT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'LT', label: 'Locataires LT (long terme)' },
+  { value: 'CT', label: 'Locataires CT (court terme)' },
+];
+
+function CheckboxGroup({
+  legend,
+  name,
+  options,
+  checked,
+  disabled,
+  hint,
+}: {
+  legend: string;
+  name: string;
+  options: { value: string; label: string }[];
+  checked: string[] | null;
+  disabled: boolean;
+  hint: string;
+}) {
+  const selected = new Set(checked ?? []);
+  return (
+    <fieldset disabled={disabled} className="disabled:opacity-50">
+      <legend className="block text-[12px] font-medium text-zinc-700">{legend}</legend>
+      <div className="mt-1 space-y-1">
+        {options.map((o) => (
+          <label key={o.value} className="flex cursor-pointer items-center gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              name={name}
+              value={o.value}
+              defaultChecked={selected.has(o.value)}
+              className="h-4 w-4 rounded-sm border-zinc-300 text-zinc-900"
+            />
+            <span>{o.label}</span>
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-500">{hint}</p>
+    </fieldset>
+  );
+}
+
 export default async function EditDocumentTypePage({ params }: { params: { id: string } }) {
   const rows = await db
     .select()
@@ -124,76 +168,45 @@ export default async function EditDocumentTypePage({ params }: { params: { id: s
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">
-              Type de locataire {isCustomerScope ? '' : '(non applicable)'}
-            </label>
-            <select
-              name="appliesToTenantType"
-              defaultValue={t.appliesToTenantType ?? ''}
-              disabled={!isCustomerScope}
-              className="input mt-1 disabled:bg-zinc-50 disabled:text-zinc-400"
-            >
-              <option value="">— Non applicable / tous —</option>
-              <option value="LT">Locataires LT (long terme)</option>
-              <option value="CT">Locataires CT (court terme)</option>
-              <option value="all">Tous les locataires</option>
-            </select>
-            {!isCustomerScope && (
-              <p className="mt-1 text-[11px] text-zinc-500">Réservé aux types scope « Client ».</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">
-              Type de fournisseur {isSupplierScope ? '' : '(non applicable)'}
-            </label>
-            <select
-              name="supplierTypeId"
-              defaultValue={t.supplierTypeId ?? ''}
-              disabled={!isSupplierScope}
-              className="input mt-1 disabled:bg-zinc-50 disabled:text-zinc-400"
-            >
-              <option value="">— Tous les fournisseurs —</option>
-              {supplierTypeOptions.map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.label}
-                </option>
-              ))}
-            </select>
-            {!isSupplierScope && (
-              <p className="mt-1 text-[11px] text-zinc-500">
-                Réservé aux types scope « Fournisseur ».
-              </p>
-            )}
-          </div>
+          <CheckboxGroup
+            legend={`Types de locataire ${isCustomerScope ? '' : '(non applicable)'}`}
+            name="appliesToTenantTypes"
+            options={TENANT_TYPE_OPTIONS}
+            checked={t.appliesToTenantTypes}
+            disabled={!isCustomerScope}
+            hint={
+              isCustomerScope
+                ? 'Aucune case cochée = tous les locataires.'
+                : 'Réservé aux types scope « Client ».'
+            }
+          />
+          <CheckboxGroup
+            legend={`Types de fournisseur ${isSupplierScope ? '' : '(non applicable)'}`}
+            name="supplierTypeIds"
+            options={supplierTypeOptions.map((st) => ({ value: st.id, label: st.label }))}
+            checked={t.supplierTypeIds}
+            disabled={!isSupplierScope}
+            hint={
+              isSupplierScope
+                ? 'Aucune case cochée = tous les fournisseurs.'
+                : 'Réservé aux types scope « Fournisseur ».'
+            }
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-zinc-700">
-              Type de société {isCompanyScope ? '' : '(non applicable)'}
-            </label>
-            <select
-              name="appliesToCompanyType"
-              defaultValue={t.appliesToCompanyType ?? ''}
-              disabled={!isCompanyScope}
-              className="input mt-1 disabled:bg-zinc-50 disabled:text-zinc-400"
-            >
-              <option value="">— Toutes les sociétés —</option>
-              {COMPANY_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            {!isCompanyScope ? (
-              <p className="mt-1 text-[11px] text-zinc-500">Réservé aux types scope « Société ».</p>
-            ) : (
-              <p className="mt-1 text-[11px] text-zinc-500">
-                Si défini, ce type s'applique uniquement aux sociétés de ce type.
-              </p>
-            )}
-          </div>
+          <CheckboxGroup
+            legend={`Types de société ${isCompanyScope ? '' : '(non applicable)'}`}
+            name="appliesToCompanyTypes"
+            options={COMPANY_TYPE_OPTIONS}
+            checked={t.appliesToCompanyTypes}
+            disabled={!isCompanyScope}
+            hint={
+              isCompanyScope
+                ? 'Aucune case cochée = toutes les sociétés. Sinon, uniquement les sociétés des types cochés.'
+                : 'Réservé aux types scope « Société ».'
+            }
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

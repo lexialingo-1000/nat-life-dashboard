@@ -47,6 +47,7 @@ import { MarchesTree, type MarcheGroup, type MarcheNode } from '@/components/mar
 import { PdfDownloadButton } from '@/components/pdf-download-button';
 import { PropertyStructureTree, type PropertyTree } from '@/components/property-structure-tree';
 import { slugify } from '@/lib/storage/minio';
+import { locationTypeLabel } from '@/lib/db/location-types';
 
 const MARCHE_STATUS_LABELS: Record<string, string> = {
   signe: 'Signé',
@@ -181,7 +182,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     propertyLocations = await db
       .select({
         id: locations.id,
-        typeLocation: locations.typeLocation,
+        typeLabel: locationTypeLabel,
         dateDebut: locations.dateDebut,
         dateFin: locations.dateFin,
         prixLocation: locations.prixLocation,
@@ -447,7 +448,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       lotName: l.lotName,
       customerId: l.customerId,
       customerLabel,
-      typeLocation: l.typeLocation,
+      typeLabel: l.typeLabel,
       dateDebut: l.dateDebut,
       dateFin: l.dateFin,
       status: computeLocationStatus(l.dateDebut, l.dateFin),

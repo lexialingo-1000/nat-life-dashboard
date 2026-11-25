@@ -30,7 +30,7 @@ interface OverdueItem {
  * Scopes couverts en V1.9 PR #3 :
  * - supplier : tous fournisseurs actifs × types is_required scope=supplier
  * - customer : customers × types is_required scope=customer
- *   (filtrés par applies_to_tenant_type : LT/CT/all/null)
+ *   (filtrés par applies_to_tenant_types : NULL/vide = tous, sinon LT et/ou CT)
  *
  * Autres scopes (company/property/lot/marche/location) hors-périmètre PR #3
  * — peu de types is_required en pratique, traités plus tard si demandé.
@@ -72,9 +72,9 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND dt.is_required = true
         AND dt.scope = 'supplier'
         -- V1.12 R3 — filtre par type fournisseur (validé client) :
-        --   dt.supplier_type_id NULL = s'applique à tous les fournisseurs
-        --   sinon = uniquement aux fournisseurs ayant ce type
-        AND (dt.supplier_type_id IS NULL OR dt.supplier_type_id = s.type_id)
+        --   dt.supplier_type_ids NULL/vide = s'applique à tous les fournisseurs
+        --   sinon = uniquement aux fournisseurs ayant un de ces types (pt 12)
+        AND (COALESCE(cardinality(dt.supplier_type_ids), 0) = 0 OR s.type_id = ANY(dt.supplier_type_ids))
         AND NOT EXISTS (
           SELECT 1 FROM ${supplierDocuments} sd
           WHERE sd.supplier_id = s.id AND sd.type_id = dt.id
@@ -106,7 +106,7 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND sd.expires_at < ${today}::date
         AND dt.is_active = true
         -- même filtre de type que « manquants » (fournisseur passé « sans bilan » → sort).
-        AND (dt.supplier_type_id IS NULL OR dt.supplier_type_id = s.type_id)
+        AND (COALESCE(cardinality(dt.supplier_type_ids), 0) = 0 OR s.type_id = ANY(dt.supplier_type_ids))
         -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
         -- du même type, même parent, encore valide (sans échéance ou pas échue).
         AND NOT EXISTS (
@@ -135,10 +135,10 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND dt.is_active = true
         AND dt.is_required = true
         AND dt.scope = 'customer'
+        -- pt 12 : applies_to_tenant_types NULL/vide = tous ; sinon LT et/ou CT
         AND (
-          dt.applies_to_tenant_type = 'all'
-          OR (dt.applies_to_tenant_type IS NULL AND c.tenant_type IS NULL)
-          OR (dt.applies_to_tenant_type = c.tenant_type::text)
+          COALESCE(cardinality(dt.applies_to_tenant_types), 0) = 0
+          OR c.tenant_type::text = ANY(dt.applies_to_tenant_types)
         )
         AND NOT EXISTS (
           SELECT 1 FROM ${customerDocuments} cd
@@ -170,10 +170,10 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND cd.expires_at IS NOT NULL
         AND cd.expires_at < ${today}::date
         AND dt.is_active = true
+        -- pt 12 : applies_to_tenant_types NULL/vide = tous ; sinon LT et/ou CT
         AND (
-          dt.applies_to_tenant_type = 'all'
-          OR (dt.applies_to_tenant_type IS NULL AND c.tenant_type IS NULL)
-          OR (dt.applies_to_tenant_type = c.tenant_type::text)
+          COALESCE(cardinality(dt.applies_to_tenant_types), 0) = 0
+          OR c.tenant_type::text = ANY(dt.applies_to_tenant_types)
         )
         -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
         -- du même type, même parent, encore valide (sans échéance ou pas échue).
@@ -205,8 +205,8 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND dt.is_required = true
         AND dt.scope = 'company'
         -- dashboard-22 #8b — filtre par type de société :
-        --   applies_to_company_type NULL = toutes ; sinon ce type uniquement
-        AND (dt.applies_to_company_type IS NULL OR dt.applies_to_company_type = c.type::text)
+        --   applies_to_company_types NULL/vide = toutes ; sinon un de ces types (pt 12)
+        AND (COALESCE(cardinality(dt.applies_to_company_types), 0) = 0 OR c.type::text = ANY(dt.applies_to_company_types))
         AND NOT EXISTS (
           SELECT 1 FROM ${companyDocuments} cd
           WHERE cd.company_id = c.id AND cd.type_id = dt.id
@@ -237,7 +237,7 @@ async function fetchOverdue(): Promise<OverdueItem[]> {
         AND cd.expires_at IS NOT NULL
         AND cd.expires_at < ${today}::date
         AND dt.is_active = true
-        AND (dt.applies_to_company_type IS NULL OR dt.applies_to_company_type = c.type::text)
+        AND (COALESCE(cardinality(dt.applies_to_company_types), 0) = 0 OR c.type::text = ANY(dt.applies_to_company_types))
         -- Retours 24/11 pt 10 : un doc expiré ne compte plus s'il existe un doc
         -- du même type, même parent, encore valide (sans échéance ou pas échue).
         AND NOT EXISTS (

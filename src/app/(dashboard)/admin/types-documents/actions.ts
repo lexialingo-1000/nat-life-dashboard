@@ -35,23 +35,33 @@ const categoryPreprocess = z.preprocess(
 
 const checkboxToBool = z.preprocess((v) => v === 'on' || v === true, z.boolean());
 
-const tenantPreprocess = z.preprocess(
-  (v) => (v === '' || v == null || v === undefined ? null : v),
-  z.enum(['LT', 'CT', 'all']).nullable(),
-);
+// Retours 24/11 pt 12 — sélection multiple (cases à cocher). Aucune case = tous
+// (stocké NULL). L'ancienne valeur 'all' n'existe plus : aucune case = tous.
+const TENANT_TYPE_VALUES = ['LT', 'CT'] as const;
 
-// dashboard-22 #8b — type de société (scope=company). NULL = toutes.
-const companyTypePreprocess = z.preprocess(
-  (v) => (v === '' || v == null || v === undefined ? null : v),
-  z
-    .enum([
-      'commerciale_bilan',
-      'commerciale_sans_bilan',
-      'immobiliere_bilan',
-      'immobiliere_sans_bilan',
-    ])
-    .nullable(),
-);
+// dashboard-22 #8b — type de société (scope=company).
+const COMPANY_TYPE_VALUES = [
+  'commerciale_bilan',
+  'commerciale_sans_bilan',
+  'immobiliere_bilan',
+  'immobiliere_sans_bilan',
+] as const;
+
+const tenantTypesSchema = z.array(z.enum(TENANT_TYPE_VALUES));
+const companyTypesSchema = z.array(z.enum(COMPANY_TYPE_VALUES));
+const supplierTypeIdsSchema = z.array(z.string().uuid());
+
+// Object.fromEntries ne garde qu'une valeur par clé : les champs multiples sont
+// relus via getAll (dédoublonnés, valeurs vides retirées).
+function formToObject(formData: FormData): Record<string, unknown> {
+  const obj: Record<string, unknown> = Object.fromEntries(formData);
+  for (const key of ['supplierTypeIds', 'appliesToTenantTypes', 'appliesToCompanyTypes']) {
+    obj[key] = Array.from(new Set(formData.getAll(key).map(String).filter(Boolean)));
+  }
+  return obj;
+}
+
+const emptyToNull = <T>(arr: T[]): T[] | null => (arr.length > 0 ? arr : null);
 
 const uuidOrNull = z.preprocess(
   (v) => (v === '' || v == null || v === undefined ? null : v),
@@ -69,22 +79,22 @@ const createSchema = z.object({
   // V12bis PR2 — categoryId FK remplace l'enum hardcodé (enum gardé en parallèle
   // pour compat documents-manager auto-prefill).
   categoryId: uuidOrNull.optional(),
-  supplierTypeId: uuidOrNull.optional(),
+  supplierTypeIds: supplierTypeIdsSchema,
   hasExpiration: checkboxToBool.optional(),
   isRequired: checkboxToBool.optional(),
-  appliesToTenantType: tenantPreprocess.optional(),
-  appliesToCompanyType: companyTypePreprocess.optional(),
+  appliesToTenantTypes: tenantTypesSchema,
+  appliesToCompanyTypes: companyTypesSchema,
 });
 
 const updateSchema = z.object({
   id: z.string().uuid(),
   label: z.string().min(1).max(255),
   categoryId: uuidOrNull,
-  supplierTypeId: uuidOrNull,
+  supplierTypeIds: supplierTypeIdsSchema,
   hasExpiration: checkboxToBool,
   isRequired: checkboxToBool,
-  appliesToTenantType: tenantPreprocess,
-  appliesToCompanyType: companyTypePreprocess,
+  appliesToTenantTypes: tenantTypesSchema,
+  appliesToCompanyTypes: companyTypesSchema,
   sortOrder: z.preprocess((v) => Number(v ?? 0), z.number().int().min(0).max(9999)),
   isActive: checkboxToBool,
 });
@@ -124,7 +134,7 @@ export async function createDocumentTypeAction(
   formData: FormData,
 ): Promise<CreateDocumentTypeState> {
   await requireAdmin();
-  const parsed = createSchema.safeParse(Object.fromEntries(formData));
+  const parsed = createSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
     return {
       status: 'error',
@@ -137,16 +147,16 @@ export async function createDocumentTypeAction(
     label,
     scope,
     categoryId,
-    supplierTypeId,
+    supplierTypeIds,
     hasExpiration,
     isRequired,
-    appliesToTenantType,
-    appliesToCompanyType,
+    appliesToTenantTypes,
+    appliesToCompanyTypes,
   } = parsed.data;
 
-  const finalAppliesTo = scope === 'customer' ? (appliesToTenantType ?? null) : null;
-  const finalSupplierTypeId = scope === 'supplier' ? (supplierTypeId ?? null) : null;
-  const finalCompanyType = scope === 'company' ? (appliesToCompanyType ?? null) : null;
+  const finalAppliesTo = scope === 'customer' ? emptyToNull(appliesToTenantTypes) : null;
+  const finalSupplierTypeIds = scope === 'supplier' ? emptyToNull(supplierTypeIds) : null;
+  const finalCompanyTypes = scope === 'company' ? emptyToNull(appliesToCompanyTypes) : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(categoryId ?? null);
 
   try {
@@ -156,11 +166,11 @@ export async function createDocumentTypeAction(
       scope,
       category: legacyCategoryEnum,
       categoryId: categoryId ?? null,
-      supplierTypeId: finalSupplierTypeId,
+      supplierTypeIds: finalSupplierTypeIds,
       hasExpiration: hasExpiration ?? false,
       isRequired: isRequired ?? false,
-      appliesToTenantType: finalAppliesTo,
-      appliesToCompanyType: finalCompanyType,
+      appliesToTenantTypes: finalAppliesTo,
+      appliesToCompanyTypes: finalCompanyTypes,
       isActive: true,
       sortOrder: 100,
     });
@@ -174,7 +184,7 @@ export async function createDocumentTypeAction(
 
 export async function updateDocumentTypeAction(formData: FormData): Promise<void> {
   await requireAdmin();
-  const parsed = updateSchema.safeParse(Object.fromEntries(formData));
+  const parsed = updateSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
@@ -186,9 +196,13 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
     .limit(1);
   if (current.length === 0) throw new Error('Type introuvable');
 
-  const finalAppliesTo = current[0].scope === 'customer' ? parsed.data.appliesToTenantType : null;
-  const finalSupplierTypeId = current[0].scope === 'supplier' ? parsed.data.supplierTypeId : null;
-  const finalCompanyType = current[0].scope === 'company' ? parsed.data.appliesToCompanyType : null;
+  const { scope } = current[0];
+  const finalAppliesTo =
+    scope === 'customer' ? emptyToNull(parsed.data.appliesToTenantTypes) : null;
+  const finalSupplierTypeIds =
+    scope === 'supplier' ? emptyToNull(parsed.data.supplierTypeIds) : null;
+  const finalCompanyTypes =
+    scope === 'company' ? emptyToNull(parsed.data.appliesToCompanyTypes) : null;
   const legacyCategoryEnum = await resolveLegacyCategoryEnum(parsed.data.categoryId);
 
   await db
@@ -197,11 +211,11 @@ export async function updateDocumentTypeAction(formData: FormData): Promise<void
       label: parsed.data.label,
       category: legacyCategoryEnum,
       categoryId: parsed.data.categoryId,
-      supplierTypeId: finalSupplierTypeId,
+      supplierTypeIds: finalSupplierTypeIds,
       hasExpiration: parsed.data.hasExpiration,
       isRequired: parsed.data.isRequired,
-      appliesToTenantType: finalAppliesTo,
-      appliesToCompanyType: finalCompanyType,
+      appliesToTenantTypes: finalAppliesTo,
+      appliesToCompanyTypes: finalCompanyTypes,
       sortOrder: parsed.data.sortOrder,
       isActive: parsed.data.isActive,
       updatedAt: new Date(),

@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { db } from '@/db/client';
-import { documentTypes, marcheTypes, supplierTypes, documentCategories } from '@/db/schema';
+import {
+  documentTypes,
+  marcheTypes,
+  supplierTypes,
+  documentCategories,
+  locationTypes,
+} from '@/db/schema';
 import { sql } from 'drizzle-orm';
-import { FileBox, HardHat, Tags, Briefcase, ArrowRight } from 'lucide-react';
+import { FileBox, HardHat, Tags, Briefcase, KeyRound, ArrowRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +22,19 @@ async function countOrZero(table: any): Promise<number> {
 }
 
 export default async function ParametresPage() {
-  const [docTypesCount, marcheTypesCount, supplierTypesCount, docCategoriesCount] =
-    await Promise.all([
-      countOrZero(documentTypes),
-      countOrZero(marcheTypes),
-      countOrZero(supplierTypes),
-      countOrZero(documentCategories),
-    ]);
+  const [
+    docTypesCount,
+    marcheTypesCount,
+    supplierTypesCount,
+    docCategoriesCount,
+    locationTypesCount,
+  ] = await Promise.all([
+    countOrZero(documentTypes),
+    countOrZero(marcheTypes),
+    countOrZero(supplierTypes),
+    countOrZero(documentCategories),
+    countOrZero(locationTypes),
+  ]);
 
   const sections = [
     {
@@ -56,6 +68,14 @@ export default async function ParametresPage() {
       description:
         'Catégories de fournisseurs (Notaire, Banque, Entrepreneur, etc.). Permet de conditionner les documents obligatoires.',
       count: supplierTypesCount,
+    },
+    {
+      href: '/admin/location-types',
+      icon: KeyRound,
+      title: 'Types de location',
+      description:
+        'Types proposés sur la fiche location (Bail meublé annuel, Bail commercial, Saisonnier, etc.).',
+      count: locationTypesCount,
     },
   ];
 

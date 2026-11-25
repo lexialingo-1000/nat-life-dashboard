@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Plus, UserPlus } from 'lucide-react';
 import { LocationsTable, type LocationRow, type LocationStatus } from './locations-table';
 import { deleteLocationAction } from './actions';
+import { locationTypeLabel } from '@/lib/db/location-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export default async function LocationsListPage() {
     const raw = await db
       .select({
         id: locations.id,
-        typeLocation: locations.typeLocation,
+        typeLabel: locationTypeLabel,
         dateDebut: locations.dateDebut,
         dateFin: locations.dateFin,
         prixLocation: locations.prixLocation,
@@ -60,7 +61,7 @@ export default async function LocationsListPage() {
         lotName: r.lotName,
         customerId: r.customerId,
         customerLabel,
-        typeLocation: r.typeLocation,
+        typeLabel: r.typeLabel,
         dateDebut: r.dateDebut,
         dateFin: r.dateFin,
         status: computeStatus(r.dateDebut, r.dateFin),

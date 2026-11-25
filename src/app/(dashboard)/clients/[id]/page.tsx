@@ -1,4 +1,5 @@
 import { docTypeCategoryCode } from '@/lib/db/document-categories';
+import { locationTypeLabel } from '@/lib/db/location-types';
 import { db } from '@/db/client';
 import {
   customers,
@@ -9,7 +10,7 @@ import {
   lots,
   properties,
 } from '@/db/schema';
-import { eq, and, asc, desc, or, isNull, sql, inArray } from 'drizzle-orm';
+import { eq, and, asc, desc, or, sql, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil, Plus } from 'lucide-react';
@@ -50,21 +51,6 @@ function computeLocationStatus(dateDebut: string, dateFin: string | null): Locat
   return 'actif';
 }
 
-const LOCATION_TYPE_LABELS: Record<string, string> = {
-  bail_meuble_annuel: 'Bail meublé annuel',
-  bail_nu_annuel: 'Bail nu annuel',
-  saisonnier_direct: 'Saisonnier direct',
-  saisonnier_plateforme: 'Saisonnier plateforme',
-};
-
-const PERIODICITE_LABELS: Record<string, string> = {
-  forfait: 'forfait',
-  jour: '/ jour',
-  semaine: '/ semaine',
-  mois: '/ mois',
-  annee: '/ an',
-};
-
 export const dynamic = 'force-dynamic';
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
@@ -94,7 +80,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .select({
       id: documentTypes.id,
       label: documentTypes.label,
-      appliesToTenantType: documentTypes.appliesToTenantType,
     })
     .from(documentTypes)
     .where(
@@ -102,11 +87,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         eq(documentTypes.scope, 'customer'),
         eq(documentTypes.isActive, true),
         eq(documentTypes.isRequired, true),
+        // Retours 24/11 pt 12 — NULL/vide = tous les locataires ; sinon LT et/ou CT.
         or(
-          isNull(documentTypes.appliesToTenantType),
-          eq(documentTypes.appliesToTenantType, 'all'),
+          sql`COALESCE(cardinality(${documentTypes.appliesToTenantTypes}), 0) = 0`,
           customer.tenantType
-            ? eq(documentTypes.appliesToTenantType, customer.tenantType)
+            ? sql`${customer.tenantType} = ANY(${documentTypes.appliesToTenantTypes})`
             : sql`false`,
         ),
       ),
@@ -131,7 +116,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const customerLocations = await db
     .select({
       id: locations.id,
-      typeLocation: locations.typeLocation,
+      typeLabel: locationTypeLabel,
       dateDebut: locations.dateDebut,
       dateFin: locations.dateFin,
       prixLocation: locations.prixLocation,
@@ -305,7 +290,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     lotName: l.lotName,
     customerId: customer.id,
     customerLabel: displayName,
-    typeLocation: l.typeLocation,
+    typeLabel: l.typeLabel,
     dateDebut: l.dateDebut,
     dateFin: l.dateFin,
     status: computeLocationStatus(l.dateDebut, l.dateFin),

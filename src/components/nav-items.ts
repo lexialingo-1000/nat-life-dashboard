@@ -57,6 +57,7 @@ export const sections: { title: string; items: NavItem[]; adminOnly?: boolean }[
           { href: '/admin/document-categories', label: 'Catégories de documents' },
           { href: '/admin/marche-types', label: 'Types de marchés' },
           { href: '/admin/supplier-types', label: 'Types de fournisseurs' },
+          { href: '/admin/location-types', label: 'Types de location' },
         ],
       },
       { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },

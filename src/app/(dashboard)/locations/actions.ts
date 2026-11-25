@@ -2,22 +2,14 @@
 
 import { requireAdmin } from '@/lib/auth/role';
 import { db } from '@/db/client';
-import { locations, locationDocuments } from '@/db/schema';
+import { locations, locationDocuments, locationPeriodiciteEnum } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-
-const locationTypeValues = [
-  'bail_meuble_annuel',
-  'bail_nu_annuel',
-  'saisonnier_direct',
-  'saisonnier_plateforme',
-] as const;
-
-const locationPeriodiciteValues = ['forfait', 'jour', 'semaine', 'mois', 'annee'] as const;
+import { safeReturnTo } from '@/lib/safe-return-to';
 
 const moneyField = z
   .preprocess(
@@ -29,7 +21,8 @@ const moneyField = z
 const locationSchema = z.object({
   lotId: z.string().uuid(),
   customerId: z.string().uuid(),
-  typeLocation: z.enum(locationTypeValues),
+  // Retours 24/11/2026 pt 6 — type = ligne de location_types (Paramètres), plus l'enum.
+  typeId: z.string().uuid('Type de location requis'),
   dateDebut: z.string().min(1, 'Date de début requise'),
   dateFin: z.string().optional().or(z.literal('')),
   prixLocation: moneyField,
@@ -37,15 +30,9 @@ const locationSchema = z.object({
   chargesCourantes: moneyField,
   fraisMenage: moneyField,
   taxeSejour: moneyField,
-  periodicite: z.enum(locationPeriodiciteValues).default('mois'),
+  periodicite: z.enum(locationPeriodiciteEnum.enumValues).default('mois'),
   notes: z.string().optional().or(z.literal('')),
 });
-
-function safeReturnTo(value: unknown, fallback: string): string {
-  const v = typeof value === 'string' ? value : '';
-  if (!v.startsWith('/') || v.startsWith('//')) return fallback;
-  return v;
-}
 
 function toNumericString(n: number | null | undefined): string | null {
   return n != null ? String(n) : null;
@@ -55,7 +42,7 @@ export async function createLocationAction(formData: FormData): Promise<void> {
   const parsed = locationSchema.safeParse({
     lotId: formData.get('lotId'),
     customerId: formData.get('customerId'),
-    typeLocation: formData.get('typeLocation'),
+    typeId: formData.get('typeId'),
     dateDebut: formData.get('dateDebut'),
     dateFin: formData.get('dateFin'),
     prixLocation: formData.get('prixLocation'),
@@ -78,7 +65,7 @@ export async function createLocationAction(formData: FormData): Promise<void> {
     .values({
       lotId: data.lotId,
       customerId: data.customerId,
-      typeLocation: data.typeLocation,
+      typeId: data.typeId,
       dateDebut: data.dateDebut,
       dateFin: data.dateFin || null,
       prixLocation: toNumericString(data.prixLocation ?? null),
@@ -107,7 +94,7 @@ export async function updateLocationAction(formData: FormData): Promise<void> {
     id: formData.get('id'),
     lotId: formData.get('lotId'),
     customerId: formData.get('customerId'),
-    typeLocation: formData.get('typeLocation'),
+    typeId: formData.get('typeId'),
     dateDebut: formData.get('dateDebut'),
     dateFin: formData.get('dateFin'),
     prixLocation: formData.get('prixLocation'),
@@ -130,7 +117,7 @@ export async function updateLocationAction(formData: FormData): Promise<void> {
     .set({
       lotId: data.lotId,
       customerId: data.customerId,
-      typeLocation: data.typeLocation,
+      typeId: data.typeId,
       dateDebut: data.dateDebut,
       dateFin: data.dateFin || null,
       prixLocation: toNumericString(data.prixLocation ?? null),

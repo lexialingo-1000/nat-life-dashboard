@@ -7,6 +7,7 @@ import { BackLink } from '@/components/back-link';
 import { updateLocationAction } from '../../actions';
 import { createCustomerInlineAction } from '@/app/(dashboard)/clients/actions';
 import { LocationFormFields } from '../../location-form-fields';
+import { loadLocationTypeOptions } from '@/lib/db/location-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,8 @@ export default async function EditLocationPage({ params }: { params: { id: strin
     .from(customers)
     .where(eq(customers.isActive, true))
     .orderBy(asc(customers.companyName));
+
+  const typeOptions = await loadLocationTypeOptions(loc.typeId);
 
   const lotOptions = lotRows.map((l) => ({
     id: l.id,
@@ -64,9 +67,10 @@ export default async function EditLocationPage({ params }: { params: { id: strin
           customerOptions={customerOptions}
           defaultLotId={loc.lotId}
           defaultCustomerId={loc.customerId}
+          typeOptions={typeOptions}
           createCustomerAction={createCustomerInlineAction}
           defaultValues={{
-            typeLocation: loc.typeLocation,
+            typeId: loc.typeId ?? undefined,
             periodicite: loc.periodicite,
             dateDebut: loc.dateDebut,
             dateFin: loc.dateFin ?? '',

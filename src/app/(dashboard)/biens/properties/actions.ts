@@ -8,6 +8,7 @@ import { fkPreflightSummary } from '@/lib/db/fk-check';
 import { getDownloadUrl, deleteObject } from '@/lib/storage/document-helpers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { safeReturnTo } from '@/lib/safe-return-to';
 import { z } from 'zod';
 
 const propertyCreateSchema = z.object({
@@ -89,7 +90,9 @@ export async function createPropertyAction(formData: FormData): Promise<void> {
     .returning({ id: properties.id });
 
   revalidatePath('/biens');
-  redirect(`/biens/properties/${inserted[0].id}`);
+  revalidatePath(`/societes/${companyId}`);
+  // Retours 24/11/2026 pt 5 — création depuis la fiche société : retour à son onglet Biens.
+  redirect(safeReturnTo(formData.get('returnTo'), `/biens/properties/${inserted[0].id}`));
 }
 
 const propertySchema = z.object({

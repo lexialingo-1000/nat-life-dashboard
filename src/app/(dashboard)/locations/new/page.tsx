@@ -6,6 +6,7 @@ import { BackLink } from '@/components/back-link';
 import { createLocationAction } from '../actions';
 import { createCustomerInlineAction } from '@/app/(dashboard)/clients/actions';
 import { LocationFormFields } from '../location-form-fields';
+import { loadLocationTypeOptions } from '@/lib/db/location-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,8 @@ export default async function NewLocationPage({ searchParams }: { searchParams: 
     .from(customers)
     .where(eq(customers.isActive, true))
     .orderBy(asc(customers.companyName));
+
+  const typeOptions = await loadLocationTypeOptions();
 
   const presetLotId = searchParams.lotId ?? '';
   const presetCustomerId = searchParams.customerId ?? '';
@@ -87,6 +90,7 @@ export default async function NewLocationPage({ searchParams }: { searchParams: 
           customerOptions={customerOptions}
           defaultLotId={presetLotId}
           defaultCustomerId={presetCustomerId}
+          typeOptions={typeOptions}
           createCustomerAction={createCustomerInlineAction}
         />
 

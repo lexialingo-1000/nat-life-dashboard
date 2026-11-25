@@ -30,7 +30,6 @@ const SCOPE_BADGE: Record<string, string> = {
 const TENANT_LABELS: Record<string, string> = {
   LT: 'LT',
   CT: 'CT',
-  all: 'Tous',
 };
 
 export interface DocTypeRow {
@@ -43,7 +42,7 @@ export interface DocTypeRow {
   categoryId?: string | null;
   hasExpiration: boolean;
   isRequired: boolean;
-  appliesToTenantType: string | null;
+  appliesToTenantTypes: string[] | null;
   isActive: boolean;
   sortOrder: number;
 }
@@ -180,9 +179,9 @@ export function DocumentTypesSortableList({ rows, categoriesById }: Props) {
             )}
           </td>
           <td>
-            {t.scope === 'customer' && t.appliesToTenantType ? (
+            {t.scope === 'customer' && t.appliesToTenantTypes?.length ? (
               <span className="badge-neutral">
-                {TENANT_LABELS[t.appliesToTenantType] ?? t.appliesToTenantType}
+                {t.appliesToTenantTypes.map((v) => TENANT_LABELS[v] ?? v).join(' + ')}
               </span>
             ) : (
               <span className="text-[12px] text-zinc-400">—</span>

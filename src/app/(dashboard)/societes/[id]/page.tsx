@@ -14,7 +14,7 @@ import {
 import { eq, sql, asc, and, desc, inArray } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { BackLink } from '@/components/back-link';
 import { SectionTitle } from '@/components/section-title';
 import { DeleteButton } from '@/components/delete-button';
@@ -181,39 +181,52 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
   );
 
   const biensTab = (
-    <div className="card overflow-hidden">
-      {props.length === 0 ? (
-        <p className="p-6 text-center text-sm text-zinc-500">
-          Aucun bien rattaché à cette société.
-        </p>
-      ) : (
-        <table className="table-base">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th className="w-[120px]">Type</th>
-              <th>Adresse</th>
-              <th className="w-[80px]">Lots</th>
-            </tr>
-          </thead>
-          <tbody>
-            {props.map((p, i) => (
-              <tr key={p.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
-                <td>
-                  <Link href={`/biens/properties/${p.id}`} className="link-cell">
-                    {p.name}
-                  </Link>
-                </td>
-                <td>
-                  <span className="badge-neutral">{p.type}</span>
-                </td>
-                <td className="text-[12px] text-zinc-500">{p.address ?? '—'}</td>
-                <td className="tabular-nums">{p.lotsCount}</td>
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
+        <SectionTitle className="mb-0">Biens de la société</SectionTitle>
+        {/* Retours 24/11/2026 pt 5 — créer un bien depuis la fiche société (société présélectionnée). */}
+        <Link
+          href={`/biens/properties/new?companyId=${company.id}&returnTo=${encodeURIComponent(`/societes/${company.id}?tab=biens`)}`}
+          className="btn-secondary"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+          Nouveau bien
+        </Link>
+      </div>
+      <div className="card overflow-hidden">
+        {props.length === 0 ? (
+          <p className="p-6 text-center text-sm text-zinc-500">
+            Aucun bien rattaché à cette société.
+          </p>
+        ) : (
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th className="w-[120px]">Type</th>
+                <th>Adresse</th>
+                <th className="w-[80px]">Lots</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {props.map((p, i) => (
+                <tr key={p.id} className={i % 2 === 1 ? 'bg-zinc-50/40' : undefined}>
+                  <td>
+                    <Link href={`/biens/properties/${p.id}`} className="link-cell">
+                      {p.name}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className="badge-neutral">{p.type}</span>
+                  </td>
+                  <td className="text-[12px] text-zinc-500">{p.address ?? '—'}</td>
+                  <td className="tabular-nums">{p.lotsCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 

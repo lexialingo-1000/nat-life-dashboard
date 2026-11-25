@@ -22,16 +22,19 @@ export const documentTypes = pgTable(
     category: documentCategoryEnum('category'),
     // V12bis PR2 — catégorie paramétrable (FK vers document_categories table)
     categoryId: uuid('category_id'),
-    // V12bis PR2 — typage par catégorie de fournisseur (scope=supplier uniquement)
-    supplierTypeId: uuid('supplier_type_id'),
+    // V12bis PR2 — typage par catégorie de fournisseur (scope=supplier uniquement).
+    // Retours 24/11 pt 12 — plusieurs types possibles. NULL/vide = tous.
+    supplierTypeIds: uuid('supplier_type_ids').array(),
     isActive: boolean('is_active').notNull().default(true),
     sortOrder: integer('sort_order').notNull().default(0),
     hasExpiration: boolean('has_expiration').notNull().default(false),
     isRequired: boolean('is_required').notNull().default(false),
-    appliesToTenantType: text('applies_to_tenant_type'),
+    // Retours 24/11 pt 12 — types de locataire (valeurs de tenant_type : LT/CT),
+    // scope=customer uniquement. NULL/vide = tous les locataires.
+    appliesToTenantTypes: text('applies_to_tenant_types').array(),
     // dashboard-22 #8b — typage par type de société (scope=company uniquement).
-    // NULL = toutes les sociétés ; sinon = une des valeurs de company_type.
-    appliesToCompanyType: text('applies_to_company_type'),
+    // Retours 24/11 pt 12 — plusieurs valeurs de company_type. NULL/vide = toutes.
+    appliesToCompanyTypes: text('applies_to_company_types').array(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

@@ -28,6 +28,53 @@ interface Props {
 
 const initialState: CreateDocumentTypeState = { status: 'idle' };
 
+// Retours 24/11 pt 12 — sélection multiple (aucune case = tous).
+const TENANT_TYPE_OPTIONS = [
+  { value: 'LT', label: 'Locataires LT (long terme)' },
+  { value: 'CT', label: 'Locataires CT (court terme)' },
+];
+
+const COMPANY_TYPE_OPTIONS = [
+  { value: 'commerciale_bilan', label: 'Commerciale (bilan)' },
+  { value: 'commerciale_sans_bilan', label: 'Commerciale (sans bilan)' },
+  { value: 'immobiliere_bilan', label: 'Immobilière (bilan)' },
+  { value: 'immobiliere_sans_bilan', label: 'Immobilière (sans bilan)' },
+];
+
+function CheckboxGroup({
+  legend,
+  name,
+  options,
+  disabled,
+  hint,
+}: {
+  legend: string;
+  name: string;
+  options: { value: string; label: string }[];
+  disabled: boolean;
+  hint: string;
+}) {
+  return (
+    <fieldset disabled={disabled} className="disabled:opacity-50">
+      <legend className="block text-[12px] font-medium text-zinc-700">{legend}</legend>
+      <div className="mt-1 space-y-1">
+        {options.map((o) => (
+          <label key={o.value} className="flex cursor-pointer items-center gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              name={name}
+              value={o.value}
+              className="h-4 w-4 rounded-sm border-zinc-300 text-zinc-900"
+            />
+            <span>{o.label}</span>
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-500">{hint}</p>
+    </fieldset>
+  );
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -127,67 +174,30 @@ export function DocumentTypeCreateForm({ categories, supplierTypes }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">
-            Type de locataire (scope client uniquement)
-          </label>
-          <select
-            name="appliesToTenantType"
-            className="input mt-1"
-            defaultValue=""
-            disabled={scope !== 'customer'}
-          >
-            <option value="">— Non applicable / tous —</option>
-            <option value="LT">Locataires LT (long terme)</option>
-            <option value="CT">Locataires CT (court terme)</option>
-            <option value="all">Tous les locataires</option>
-          </select>
-          <p className="mt-1 text-[11px] text-zinc-500">Ignoré si le scope n'est pas « Client ».</p>
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">
-            Type de fournisseur (scope fournisseur uniquement)
-          </label>
-          <select
-            name="supplierTypeId"
-            className="input mt-1"
-            defaultValue=""
-            disabled={scope !== 'supplier'}
-          >
-            <option value="">— Tous les fournisseurs —</option>
-            {supplierTypes.map((st) => (
-              <option key={st.id} value={st.id}>
-                {st.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Si défini, ce type de doc s'applique uniquement aux fournisseurs de cette catégorie.
-          </p>
-        </div>
+        <CheckboxGroup
+          legend="Types de locataire (scope client uniquement)"
+          name="appliesToTenantTypes"
+          options={TENANT_TYPE_OPTIONS}
+          disabled={scope !== 'customer'}
+          hint="Aucune case cochée = tous les locataires. Ignoré si le scope n'est pas « Client »."
+        />
+        <CheckboxGroup
+          legend="Types de fournisseur (scope fournisseur uniquement)"
+          name="supplierTypeIds"
+          options={supplierTypes.map((st) => ({ value: st.id, label: st.label }))}
+          disabled={scope !== 'supplier'}
+          hint="Aucune case cochée = tous les fournisseurs. Sinon, uniquement les fournisseurs des types cochés."
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[12px] font-medium text-zinc-700">
-            Type de société (scope société uniquement)
-          </label>
-          <select
-            name="appliesToCompanyType"
-            className="input mt-1"
-            defaultValue=""
-            disabled={scope !== 'company'}
-          >
-            <option value="">— Toutes les sociétés —</option>
-            <option value="commerciale_bilan">Commerciale (bilan)</option>
-            <option value="commerciale_sans_bilan">Commerciale (sans bilan)</option>
-            <option value="immobiliere_bilan">Immobilière (bilan)</option>
-            <option value="immobiliere_sans_bilan">Immobilière (sans bilan)</option>
-          </select>
-          <p className="mt-1 text-[11px] text-zinc-500">
-            Si défini, ce type de doc s'applique uniquement aux sociétés de ce type.
-          </p>
-        </div>
+        <CheckboxGroup
+          legend="Types de société (scope société uniquement)"
+          name="appliesToCompanyTypes"
+          options={COMPANY_TYPE_OPTIONS}
+          disabled={scope !== 'company'}
+          hint="Aucune case cochée = toutes les sociétés. Sinon, uniquement les sociétés des types cochés."
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

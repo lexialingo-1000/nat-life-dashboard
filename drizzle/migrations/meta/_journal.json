@@ -15,6 +15,27 @@
       "when": 1795600280481,
       "tag": "0001_flowery_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795601905247,
+      "tag": "0002_location_types_trimestre",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795602142347,
+      "tag": "0003_document_types_arrays",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795602161317,
+      "tag": "0004_document_types_drop_scalars",
+      "breakpoints": true
     }
   ]
 }

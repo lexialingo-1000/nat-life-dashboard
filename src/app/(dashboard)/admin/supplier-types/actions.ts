@@ -133,7 +133,7 @@ export async function deleteSupplierTypeAction(formData: FormData): Promise<void
   const [docTypesCount] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(documentTypes)
-    .where(eq(documentTypes.supplierTypeId, id));
+    .where(sql`${id}::uuid = ANY(${documentTypes.supplierTypeIds})`);
 
   const total = (suppliersCount?.n ?? 0) + (docTypesCount?.n ?? 0);
   if (total > 0) {

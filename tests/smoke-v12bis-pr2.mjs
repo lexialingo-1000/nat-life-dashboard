@@ -202,20 +202,19 @@ await test('K1a /admin/types-documents create : select categoryId (FK)', async (
   if (opts.length < 7) throw new Error(`Options categoryId attendues 7+ (— Aucune — + 6 seeds), trouvé ${opts.length} : ${JSON.stringify(opts)}`);
 });
 
-await test('K1b /admin/types-documents create : select supplierTypeId présent', async () => {
-  const sel = await page.$('select[name="supplierTypeId"]');
-  if (!sel) throw new Error('select[name="supplierTypeId"] absent (form create)');
-  const opts = await page.$$eval('select[name="supplierTypeId"] option', (os) => os.map((o) => o.textContent.trim()));
-  if (opts.length < 11) throw new Error(`Options supplierTypeId attendues 11+ (— Tous — + 10 seeds), trouvé ${opts.length}`);
+// Retours 24/11 pt 12 — select unique remplacé par des cases (sélection multiple).
+await test('K1b /admin/types-documents create : cases supplierTypeIds présentes', async () => {
+  const opts = await page.$$('input[type="checkbox"][name="supplierTypeIds"]');
+  if (opts.length < 10) throw new Error(`Cases supplierTypeIds attendues 10+ (10 seeds), trouvé ${opts.length}`);
 });
 
 await test('K1c /admin/types-documents/[id]/edit : selects FK présents', async () => {
   const editHref = await page.$eval('table tbody tr a[href*="/admin/types-documents/"][href$="/edit"]', (a) => a.getAttribute('href'));
   await page.goto(`${URL_BASE}${editHref}`, { waitUntil: 'domcontentloaded', timeout: 25000 });
   const catSel = await page.$('select[name="categoryId"]');
-  const supSel = await page.$('select[name="supplierTypeId"]');
+  const supSel = await page.$('input[type="checkbox"][name="supplierTypeIds"]');
   if (!catSel) throw new Error('select categoryId absent (edit)');
-  if (!supSel) throw new Error('select supplierTypeId absent (edit)');
+  if (!supSel) throw new Error('cases supplierTypeIds absentes (edit)');
 });
 
 // =============================================================================

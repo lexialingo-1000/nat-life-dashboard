@@ -9,6 +9,7 @@ import { DeleteButton } from '@/components/delete-button';
 import { EntityLink } from '@/components/entity-link';
 import { EntityCard } from '@/components/entity-card';
 import { formatDate } from '@/lib/utils';
+import { PERIODICITE_SUFFIX } from '@/lib/location-periodicite';
 
 export type LocationStatus = 'actif' | 'a_venir' | 'inactif';
 
@@ -20,7 +21,8 @@ export type LocationRow = {
   lotName: string;
   customerId: string;
   customerLabel: string;
-  typeLocation: string;
+  /** Libellé du type (location_types, repli enum legacy) — cf. locationTypeLabel. */
+  typeLabel: string;
   dateDebut: string;
   dateFin: string | null;
   status: LocationStatus;
@@ -39,13 +41,6 @@ export type LocationColumnId =
   | 'status'
   | 'actions';
 
-const TYPE_LABELS: Record<string, string> = {
-  bail_meuble_annuel: 'Bail meublé annuel',
-  bail_nu_annuel: 'Bail nu annuel',
-  saisonnier_direct: 'Saisonnier direct',
-  saisonnier_plateforme: 'Saisonnier plateforme',
-};
-
 const STATUS_LABELS: Record<LocationStatus, string> = {
   actif: 'Actif',
   a_venir: 'À venir',
@@ -56,14 +51,6 @@ const STATUS_BADGE: Record<LocationStatus, string> = {
   actif: 'badge-emerald',
   a_venir: 'badge-blue',
   inactif: 'badge-neutral',
-};
-
-const PERIODICITE_SUFFIX: Record<string, string> = {
-  forfait: 'forfait',
-  jour: '/ jour',
-  semaine: '/ sem.',
-  mois: '/ mois',
-  annee: '/ an',
 };
 
 interface Props {
@@ -151,12 +138,9 @@ export function LocationsTable({
       {
         id: 'type',
         def: {
-          accessorKey: 'typeLocation',
+          accessorKey: 'typeLabel',
           header: 'Type',
-          cell: ({ getValue }) => {
-            const v = getValue() as string;
-            return <span className="badge-neutral">{TYPE_LABELS[v] ?? v}</span>;
-          },
+          cell: ({ getValue }) => <span className="badge-neutral">{getValue() as string}</span>,
         },
       },
       {

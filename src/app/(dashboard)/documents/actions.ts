@@ -10,6 +10,7 @@ import {
   lotDocuments,
   marcheDocuments,
   locationDocuments,
+  documentTypes,
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -18,9 +19,10 @@ import { z } from 'zod';
 import { deleteObject } from '@/lib/storage/document-helpers';
 
 /**
- * Édition d'un document existant : nom, date du document, date d'expiration,
- * notes. Le type et le storage_key ne sont PAS modifiables (verrouillés après
- * upload pour préserver la cohérence des refs et MinIO).
+ * Édition d'un document existant : type, nom, date du document, date
+ * d'expiration, notes. Le storage_key n'est PAS modifiable (verrouillé après
+ * upload pour préserver la cohérence MinIO). Retours 24/11 pt 11 : le type est
+ * modifiable, limité aux types du même scope (actifs, ou le type actuel).
  *
  * Action factorisée pour les 7 scopes — switch sur le scope pour cibler la
  * bonne table.
@@ -83,6 +85,7 @@ const updateSchema = z.object({
   scope: z.enum(SCOPES),
   id: z.string().uuid(),
   parentId: z.string().uuid(),
+  typeId: z.string().uuid(),
   name: z.string().min(1).max(255),
   documentDate: z.string().optional().or(z.literal('')),
   expiresAt: z.string().optional().or(z.literal('')),
@@ -96,15 +99,38 @@ export async function updateDocumentAction(formData: FormData): Promise<void> {
     throw new Error(parsed.error.errors.map((e) => e.message).join(', '));
   }
 
-  const { scope, id, parentId, name, documentDate, expiresAt, notes } = parsed.data;
+  const { scope, id, parentId, typeId, name, documentDate, expiresAt, notes } = parsed.data;
   const table = TABLES[scope];
+
+  // Retours 24/11 pt 11 — le type doit exister, appartenir au même scope et être
+  // actif (sauf s'il est inchangé : un doc peut garder un type désactivé depuis).
+  const [current] = await db
+    .select({ typeId: table.typeId })
+    .from(table)
+    .where(eq(table.id, id))
+    .limit(1);
+  if (!current) throw new Error('Document introuvable');
+  const [type] = await db
+    .select({
+      scope: documentTypes.scope,
+      isActive: documentTypes.isActive,
+      hasExpiration: documentTypes.hasExpiration,
+    })
+    .from(documentTypes)
+    .where(eq(documentTypes.id, typeId))
+    .limit(1);
+  if (!type || type.scope !== scope) throw new Error('Type de document invalide pour ce scope');
+  if (!type.isActive && typeId !== current.typeId) throw new Error('Type de document désactivé');
 
   await db
     .update(table)
     .set({
+      typeId,
       name,
       documentDate: documentDate || null,
-      expiresAt: expiresAt || null,
+      // Nouveau type sans échéance → on efface l'échéance (cohérent avec le
+      // formulaire qui n'affiche le champ que pour les types avec échéance).
+      expiresAt: type.hasExpiration ? expiresAt || null : null,
       notes: notes || null,
     })
     .where(eq(table.id, id));

@@ -2,28 +2,14 @@
 
 import { useState } from 'react';
 import { EntityCombobox, type ComboboxOption } from '@/components/entity-combobox';
+import { LOCATION_PERIODICITES, PERIODICITE_SUFFIX } from '@/lib/location-periodicite';
 
 type CreateAction = (
   formData: FormData,
 ) => Promise<{ id: string; label: string } | { error: string }>;
 
-const TYPE_OPTIONS = [
-  { value: 'bail_meuble_annuel', label: 'Bail meublé annuel' },
-  { value: 'bail_nu_annuel', label: 'Bail nu annuel' },
-  { value: 'saisonnier_direct', label: 'Saisonnier — direct' },
-  { value: 'saisonnier_plateforme', label: 'Saisonnier — plateforme' },
-] as const;
-
-const PERIODICITE_OPTIONS = [
-  { value: 'forfait', label: 'Forfait' },
-  { value: 'jour', label: 'Jour' },
-  { value: 'semaine', label: 'Semaine' },
-  { value: 'mois', label: 'Mois' },
-  { value: 'annee', label: 'Année' },
-] as const;
-
 interface DefaultValues {
-  typeLocation?: string;
+  typeId?: string;
   periodicite?: string;
   dateDebut?: string;
   dateFin?: string;
@@ -40,6 +26,8 @@ interface Props {
   customerOptions: ComboboxOption[];
   defaultLotId?: string;
   defaultCustomerId?: string;
+  /** Retours 24/11/2026 pt 6 — types de location (table location_types, Paramètres). */
+  typeOptions: { id: string; label: string }[];
   defaultValues?: DefaultValues;
   /** Server action to create a customer inline (passed from server parent). */
   createCustomerAction?: CreateAction;
@@ -50,21 +38,14 @@ export function LocationFormFields({
   customerOptions,
   defaultLotId,
   defaultCustomerId,
+  typeOptions,
   defaultValues = {},
   createCustomerAction,
 }: Props) {
   const [periodicite, setPeriodicite] = useState(defaultValues.periodicite ?? 'mois');
 
   const periodSuffix =
-    periodicite === 'forfait'
-      ? '(forfait)'
-      : periodicite === 'jour'
-        ? '/ jour'
-        : periodicite === 'semaine'
-          ? '/ semaine'
-          : periodicite === 'mois'
-            ? '/ mois'
-            : '/ an';
+    periodicite === 'forfait' ? '(forfait)' : (PERIODICITE_SUFFIX[periodicite] ?? '');
 
   return (
     <div className="space-y-6">
@@ -97,13 +78,14 @@ export function LocationFormFields({
       <div>
         <label className="block text-[12px] font-medium text-zinc-700">Type de location *</label>
         <select
-          name="typeLocation"
+          name="typeId"
           required
-          defaultValue={defaultValues.typeLocation ?? 'bail_meuble_annuel'}
+          defaultValue={defaultValues.typeId ?? typeOptions[0]?.id ?? ''}
           className="input mt-1"
         >
-          {TYPE_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>
+          {typeOptions.length === 0 && <option value="">— Aucun type (voir Paramètres) —</option>}
+          {typeOptions.map((t) => (
+            <option key={t.id} value={t.id}>
               {t.label}
             </option>
           ))}
@@ -139,7 +121,7 @@ export function LocationFormFields({
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] uppercase tracking-wider text-zinc-500">Périodicité :</span>
-          {PERIODICITE_OPTIONS.map((p) => {
+          {LOCATION_PERIODICITES.map((p) => {
             const active = p.value === periodicite;
             return (
               <button
