@@ -17,6 +17,7 @@ import {
 import { eq, inArray, asc, and, ne } from 'drizzle-orm';
 import { getPresignedDownloadUrl } from '@/lib/storage/minio';
 import { SuiviTravauxPDF, type PdfMarche } from '@/lib/pdf/suivi-travaux-pdf';
+import { sortByTacheStatus } from '@/lib/utils';
 
 // dashboard-22 — API route PDF suivi de travaux
 // GET /api/pdf/suivi-travaux?marcheId=<id>
@@ -159,7 +160,8 @@ async function buildMarcheNodes(marcheIds: string[]): Promise<PdfMarche[]> {
       name: s.name,
       status: s.status,
       marcheTypeLabel: s.marcheTypeLabel ?? null,
-      taches: (tachesBySousLot.get(s.id) ?? []).map((t) => ({
+      // Retours 24/11 pt 1 : même ordre de statut qu'à l'écran.
+      taches: sortByTacheStatus(tachesBySousLot.get(s.id) ?? []).map((t) => ({
         id: t.id,
         title: t.title,
         status: t.status,

@@ -484,8 +484,10 @@ export default async function SocieteDetailPage({ params }: { params: { id: stri
             <span className="display-serif">{company.name}</span>
           </h1>
           <p className="mt-1.5 text-[13px] text-zinc-500">
-            {company.type} · <span className="uppercase">{company.formeJuridique ?? '—'}</span> ·
-            SIREN <span className="font-mono">{company.siren ?? '—'}</span>
+            {company.type.startsWith('commerciale') ? 'Commerciale' : 'Immobilière'}
+            {company.type.endsWith('sans_bilan') ? ' sans bilan' : ' avec bilan'} ·{' '}
+            <span className="uppercase">{company.formeJuridique ?? '—'}</span> · SIREN{' '}
+            <span className="font-mono">{company.siren ?? '—'}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">

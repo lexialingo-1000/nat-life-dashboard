@@ -1,5 +1,5 @@
 import { db } from '@/db/client';
-import { sql, and, lte, isNotNull } from 'drizzle-orm';
+import { sql, and, eq, lte, isNotNull } from 'drizzle-orm';
 import { supplierDocuments, documentTypes, suppliers } from '@/db/schema';
 import { expirationStatus } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
@@ -32,7 +32,18 @@ async function fetchExpirations(): Promise<ExpirationItem[]> {
     .innerJoin(documentTypes, sql`${supplierDocuments.typeId} = ${documentTypes.id}`)
     .innerJoin(suppliers, sql`${supplierDocuments.supplierId} = ${suppliers.id}`)
     .where(
-      and(isNotNull(supplierDocuments.expiresAt), lte(supplierDocuments.expiresAt, thresholdIso)),
+      and(
+        isNotNull(supplierDocuments.expiresAt),
+        lte(supplierDocuments.expiresAt, thresholdIso),
+        eq(documentTypes.isActive, true),
+        // Retours 24/11 pt 10 : un doc déjà renouvelé (autre doc du même type, même fournisseur,
+        // qui expire plus tard ou jamais) ne s'affiche plus.
+        sql`NOT EXISTS (SELECT 1 FROM ${supplierDocuments} v
+          WHERE v.supplier_id = ${supplierDocuments.supplierId}
+            AND v.type_id = ${supplierDocuments.typeId}
+            AND v.id <> ${supplierDocuments.id}
+            AND (v.expires_at IS NULL OR v.expires_at > ${supplierDocuments.expiresAt}))`,
+      ),
     );
 
   return supplierExp.map((row) => ({
